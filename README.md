@@ -1,4 +1,4 @@
-####Hiker Connect App Design
+##Hiker Connect App Design
 
 **Team Member: Austin Matthews, Navami Bhat and Shrinkhla Sinha.**
 
