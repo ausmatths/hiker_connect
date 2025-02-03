@@ -27,17 +27,28 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       try {
+        print('Attempting to login with email: ${_emailController.text}');
         final userModel = await _authService.signInWithEmailAndPassword(
           email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
+          password: _passwordController.text,
         );
 
-        if (mounted && userModel != null) {
+        if (userModel != null && mounted) {
+          print('Login successful. Navigating to home screen.');
           Navigator.of(context).pushReplacementNamed('/home');
+        } else {
+          setState(() {
+            _errorMessage = 'Failed to login. Please try again.';
+          });
         }
       } catch (e) {
+        print('Login error: $e');
         setState(() {
-          _errorMessage = e.toString();
+          if (e is String) {
+            _errorMessage = e;
+          } else {
+            _errorMessage = 'An error occurred during login. Please try again.';
+          }
         });
       } finally {
         if (mounted) {

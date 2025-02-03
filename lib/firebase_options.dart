@@ -83,4 +83,5 @@ class DefaultFirebaseOptions {
     authDomain: 'hiker-connect.firebaseapp.com',
     storageBucket: 'hiker-connect.firebasestorage.app',
   );
+
 }

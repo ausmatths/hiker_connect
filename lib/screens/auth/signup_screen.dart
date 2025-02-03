@@ -27,17 +27,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
       });
 
       try {
+        print('Attempting to sign up with email: ${_emailController.text}');
         final userModel = await _authService.signUpWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
           displayName: _displayNameController.text.trim(),
         );
+        print('Sign up successful: $userModel');
 
         if (mounted) {
-          // Navigate to home screen or show success message
-          Navigator.of(context).pushReplacementNamed('/home'); // Adjust route as needed
+          Navigator.of(context).pushReplacementNamed('/home');
         }
       } catch (e) {
+        print('Sign up error: $e');
         setState(() {
           _errorMessage = e.toString();
         });

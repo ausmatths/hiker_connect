@@ -6,10 +6,7 @@ class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Stream to listen to auth state changes
   Stream<User?> get authStateChanges => _auth.authStateChanges();
-
-  // Get current user
   User? get currentUser => _auth.currentUser;
 
   // Get current user data from Firestore
@@ -18,7 +15,7 @@ class AuthService {
     return await getUserData(currentUser!.uid);
   }
 
-  // Add this method to get any user's data by UID
+  // Get user data by UID
   Future<UserModel?> getUserData(String uid) async {
     try {
       final doc = await _firestore.collection('users').doc(uid).get();
@@ -28,7 +25,7 @@ class AuthService {
     }
   }
 
-  // Sign up with email and password
+  // Sign up
   Future<UserModel?> signUpWithEmailAndPassword({
     required String email,
     required String password,
@@ -41,7 +38,6 @@ class AuthService {
       );
 
       if (userCredential.user != null) {
-        // Create the user model
         final userModel = UserModel(
           uid: userCredential.user!.uid,
           email: email,
@@ -49,9 +45,11 @@ class AuthService {
           createdAt: DateTime.now(),
           lastActive: DateTime.now(),
           isEmailVerified: userCredential.user!.emailVerified,
+          interests: [],
+          following: [],
+          followers: [],
         );
 
-        // Save user data to Firestore
         await _firestore
             .collection('users')
             .doc(userCredential.user!.uid)
@@ -65,33 +63,66 @@ class AuthService {
     }
   }
 
-  // Sign in with email and password
   Future<UserModel?> signInWithEmailAndPassword({
     required String email,
     required String password,
   }) async {
     try {
-      final userCredential = await _auth.signInWithEmailAndPassword(
+      print('Attempting to sign in with email: $email');
+
+      // First authenticate
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      if (userCredential.user != null) {
-        // Update last active timestamp
-        await _firestore.collection('users').doc(userCredential.user!.uid).update({
-          'lastActive': FieldValue.serverTimestamp(),
-        });
-
-        // Get and return user data
-        return await getCurrentUserData();
+      if (credential.user == null) {
+        print('No user returned after authentication');
+        return null;
       }
-      return null;
+
+      print('User authenticated successfully: ${credential.user!.uid}');
+
+      // Then get/create user document
+      DocumentSnapshot<Map<String, dynamic>> doc =
+      await _firestore.collection('users').doc(credential.user!.uid).get();
+
+      if (!doc.exists) {
+        print('Creating new user document');
+        // Create new user document
+        final newUser = UserModel(
+          uid: credential.user!.uid,
+          email: email,
+          displayName: email.split('@')[0],
+          createdAt: DateTime.now(),
+          lastActive: DateTime.now(),
+          isEmailVerified: credential.user!.emailVerified,
+          interests: [],
+          following: [],
+          followers: [],
+        );
+
+        await _firestore
+            .collection('users')
+            .doc(credential.user!.uid)
+            .set(newUser.toMap());
+
+        return newUser;
+      }
+
+      print('Returning existing user document');
+      return UserModel.fromFirestore(doc);
+
     } on FirebaseAuthException catch (e) {
+      print('FirebaseAuthException: ${e.code} - ${e.message}');
       throw _handleAuthException(e);
+    } catch (e) {
+      print('Unexpected error during sign in: $e');
+      throw Exception('An error occurred during sign in');
     }
   }
 
-  // Update user profile
+  // Update profile
   Future<void> updateUserProfile({
     String? displayName,
     String? photoUrl,
@@ -101,7 +132,6 @@ class AuthService {
     if (currentUser == null) throw Exception('No user logged in');
 
     try {
-      final userDoc = _firestore.collection('users').doc(currentUser!.uid);
       final updates = <String, dynamic>{
         if (displayName != null) 'displayName': displayName,
         if (photoUrl != null) 'photoUrl': photoUrl,
@@ -110,7 +140,7 @@ class AuthService {
         'lastActive': FieldValue.serverTimestamp(),
       };
 
-      await userDoc.update(updates);
+      await _firestore.collection('users').doc(currentUser!.uid).update(updates);
     } catch (e) {
       throw Exception('Failed to update profile: $e');
     }
@@ -128,7 +158,6 @@ class AuthService {
     batch.update(currentUserDoc, {
       'following': FieldValue.arrayUnion([targetUserId])
     });
-
     batch.update(targetUserDoc, {
       'followers': FieldValue.arrayUnion([currentUser!.uid])
     });
@@ -147,7 +176,6 @@ class AuthService {
     batch.update(currentUserDoc, {
       'following': FieldValue.arrayRemove([targetUserId])
     });
-
     batch.update(targetUserDoc, {
       'followers': FieldValue.arrayRemove([currentUser!.uid])
     });
@@ -157,13 +185,13 @@ class AuthService {
 
   // Sign out
   Future<void> signOut() async {
-    if (currentUser != null) {
-      // Update last active timestamp before signing out
-      await _firestore.collection('users').doc(currentUser!.uid).update({
-        'lastActive': FieldValue.serverTimestamp(),
-      });
+    try {
+      await _auth.signOut();
+      print('Successfully signed out');
+    } catch (e) {
+      print('Error during sign out: $e');
+      throw Exception('Failed to sign out: $e');
     }
-    await _auth.signOut();
   }
 
   // Reset password
@@ -180,9 +208,7 @@ class AuthService {
     if (currentUser == null) throw Exception('No user logged in');
 
     try {
-      // Delete user data from Firestore
       await _firestore.collection('users').doc(currentUser!.uid).delete();
-      // Delete user authentication
       await currentUser!.delete();
     } catch (e) {
       throw Exception('Failed to delete account: $e');
