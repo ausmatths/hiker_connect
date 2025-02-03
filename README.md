@@ -43,38 +43,66 @@ Story:
 Tom wants to go on a hiking trip for the weekend, so he opens the Hiker Connect app to look for upcoming hikes. He goes to the Events section, where all the public hikes are listed. He uses filters to look for medium-difficulty hikes. A group hike to Mount Rainier catches his attention, so he clicks on it to see more details. He reads about the hike, learns what gear he will need, and checks the weather forecast for the day of the hike. After reviewing all the information and deciding it’s a good option, he clicks the "Join Event" button. Since he is already registered on the app, he immediately gets confirmation that he has joined the hike.
 
 
-**Milestone Planning**
+**Milestone Planning
 
-**Milestone 1: Foundation Focus: Core Authentication and Data Structure**
+**Milestone 1: Core User Features**
 
-* Basic user authentication -highest risk, needs to be done first such as user registration screen, login/logout screen and a user profile page.
-* Trail database structure setup, to maintain trail data
-* Create a Content curator role system essential for data quality and authorization to add new trails for the events
-* Simple trail viewing user interface to display trail list and details   
-* Unit testing framework setup
+* Create the trail viewing interface where users can:
+1. Browse the list of available trails
+2. View detailed trail information
+3. Add new trails to the database
+4. Update trail conditions and details
 
-Description: Authentication and data structure are the challenging components and should be tackled first. They form the foundation for all other features. Content curator roles need to be established early to begin populating trail data.
+* Implement basic authentication allowing users to:
+1. Sign up with email and password
+2. Create a basic profile with name and emergency contact
+3. Log in and out of the application
 
+Success Criteria:
+* Users can successfully create accounts and log in
+* Users can view, add, and update trail information
+* Trail data persists between app sessions
 
-**Milestone 2: Core Functionality**
+**Milestone 2: Event Management**
 
-* Event creation and management  
-* User profile creation and management
-* Trail search and filtering implementation
-* Basic photo upload for trails
-* Expand unit test coverage
-* Initial UI/UX implementation
+* Develop event creation features enabling users to:
+1. Create new hiking events
+2. Select trails from the database for events
+3. Set event details (date, time, meeting point)
+4. Specify participant limits and RSVP deadlines
 
-Description: Once the foundation is built, we can now focus on the core features that are crucial for the app. This milestone focuses on the essential user interactions while continuing to build out our test coverage.
+* Build event participation features allowing users to:
+1. Browse available events
+2. Join events
+3. View their upcoming events
+4. Receive event confirmations
 
-**Milestone 3: Polish and Enhancement**
+Success Criteria:
+* Users can create and manage hiking events
+* Users can successfully join events
+* Event details are accurately displayed to all participants
 
-* Review and rating system
-* Achievement tracking
-* Offline trail data access
-* UI polish and performance optimization
-* Complete unit test coverage
-* Bug fixes and system hardening
+**Milestone 3: Enhanced Features**
+
+* Implement the photo gallery feature to:
+1. Allow users to upload trail photos
+2. Display photos on trail detail pages
+3. Let users browse trail photo collections
+
+* Add the bookmarking system enabling users to:
+1. Save favorite trails
+2. Save interesting events
+3. Quickly access saved items
+
+* Create the review system allowing users to:
+1. Rate trails
+2. Write detailed reviews
+3. View others' ratings and reviews
+
+Success Criteria:
+* Users can successfully upload and view photos
+* Bookmarking system works reliably
+* Review system provides valuable trail feedback**
 
 * Description: In the final milestone we aim to focus on features that enhance the user experience but aren't critical to core functionality. This gives us flexibility to adjust scope if earlier milestones take longer than expected.
 
