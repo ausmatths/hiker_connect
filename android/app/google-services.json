@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "967683373829",
+    "project_id": "hiker-connect",
+    "storage_bucket": "hiker-connect.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:967683373829:android:1973708e7f1815f920956c",
+        "android_client_info": {
+          "package_name": "com.example.hiker_connect"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJndcitHYrgEHuSHcjlE48QhHnxhRRd8Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:967683373829:android:ba131cf6e15d97b520956c",
+        "android_client_info": {
+          "package_name": "com.hikerconnect.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJndcitHYrgEHuSHcjlE48QhHnxhRRd8Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
