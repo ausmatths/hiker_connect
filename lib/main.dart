@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hiker_connect/screens/trails/trailedit_screen.dart';
 import 'package:hiker_connect/services/firebase_auth.dart';
 import 'package:hiker_connect/screens/auth/login_screen.dart';
 import 'package:hiker_connect/screens/auth/signup_screen.dart';
@@ -53,6 +54,7 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => const SignUpScreen(),
         '/home': (context) => const HomeScreen(),
         '/profile': (context) => const ProfileScreen(),
+        '/trail': (context) => const TrailEditScreen(trailName: '',),
       },
     );
   }
@@ -79,7 +81,6 @@ class AuthWrapper extends StatelessWidget {
         if (snapshot.hasData) {
           return const HomeScreen();
         }
-
         return const LoginScreen();
       },
     );
@@ -99,14 +100,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static const List<Widget> _widgetOptions = <Widget>[
     Center(child: Text('Feed')),
+    TrailEditScreen(trailName: ''),
     Center(child: Text('Explore')),
     ProfileScreen(),
   ];
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+      // For other tabs, just update the body
+      setState(() {
+        _selectedIndex = index;
+      });
   }
 
   Future<void> _signOut() async {
@@ -142,6 +145,11 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: Icon(Icons.home_outlined),
             selectedIcon: Icon(Icons.home),
             label: 'Feed',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.abc),
+            selectedIcon: Icon(Icons.abc),
+            label: 'Trail',
           ),
           NavigationDestination(
             icon: Icon(Icons.explore_outlined),
