@@ -16,15 +16,102 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
 
   bool _isLoading = false;
+  bool _isChecking = false;
   bool _obscurePassword = true;
   String _errorMessage = '';
 
-  Future<void> _login() async {
-    if (_formKey.currentState!.validate()) {
+  @override
+  void initState() {
+    super.initState();
+    _checkLoginState();
+  }
+
+  Future<void> _checkLoginState() async {
+    try {
+      if (!mounted) return;
+      setState(() {
+        _isChecking = true;
+      });
+      // Check login state logic here
+      final currentUser = _authService.currentUser;
+      if (currentUser != null && mounted) {
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isChecking = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _resetPassword() async {
+    try {
+      if (!mounted) return;
       setState(() {
         _isLoading = true;
         _errorMessage = '';
       });
+
+      await _authService.resetPassword(_emailController.text.trim());
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Password reset email sent. Please check your inbox.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to send password reset email. Please try again.';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    try {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = true;
+        _errorMessage = '';
+      });
+
+      final userModel = await _authService.signInWithGoogle();
+
+      if (userModel != null && mounted) {
+        Navigator.of(context).pushReplacementNamed('/home');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to sign in with Google. Please try again.';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _login() async {
+    if (_formKey.currentState!.validate()) {
+      if (mounted) {
+        setState(() {
+          _isLoading = true;
+          _errorMessage = '';
+        });
+      }
 
       try {
         print('Attempting to login with email: ${_emailController.text}');
@@ -36,20 +123,22 @@ class _LoginScreenState extends State<LoginScreen> {
         if (userModel != null && mounted) {
           print('Login successful. Navigating to home screen.');
           Navigator.of(context).pushReplacementNamed('/home');
-        } else {
+        } else if (mounted) {
           setState(() {
             _errorMessage = 'Failed to login. Please try again.';
           });
         }
       } catch (e) {
         print('Login error: $e');
-        setState(() {
-          if (e is String) {
-            _errorMessage = e;
-          } else {
-            _errorMessage = 'An error occurred during login. Please try again.';
-          }
-        });
+        if (mounted) {
+          setState(() {
+            if (e is String) {
+              _errorMessage = e;
+            } else {
+              _errorMessage = 'An error occurred during login. Please try again.';
+            }
+          });
+        }
       } finally {
         if (mounted) {
           setState(() {
@@ -69,6 +158,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isChecking) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Login'),
@@ -83,7 +180,6 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const SizedBox(height: 32),
-                // App Logo or Title
                 const Icon(
                   Icons.hiking,
                   size: 80,
@@ -130,9 +226,11 @@ class _LoginScreenState extends State<LoginScreen> {
                         _obscurePassword ? Icons.visibility : Icons.visibility_off,
                       ),
                       onPressed: () {
-                        setState(() {
-                          _obscurePassword = !_obscurePassword;
-                        });
+                        if (mounted) {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        }
                       },
                     ),
                   ),
@@ -148,10 +246,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton(
-                    onPressed: () {
-                      // Navigate to forgot password screen
-                      Navigator.pushNamed(context, '/forgot-password');
-                    },
+                    onPressed: _isLoading ? null : _resetPassword,
                     child: const Text('Forgot Password?'),
                   ),
                 ),
@@ -179,6 +274,15 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                       : const Text('Login'),
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _signInWithGoogle,
+                  icon: const Icon(Icons.g_mobiledata),
+                  label: const Text('Sign in with Google'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 TextButton(
