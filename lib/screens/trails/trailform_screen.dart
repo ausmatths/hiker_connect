@@ -9,9 +9,13 @@ import 'package:hiker_connect/screens/auth/login_screen.dart';
 import 'package:hiker_connect/screens/auth/signup_screen.dart';
 import 'package:hiker_connect/screens/profile/profile_screen.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:hiker_connect/models/trail_model.dart';
+
 class TrailEditScreen extends StatefulWidget {
   final String trailName;
-  const TrailEditScreen({super.key, required this.trailName});
+  final VoidCallback? onSave;
+
+  const TrailEditScreen({super.key, required this.trailName, this.onSave});
 
   @override
   _TrailEditScreenState createState() => _TrailEditScreenState();
@@ -25,7 +29,8 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
   List<File> _images = [];
 
   Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final pickedFile =
+    await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
         _images.add(File(pickedFile.path));
@@ -35,6 +40,20 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
+      // Create a new Trail object
+      Trail newTrail = Trail(
+        name: widget.trailName,
+        description: _descriptionController.text,
+        difficulty: _difficulty,
+        notice: _noticeController.text,
+        images: _images,
+      );
+
+      // Add the new trail to the list (you'll need to manage this list elsewhere)
+      // For example, you could have a list in a parent widget or use a state management solution
+      // trails.add(newTrail);
+
+      widget.onSave?.call();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Trail Updated Successfully!')),
       );
@@ -70,7 +89,8 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
                 DropdownButtonFormField<String>(
                   value: _difficulty,
                   items: ['Easy', 'Moderate', 'Hard']
-                      .map((level) => DropdownMenuItem(value: level, child: Text(level)))
+                      .map((level) => DropdownMenuItem(
+                      value: level, child: Text(level)))
                       .toList(),
                   onChanged: (value) {
                     setState(() {
@@ -95,7 +115,8 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
                   children: _images
                       .map((image) => Padding(
                     padding: const EdgeInsets.all(4.0),
-                    child: Image.file(image, height: 100, width: 100),
+                    child: Image.file(image,
+                        height: 100, width: 100),
                   ))
                       .toList(),
                 ),
