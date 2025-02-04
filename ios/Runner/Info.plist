@@ -24,6 +24,24 @@
     <string></string>
     <key>CFBundleVersion</key>
     <string>$(FLUTTER_BUILD_NUMBER)</string>
+
+    <!-- Google Sign-in Section -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <!-- Replace with value from GoogleService-Info.plist -->
+                <string>com.googleusercontent.apps.967683373829-v2dg79vtpr1qr8buh5h3j10ejsaq06ah</string>
+            </array>
+        </dict>
+    </array>
+
+    <key>GIDClientID</key>
+    <string>967683373829-v2dg79vtpr1qr8buh5h3j10ejsaq06ah.apps.googleusercontent.com</string>
+
     <key>LSRequiresIPhoneOS</key>
     <true/>
     <key>UIApplicationSupportsIndirectInputEvents</key>
@@ -45,23 +63,5 @@
         <string>UIInterfaceOrientationLandscapeLeft</string>
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
-
-    <!-- Google Sign-in Section -->
-    <key>CFBundleURLTypes</key>
-    <array>
-        <dict>
-            <key>CFBundleTypeRole</key>
-            <string>Editor</string>
-            <key>CFBundleURLSchemes</key>
-            <array>
-                <!-- TODO: Replace this value with your REVERSED_CLIENT_ID from GoogleService-Info.plist -->
-                <string>com.googleusercontent.apps.YOUR-REVERSED-CLIENT-ID</string>
-            </array>
-        </dict>
-    </array>
-    <!-- For Google Sign In -->
-    <key>GIDClientID</key>
-    <!-- TODO: Replace this value with your CLIENT_ID from GoogleService-Info.plist -->
-    <string>YOUR-CLIENT-ID.apps.googleusercontent.com</string>
 </dict>
 </plist>
