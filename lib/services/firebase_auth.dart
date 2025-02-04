@@ -1,10 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hiker_connect/models/user_model.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
   User? get currentUser => _auth.currentUser;
@@ -22,6 +24,61 @@ class AuthService {
       return doc.exists ? UserModel.fromFirestore(doc) : null;
     } catch (e) {
       throw Exception('Failed to get user data: $e');
+    }
+  }
+
+  // Sign in with Google
+  Future<UserModel?> signInWithGoogle() async {
+    try {
+      // Trigger the authentication flow
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+
+      if (googleUser == null) return null;
+
+      // Obtain the auth details from the request
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+
+      // Create a new credential
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // Sign in to Firebase with the credential
+      final userCredential = await _auth.signInWithCredential(credential);
+
+      if (userCredential.user == null) return null;
+
+      // Check if user exists in Firestore
+      final userDoc = await _firestore.collection('users').doc(userCredential.user!.uid).get();
+
+      if (!userDoc.exists) {
+        // Create new user document
+        final newUser = UserModel(
+          uid: userCredential.user!.uid,
+          email: userCredential.user!.email!,
+          displayName: userCredential.user!.displayName ?? googleUser.displayName ?? googleUser.email.split('@')[0],
+          createdAt: DateTime.now(),
+          lastActive: DateTime.now(),
+          isEmailVerified: userCredential.user!.emailVerified,
+          photoUrl: userCredential.user!.photoURL,
+          interests: [],
+          following: [],
+          followers: [],
+        );
+
+        await _firestore
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .set(newUser.toMap());
+
+        return newUser;
+      }
+
+      return UserModel.fromFirestore(userDoc);
+    } catch (e) {
+      print('Error signing in with Google: $e');
+      throw Exception('Failed to sign in with Google');
     }
   }
 
@@ -70,8 +127,7 @@ class AuthService {
     try {
       print('Attempting to sign in with email: $email');
 
-      // First authenticate
-      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      final credential = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -83,13 +139,11 @@ class AuthService {
 
       print('User authenticated successfully: ${credential.user!.uid}');
 
-      // Then get/create user document
       DocumentSnapshot<Map<String, dynamic>> doc =
       await _firestore.collection('users').doc(credential.user!.uid).get();
 
       if (!doc.exists) {
         print('Creating new user document');
-        // Create new user document
         final newUser = UserModel(
           uid: credential.user!.uid,
           email: email,
@@ -186,7 +240,8 @@ class AuthService {
   // Sign out
   Future<void> signOut() async {
     try {
-      await _auth.signOut();
+      await _googleSignIn.signOut();  // Sign out from Google
+      await _auth.signOut();          // Sign out from Firebase
       print('Successfully signed out');
     } catch (e) {
       print('Error during sign out: $e');
