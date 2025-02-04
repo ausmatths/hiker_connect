@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hiker_connect/screens/trails/trailedit_screen.dart';
+import 'package:hiker_connect/screens/trails/trail_screen.dart';
 import 'package:hiker_connect/services/firebase_auth.dart';
 import 'package:hiker_connect/screens/auth/login_screen.dart';
 import 'package:hiker_connect/screens/auth/signup_screen.dart';
@@ -54,7 +54,7 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => const SignUpScreen(),
         '/home': (context) => const HomeScreen(),
         '/profile': (context) => const ProfileScreen(),
-        '/trail': (context) => const TrailEditScreen(trailName: '',),
+        '/trail': (context) => const TrailListScreen(),
       },
     );
   }
@@ -100,7 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static const List<Widget> _widgetOptions = <Widget>[
     Center(child: Text('Feed')),
-    TrailEditScreen(trailName: ''),
+    TrailListScreen(),
     Center(child: Text('Explore')),
     ProfileScreen(),
   ];
@@ -147,8 +147,8 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Feed',
           ),
           NavigationDestination(
-            icon: Icon(Icons.abc),
-            selectedIcon: Icon(Icons.abc),
+            icon: Icon(Icons.terrain_outlined),
+            selectedIcon: Icon(Icons.terrain_outlined),
             label: 'Trail',
           ),
           NavigationDestination(
