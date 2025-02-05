@@ -1,15 +1,7 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hiker_connect/screens/trails/trailform_screen.dart';
-import 'package:hiker_connect/services/firebase_auth.dart';
-import 'package:hiker_connect/screens/auth/login_screen.dart';
-import 'package:hiker_connect/screens/auth/signup_screen.dart';
 import 'package:hiker_connect/models/trail_model.dart';
-import 'package:image_picker/image_picker.dart';
-
+import 'eventform_screen.dart';
 
 class TrailListScreen extends StatefulWidget {
   const TrailListScreen({super.key});
@@ -19,7 +11,6 @@ class TrailListScreen extends StatefulWidget {
 }
 
 class _TrailListScreenState extends State<TrailListScreen> {
-  // Sample data (replace with your actual data source)
   List<Trail> trails = [
     Trail(
         name: 'Trail 1',
@@ -48,10 +39,18 @@ class _TrailListScreenState extends State<TrailListScreen> {
         builder: (context) => TrailEditScreen(
           trailName: trailName,
           onSave: () {
-            // Refresh the list after saving
-            setState(() {});
+            setState(() {}); // Refresh UI after saving
           },
         ),
+      ),
+    );
+  }
+
+  void _navigateToEventForm() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const EventFormScreen(),
       ),
     );
   }
@@ -61,6 +60,12 @@ class _TrailListScreenState extends State<TrailListScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Trails'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add),
+            onPressed: _navigateToEventForm, // Add event when pressed
+          ),
+        ],
       ),
       body: ListView.builder(
         itemCount: trails.length,
@@ -75,6 +80,10 @@ class _TrailListScreenState extends State<TrailListScreen> {
             },
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _navigateToEventForm, // Add event when pressed
+        child: const Icon(Icons.add),
       ),
     );
   }
