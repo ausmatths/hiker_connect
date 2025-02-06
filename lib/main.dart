@@ -101,7 +101,7 @@ class _HomeScreenState extends State<HomeScreen> {
   static const List<Widget> _widgetOptions = <Widget>[
     Center(child: Text('Feed')),
     TrailListScreen(),
-    Center(child: Text('Explore')),
+    Center(child: Text('Event')),
     ProfileScreen(),
   ];
 
@@ -152,9 +152,9 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Trail',
           ),
           NavigationDestination(
-            icon: Icon(Icons.explore_outlined),
-            selectedIcon: Icon(Icons.explore),
-            label: 'Explore',
+            icon: Icon(Icons.event),
+            selectedIcon: Icon(Icons.event),
+            label: 'Events',
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),

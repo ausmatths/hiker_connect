@@ -37,7 +37,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
       final newEvent = TrailData(
-        name: 'New Event', // If you have a name field, replace this
+        name: 'New Event',
         description: _descriptionController.text,
         difficulty: _difficulty,
         notice: _noticeController.text,
@@ -48,7 +48,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
         duration: Duration(hours: _selectedHours, minutes: _selectedMinutes),
       );
 
-      Navigator.pop(context, newEvent); // Send data back to previous screen
+      Navigator.pop(context, newEvent);
     }
   }
 
@@ -125,7 +125,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
               TextFormField(
                 controller: _participantsController,
                 keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],  // Restrict to numbers only
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: const InputDecoration(
                   labelText: 'Number of Participants',
                   border: OutlineInputBorder(),
