@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hiker_connect/screens/auth/forgot_password_screen.dart';
 import 'package:hiker_connect/screens/trails/trail_screen.dart';
 import 'package:hiker_connect/services/firebase_auth.dart';
 import 'package:hiker_connect/screens/auth/login_screen.dart';
@@ -54,8 +55,9 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => const SignUpScreen(),
         '/home': (context) => const HomeScreen(),
         '/profile': (context) => const ProfileScreen(),
-        '/trail': (context) => const TrailListScreen(),
+        '/forgot-password': (context) => const ForgotPasswordScreen(),
       },
+
     );
   }
 }
