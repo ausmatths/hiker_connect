@@ -11,13 +11,11 @@ class AuthService {
   Stream<User?> get authStateChanges => _auth.authStateChanges();
   User? get currentUser => _auth.currentUser;
 
-  // Get current user data from Firestore
   Future<UserModel?> getCurrentUserData() async {
     if (currentUser == null) return null;
     return await getUserData(currentUser!.uid);
   }
 
-  // Get user data by UID
   Future<UserModel?> getUserData(String uid) async {
     try {
       final doc = await _firestore.collection('users').doc(uid).get();
@@ -27,33 +25,26 @@ class AuthService {
     }
   }
 
-  // Sign in with Google
   Future<UserModel?> signInWithGoogle() async {
     try {
-      // Trigger the authentication flow
       final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
       if (googleUser == null) return null;
 
-      // Obtain the auth details from the request
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
-      // Create a new credential
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      // Sign in to Firebase with the credential
       final userCredential = await _auth.signInWithCredential(credential);
 
       if (userCredential.user == null) return null;
 
-      // Check if user exists in Firestore
       final userDoc = await _firestore.collection('users').doc(userCredential.user!.uid).get();
 
       if (!userDoc.exists) {
-        // Create new user document
         final newUser = UserModel(
           uid: userCredential.user!.uid,
           email: userCredential.user!.email!,
