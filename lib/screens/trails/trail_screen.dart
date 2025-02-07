@@ -9,10 +9,10 @@ class TrailListScreen extends StatefulWidget {
   const TrailListScreen({super.key});
 
   @override
-  _TrailListScreenState createState() => _TrailListScreenState();
+  TrailListScreenState createState() => TrailListScreenState();
 }
 
-class _TrailListScreenState extends State<TrailListScreen> {
+class TrailListScreenState extends State<TrailListScreen> {
 
   List<TrailData> events = []; // Store created events
 

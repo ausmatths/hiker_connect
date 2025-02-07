@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'dart:core';
 
 import '../../models/trail_data.dart';
 
