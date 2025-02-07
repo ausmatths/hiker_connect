@@ -1,13 +1,5 @@
-
 import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hiker_connect/services/firebase_auth.dart';
-import 'package:hiker_connect/screens/auth/login_screen.dart';
-import 'package:hiker_connect/screens/auth/signup_screen.dart';
-import 'package:hiker_connect/screens/profile/profile_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hiker_connect/models/trail_model.dart';
 
@@ -28,9 +20,9 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
   String _difficulty = 'Easy';
   List<File> _images = [];
 
+  // Function to pick an image from gallery
   Future<void> _pickImage() async {
-    final pickedFile =
-    await ImagePicker().pickImage(source: ImageSource.gallery);
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
         _images.add(File(pickedFile.path));
@@ -38,6 +30,7 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
     }
   }
 
+  // Submit the form to save changes
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
       // Create a new Trail object
@@ -49,15 +42,11 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
         images: _images,
       );
 
-      // Add the new trail to the list (you'll need to manage this list elsewhere)
-      // For example, you could have a list in a parent widget or use a state management solution
-      // trails.add(newTrail);
-
-      widget.onSave?.call();
+      widget.onSave?.call(); // Call the onSave function passed to the widget
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Trail Updated Successfully!')),
       );
-      // Here, you would send data to backend
+      // Here, you would send data to the backend or perform additional actions
     }
   }
 
@@ -111,20 +100,24 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
                   ),
                 ),
                 const SizedBox(height: 16.0),
+
+                // Display picked images
                 Wrap(
-                  children: _images
-                      .map((image) => Padding(
+                  children: _images.map((image) => Padding(
                     padding: const EdgeInsets.all(4.0),
                     child: Image.file(image,
-                        height: 100, width: 100),
-                  ))
-                      .toList(),
+                        height: 100, width: 100, fit: BoxFit.cover),
+                  )).toList(),
                 ),
+
+                // Button to upload image
                 TextButton(
                   onPressed: _pickImage,
                   child: const Text('Upload Image'),
                 ),
                 const SizedBox(height: 20.0),
+
+                // Save changes button
                 ElevatedButton(
                   onPressed: _submitForm,
                   child: const Text('Save Changes'),

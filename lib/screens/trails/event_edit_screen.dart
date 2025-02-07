@@ -22,6 +22,7 @@ class _EventEditScreenState extends State<EventEditScreen> {
   late TextEditingController _participantsController;
   late TextEditingController _noticeController;
   DateTime? _selectedDate;
+  String? _selectedDifficulty;
 
   @override
   void initState() {
@@ -29,18 +30,19 @@ class _EventEditScreenState extends State<EventEditScreen> {
     _participantsController = TextEditingController(text: widget.event.participants.toString());
     _noticeController = TextEditingController(text: widget.event.notice);
     _selectedDate = widget.event.date;
+    _selectedDifficulty = widget.event.difficulty;
   }
 
   void _saveChanges() {
     widget.onUpdate(
       TrailData(
         name: widget.event.name,
-        description: widget.event.description, // Keep unchanged
-        difficulty: widget.event.difficulty,
+        description: widget.event.description,
+        difficulty: _selectedDifficulty ?? widget.event.difficulty,
         notice: _noticeController.text,
         images: widget.event.images,
         date: _selectedDate ?? widget.event.date,
-        location: widget.event.location, // Keep unchanged
+        location: widget.event.location, //
         participants: int.tryParse(_participantsController.text) ?? widget.event.participants,
         duration: widget.event.duration,
       ),
@@ -80,6 +82,12 @@ class _EventEditScreenState extends State<EventEditScreen> {
         child: Column(
           children: [
             TextFormField(
+              initialValue: widget.event.name,
+              decoration: const InputDecoration(labelText: 'Event Name'),
+              readOnly: true, // Prevent editing
+            ),
+            const SizedBox(height: 20),
+            TextFormField(
               initialValue: widget.event.description,
               decoration: const InputDecoration(labelText: 'Event Description'),
               readOnly: true, // Prevent editing
@@ -95,6 +103,25 @@ class _EventEditScreenState extends State<EventEditScreen> {
               controller: _participantsController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(labelText: 'Number of Participants'),
+            ),
+            const SizedBox(height: 20),
+            DropdownButtonFormField<String>(
+              value: _selectedDifficulty, // Use local state variable
+              items: ['Easy', 'Moderate', 'Hard']
+                  .map((level) => DropdownMenuItem(
+                value: level,
+                child: Text(level),
+              ))
+                  .toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedDifficulty = value; // Update state properly
+                });
+              },
+              decoration: const InputDecoration(
+                labelText: 'Difficulty Level',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 20),
             TextFormField(
