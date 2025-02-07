@@ -1,5 +1,3 @@
-import 'dart:io';
-
 class TrailData {
   final String name;
   final String description;

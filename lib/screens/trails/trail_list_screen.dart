@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hiker_connect/screens/trails/trailform_screen.dart';
-import 'package:hiker_connect/models/trail_model.dart';
 import '../../models/trail_data.dart';
 import 'event_edit_screen.dart';
 import 'eventform_screen.dart';
@@ -14,7 +12,7 @@ class TrailListScreen extends StatefulWidget {
 
 class TrailListScreenState extends State<TrailListScreen> {
 
-  List<TrailData> events = []; // Store created events
+  List<TrailData> events = [];
 
   void _navigateToEventForm() {
     Navigator.push<TrailData>(
