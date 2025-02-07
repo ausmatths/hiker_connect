@@ -15,6 +15,7 @@ class EventFormScreen extends StatefulWidget {
 
 class _EventFormScreenState extends State<EventFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _noticeController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
@@ -36,19 +37,33 @@ class _EventFormScreenState extends State<EventFormScreen> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
+      if (_eventDate == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select an event date')),
+        );
+        return;
+      }
+
+      if (_selectedHours == 0 && _selectedMinutes == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a valid event duration')),
+        );
+        return;
+      }
+
       final newEvent = TrailData(
-        name: 'New Event', // If you have a name field, replace this
+        name: _nameController.text,
         description: _descriptionController.text,
         difficulty: _difficulty,
         notice: _noticeController.text,
         images: _eventImages.map((image) => image.path).toList(),
-        date: _eventDate ?? DateTime.now(),
+        date: _eventDate!,
         location: _locationController.text,
         participants: int.tryParse(_participantsController.text) ?? 0,
         duration: Duration(hours: _selectedHours, minutes: _selectedMinutes),
       );
 
-      Navigator.pop(context, newEvent); // Send data back to previous screen
+      Navigator.pop(context, newEvent);
     }
   }
 
@@ -80,12 +95,30 @@ class _EventFormScreenState extends State<EventFormScreen> {
           child: Column(
             children: [
               TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Event Name',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) => value == null || value.isEmpty ? 'Please enter event name' : null,
+              ),
+              const SizedBox(height: 16.0),
+              TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(
                   labelText: 'Event Description',
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) => value == null || value.isEmpty ? 'Please enter event description' : null,
+              ),
+              const SizedBox(height: 16.0),
+              TextFormField(
+                controller: _locationController,
+                decoration: const InputDecoration(
+                  labelText: 'Location',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) => value == null || value.isEmpty ? 'Please enter the event location' : null,
               ),
               const SizedBox(height: 16.0),
               DropdownButtonFormField<String>(
@@ -109,36 +142,16 @@ class _EventFormScreenState extends State<EventFormScreen> {
               ),
               const SizedBox(height: 16.0),
               TextFormField(
-                controller: _locationController,
-                decoration: const InputDecoration(
-                  labelText: 'Location',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the event location';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16.0),
-              TextFormField(
                 controller: _participantsController,
                 keyboardType: TextInputType.number,
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly],  // Restrict to numbers only
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 decoration: const InputDecoration(
                   labelText: 'Number of Participants',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the number of participants';
-                  }
-                  if (int.tryParse(value) == null) {
-                    return 'Please enter a valid integer';
-                  }
-                  return null;
-                },
+                validator: (value) => value == null || value.isEmpty || int.tryParse(value) == null
+                    ? 'Please enter a valid number of participants'
+                    : null,
               ),
               const SizedBox(height: 16.0),
 

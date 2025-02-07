@@ -1,15 +1,13 @@
-import 'dart:io';
-
 class TrailData {
   final String name;
   final String description;
   final String difficulty;
   final String notice;
-  final List<File> images;
-  final DateTime date;           // Added date field
-  final String location;         // Added location field
-  final int participants;        // Added participants field
-  final String duration;         // Added duration field
+  final List<String> images;
+  final DateTime date;
+  final String location;
+  final int participants;
+  final Duration duration;
 
   TrailData({
     required this.name,
