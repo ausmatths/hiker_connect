@@ -1,6 +1,15 @@
+
 import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:hiker_connect/services/firebase_auth.dart';
+import 'package:hiker_connect/screens/auth/login_screen.dart';
+import 'package:hiker_connect/screens/auth/signup_screen.dart';
+import 'package:hiker_connect/screens/profile/profile_screen.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:hiker_connect/models/trail_model.dart';
 
 class TrailEditScreen extends StatefulWidget {
   final String trailName;
@@ -20,7 +29,8 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
   List<File> _images = [];
 
   Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    final pickedFile =
+    await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
         _images.add(File(pickedFile.path));
@@ -30,11 +40,24 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      // Here, you would send data to backend
+      // Create a new Trail object
+      Trail newTrail = Trail(
+        name: widget.trailName,
+        description: _descriptionController.text,
+        difficulty: _difficulty,
+        notice: _noticeController.text,
+        images: _images,
+      );
+
+      // Add the new trail to the list (you'll need to manage this list elsewhere)
+      // For example, you could have a list in a parent widget or use a state management solution
+      // trails.add(newTrail);
+
       widget.onSave?.call();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Trail Updated Successfully!')),
       );
+      // Here, you would send data to backend
     }
   }
 
@@ -92,7 +115,8 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
                   children: _images
                       .map((image) => Padding(
                     padding: const EdgeInsets.all(4.0),
-                    child: Image.file(image, height: 100, width: 100),
+                    child: Image.file(image,
+                        height: 100, width: 100),
                   ))
                       .toList(),
                 ),
