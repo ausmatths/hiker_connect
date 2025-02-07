@@ -176,12 +176,26 @@ class AuthService {
     }
   }
 
-  // Update profile
+  // Update profile with all new fields
   Future<void> updateUserProfile({
     String? displayName,
     String? photoUrl,
     String? bio,
     List<String>? interests,
+    String? phoneNumber,
+    UserLocation? location,
+    DateTime? dateOfBirth,
+    String? gender,
+    double? height,
+    double? weight,
+    String? preferredLanguage,
+    String? bloodType,
+    String? allergies,
+    String? insuranceInfo,
+    List<String>? medicalConditions,
+    List<String>? medications,
+    List<EmergencyContact>? emergencyContacts,
+    Map<String, String>? socialLinks,
   }) async {
     if (currentUser == null) throw Exception('No user logged in');
 
@@ -191,11 +205,28 @@ class AuthService {
         if (photoUrl != null) 'photoUrl': photoUrl,
         if (bio != null) 'bio': bio,
         if (interests != null) 'interests': interests,
+        if (phoneNumber != null) 'phoneNumber': phoneNumber,
+        if (location != null) 'location': location.toMap(),
+        if (dateOfBirth != null) 'dateOfBirth': Timestamp.fromDate(dateOfBirth),
+        if (gender != null) 'gender': gender,
+        if (height != null) 'height': height,
+        if (weight != null) 'weight': weight,
+        if (preferredLanguage != null) 'preferredLanguage': preferredLanguage,
+        if (bloodType != null) 'bloodType': bloodType,
+        if (allergies != null) 'allergies': allergies,
+        if (insuranceInfo != null) 'insuranceInfo': insuranceInfo,
+        if (medicalConditions != null) 'medicalConditions': medicalConditions,
+        if (medications != null) 'medications': medications,
+        if (emergencyContacts != null)
+          'emergencyContacts': emergencyContacts.map((e) => e.toMap()).toList(),
+        if (socialLinks != null) 'socialLinks': socialLinks,
         'lastActive': FieldValue.serverTimestamp(),
       };
 
       await _firestore.collection('users').doc(currentUser!.uid).update(updates);
+      print('Profile updated successfully');
     } catch (e) {
+      print('Error updating profile: $e');
       throw Exception('Failed to update profile: $e');
     }
   }
