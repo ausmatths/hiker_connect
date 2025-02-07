@@ -184,6 +184,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   user.displayName,
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildStatColumn('Followers', user.followers.length),
+                    _buildStatColumn('Following', user.following.length),
+                  ],
+                ),
               ],
             ),
           ),
@@ -225,15 +233,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               }).toList(),
             ),
           ],
-
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildStatColumn('Followers', user.followers.length),
-              _buildStatColumn('Following', user.following.length),
-            ],
-          ),
         ],
       ),
     );

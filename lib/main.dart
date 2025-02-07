@@ -108,7 +108,6 @@ class _HomeScreenState extends State<HomeScreen> {
   ];
 
   void _onItemTapped(int index) {
-      // For other tabs, just update the body
       setState(() {
         _selectedIndex = index;
       });
