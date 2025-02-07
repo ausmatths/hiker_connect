@@ -4,8 +4,7 @@ import 'package:hiker_connect/services/firebase_auth.dart';
 import 'package:hiker_connect/screens/profile/edit_profile_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  final String? userId; // If null, show current user's profile
-
+  final String? userId;
   const ProfileScreen({super.key, this.userId});
 
   @override
@@ -120,7 +119,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                // Bio Section
                 if (user.bio != null && user.bio!.isNotEmpty) ...[
                   const Text(
                     'About',
