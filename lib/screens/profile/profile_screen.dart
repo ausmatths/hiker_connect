@@ -62,7 +62,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           centerTitle: true,
           actions: [
-            if (_isCurrentUser)
+            if (_isCurrentUser) ...[
               IconButton(
                 icon: const Icon(Icons.edit, color: Colors.black),
                 onPressed: () async {
@@ -80,6 +80,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   }
                 },
               ),
+              IconButton(
+                icon: const Icon(Icons.logout, color: Colors.black),
+                onPressed: () async {
+                  try {
+                    await _authService.signOut();
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error signing out: $e')),
+                      );
+                    }
+                  }
+                },
+              ),
+            ],
           ],
           bottom: TabBar(
             labelColor: Colors.black,
