@@ -2,12 +2,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hiker_connect/services/firebase_auth.dart';
-import 'package:hiker_connect/screens/auth/login_screen.dart';
-import 'package:hiker_connect/screens/auth/signup_screen.dart';
-import 'package:hiker_connect/screens/profile/profile_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hiker_connect/models/trail_model.dart';
 
@@ -40,7 +34,6 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
-      // Create a new Trail object
       Trail newTrail = Trail(
         name: widget.trailName,
         description: _descriptionController.text,
