@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:core';
 
 import '../../models/trail_data.dart';
+import '../../services/databaseservice.dart';
 
 class EventFormScreen extends StatefulWidget {
   const EventFormScreen({super.key});
@@ -16,6 +17,7 @@ class EventFormScreen extends StatefulWidget {
 
 class _EventFormScreenState extends State<EventFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  final dbService = DatabaseService.instance;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _noticeController = TextEditingController();
@@ -36,7 +38,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
     }
   }
 
-  void _submitForm() {
+  Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       if (_eventDate == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -64,6 +66,13 @@ class _EventFormScreenState extends State<EventFormScreen> {
         duration: Duration(hours: _selectedHours, minutes: _selectedMinutes),
       );
 
+      // Use DatabaseService to insert the event
+      await dbService.insertTrails(newEvent);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Event saved successfully')),
+      );
+
       Navigator.pop(context, newEvent);
     }
   }
@@ -72,8 +81,8 @@ class _EventFormScreenState extends State<EventFormScreen> {
     final DateTime today = DateTime.now();
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: today.add(const Duration(days: 1)),
-      firstDate: today.add(const Duration(days: 1)),
+      initialDate: today.add(const Duration(days: 1)), // Default to tomorrow
+      firstDate: today.add(const Duration(days: 1)), // Restrict past dates
       lastDate: DateTime(2101),
     );
 
@@ -156,6 +165,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
               ),
               const SizedBox(height: 16.0),
 
+              // Date Picker with Future Date Restriction
               GestureDetector(
                 onTap: _selectDate,
                 child: Container(
@@ -180,6 +190,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
               ),
               const SizedBox(height: 16.0),
 
+              // Duration Picker (Hours & Minutes)
               Row(
                 children: [
                   Expanded(
@@ -213,6 +224,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
               ),
               const SizedBox(height: 16.0),
 
+              // Image Upload
               Wrap(
                 children: _eventImages
                     .map((image) => Padding(
