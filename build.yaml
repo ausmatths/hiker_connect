@@ -1,0 +1,7 @@
+targets:
+  $default:
+    builders:
+      mockito_builder:
+        options:
+          auto_mocks:
+            - test/**/*.dart
