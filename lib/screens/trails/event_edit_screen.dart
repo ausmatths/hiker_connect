@@ -1,75 +1,126 @@
 import 'package:flutter/material.dart';
-import 'package:hiker_connect/models/trail_data.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import '../../models/trail_data.dart';
+
 class EventEditScreen extends StatefulWidget {
   final TrailData event;
   final Function(TrailData) onUpdate;
   final VoidCallback onDelete;
 
   const EventEditScreen({
-    super.key,
+    Key? key,
     required this.event,
     required this.onUpdate,
     required this.onDelete,
-  });
+  }) : super(key: key);
 
   @override
   _EventEditScreenState createState() => _EventEditScreenState();
 }
 
 class _EventEditScreenState extends State<EventEditScreen> {
+  final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
-  late TextEditingController _locationController;
   late TextEditingController _descriptionController;
-  late TextEditingController _participantsController;
   late TextEditingController _noticeController;
-  DateTime? _selectedDate;
-  String? _selectedDifficulty;
-  int _selectedHours = 0;
-  int _selectedMinutes = 0;
+  late TextEditingController _locationController;
+  late TextEditingController _participantsController;
+  late String _difficulty;
+  late DateTime _eventDate;
+  late List<String> _eventImages;
+  late int _selectedHours;
+  late int _selectedMinutes;
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.event.name.toString());
-    _locationController = TextEditingController(text: widget.event.location.toString());
-    _descriptionController = TextEditingController(text: widget.event.description.toString());
-    _participantsController = TextEditingController(text: widget.event.participants.toString());
+    _nameController = TextEditingController(text: widget.event.name);
+    _descriptionController = TextEditingController(text: widget.event.description);
     _noticeController = TextEditingController(text: widget.event.notice);
-    _selectedDate = widget.event.date;
-    _selectedDifficulty = widget.event.difficulty;
+    _locationController = TextEditingController(text: widget.event.location);
+    _participantsController = TextEditingController(text: widget.event.participants.toString());
+    _difficulty = widget.event.difficulty;
+    _eventDate = widget.event.date;
+    _eventImages = List.from(widget.event.images);
     _selectedHours = widget.event.duration.inHours;
     _selectedMinutes = widget.event.duration.inMinutes % 60;
   }
 
-  void _saveChanges() {
-    widget.onUpdate(
-      TrailData(
-        name: _nameController.text.isNotEmpty ? _nameController.text : widget.event.name,
-        description: _descriptionController.text.isNotEmpty ? _descriptionController.text : widget.event.description,
-        difficulty: _selectedDifficulty ?? widget.event.difficulty,
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _noticeController.dispose();
+    _locationController.dispose();
+    _participantsController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    if (_eventImages.length >= 5) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Maximum 5 images allowed')),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      final pickedFile = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _eventImages.add(pickedFile.path);
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error picking image: ${e.toString()}')),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _submitForm() {
+    if (_formKey.currentState!.validate()) {
+      final updatedEvent = TrailData(
+        name: _nameController.text,
+        description: _descriptionController.text,
+        difficulty: _difficulty,
         notice: _noticeController.text,
-        images: widget.event.images,
-        date: _selectedDate ?? widget.event.date,
-        location: _locationController.text.isNotEmpty ? _locationController.text : widget.event.location,
-        participants: int.tryParse(_participantsController.text) ?? widget.event.participants,
+        images: _eventImages,
+        date: _eventDate,
+        location: _locationController.text,
+        participants: int.tryParse(_participantsController.text) ?? 0,
         duration: Duration(hours: _selectedHours, minutes: _selectedMinutes),
-      ),
-    );
-    Navigator.pop(context, widget.event);
+      );
+
+      widget.onUpdate(updatedEvent);
+      Navigator.pop(context);
+    }
   }
 
   Future<void> _selectDate() async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate ?? DateTime.now().add(const Duration(days: 1)),
-      firstDate: DateTime.now().add(const Duration(days: 1)),
+      initialDate: _eventDate,
+      firstDate: DateTime.now(),
       lastDate: DateTime(2101),
     );
 
-    if (picked != null) {
+    if (picked != null && picked != _eventDate) {
       setState(() {
-        _selectedDate = picked;
+        _eventDate = picked;
       });
     }
   }
@@ -82,121 +133,253 @@ class _EventEditScreenState extends State<EventEditScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.delete),
-            onPressed: () => widget.onDelete(),
+            onPressed: widget.onDelete,
           ),
         ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Trail Name'),
-            ),
-            const SizedBox(height: 20),
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(labelText: 'Trail Description'),
-            ),
-            const SizedBox(height: 20),
-            TextFormField(
-              controller: _locationController,
-              decoration: const InputDecoration(labelText: 'Trail Location'),
-            ),
-            const SizedBox(height: 20),
-            TextFormField(
-              controller: _noticeController,
-              decoration: const InputDecoration(labelText: 'Notice'),
-            ),
-            const SizedBox(height: 20),
-            TextFormField(
-              controller: _participantsController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Number of Participants'),
-            ),
-            const SizedBox(height: 20),
-            DropdownButtonFormField<String>(
-              value: _selectedDifficulty,
-              items: ['Easy', 'Moderate', 'Hard']
-                  .map((level) => DropdownMenuItem(
-                value: level,
-                child: Text(level),
-              ))
-                  .toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedDifficulty = value;
-                });
-              },
-              decoration: const InputDecoration(
-                labelText: 'Difficulty Level',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 20),
-            GestureDetector(
-              onTap: _selectDate,
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(5.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Trail Name',
+                  border: OutlineInputBorder(),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      _selectedDate == null
-                          ? 'Select Trail Date'
-                          : 'Trail Date: ${DateFormat('yyyy-MM-dd').format(_selectedDate!)}',
-                      style: const TextStyle(fontSize: 16.0),
+                validator: (value) => value?.isEmpty ?? true ? 'Please enter trail name' : null,
+              ),
+              const SizedBox(height: 16.0),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(
+                  labelText: 'Description',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+                validator: (value) => value?.isEmpty ?? true ? 'Please enter description' : null,
+              ),
+              const SizedBox(height: 16.0),
+              TextFormField(
+                controller: _locationController,
+                decoration: const InputDecoration(
+                  labelText: 'Location',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) => value?.isEmpty ?? true ? 'Please enter location' : null,
+              ),
+              const SizedBox(height: 16.0),
+              DropdownButtonFormField<String>(
+                value: _difficulty,
+                items: ['Easy', 'Moderate', 'Hard']
+                    .map((level) => DropdownMenuItem(value: level, child: Text(level)))
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => _difficulty = value);
+                  }
+                },
+                decoration: const InputDecoration(
+                  labelText: 'Difficulty Level',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16.0),
+              TextFormField(
+                controller: _noticeController,
+                decoration: const InputDecoration(
+                  labelText: 'Notice',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 2,
+              ),
+              const SizedBox(height: 16.0),
+              TextFormField(
+                controller: _participantsController,
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: const InputDecoration(
+                  labelText: 'Number of Participants',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) => value?.isEmpty ?? true ? 'Please enter number of participants' : null,
+              ),
+              const SizedBox(height: 16.0),
+              GestureDetector(
+                onTap: _selectDate,
+                child: Container(
+                  padding: const EdgeInsets.all(16.0),
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.grey),
+                    borderRadius: BorderRadius.circular(4.0),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        DateFormat('yyyy-MM-dd').format(_eventDate),
+                        style: const TextStyle(fontSize: 16.0),
+                      ),
+                      const Icon(Icons.calendar_today),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16.0),
+              Row(
+                children: [
+                  Expanded(
+                    child: DropdownButtonFormField<int>(
+                      value: _selectedHours,
+                      items: List.generate(24, (index) => index)
+                          .map((hour) => DropdownMenuItem(value: hour, child: Text('$hour hrs')))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => _selectedHours = value);
+                        }
+                      },
+                      decoration: const InputDecoration(
+                        labelText: 'Hours',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
-                    const Icon(Icons.calendar_today),
+                  ),
+                  const SizedBox(width: 16.0),
+                  Expanded(
+                    child: DropdownButtonFormField<int>(
+                      value: _selectedMinutes,
+                      items: List.generate(60, (index) => index)
+                          .map((minute) => DropdownMenuItem(value: minute, child: Text('$minute min')))
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) {
+                          setState(() => _selectedMinutes = value);
+                        }
+                      },
+                      decoration: const InputDecoration(
+                        labelText: 'Minutes',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16.0),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Trail Images',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8.0,
+                      runSpacing: 8.0,
+                      children: [
+                        ..._eventImages.map((imagePath) => Stack(
+                          children: [
+                            Container(
+                              height: 100,
+                              width: 100,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  imagePath,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      color: Colors.grey[200],
+                                      child: const Icon(
+                                        Icons.broken_image,
+                                        color: Colors.grey,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _eventImages.remove(imagePath);
+                                  });
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.all(2),
+                                  decoration: const BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black26,
+                                        blurRadius: 2,
+                                      ),
+                                    ],
+                                  ),
+                                  child: const Icon(
+                                    Icons.close,
+                                    size: 18,
+                                    color: Colors.red,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        )).toList(),
+                        if (_eventImages.length < 5)
+                          GestureDetector(
+                            onTap: _isLoading ? null : _pickImage,
+                            child: Container(
+                              height: 100,
+                              width: 100,
+                              decoration: BoxDecoration(
+                                border: Border.all(
+                                  color: Colors.grey.shade300,
+                                ),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: _isLoading
+                                  ? const Center(child: CircularProgressIndicator())
+                                  : const Icon(
+                                Icons.add_photo_alternate_outlined,
+                                color: Colors.grey,
+                                size: 32,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
                   ],
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-
-            Row(
-              children: [
-                Expanded(
-                  child: DropdownButtonFormField<int>(
-                    value: _selectedHours,
-                    items: List.generate(24, (index) => index)
-                        .map((hour) => DropdownMenuItem(value: hour, child: Text('$hour hrs')))
-                        .toList(),
-                    onChanged: (value) => setState(() => _selectedHours = value!),
-                    decoration: const InputDecoration(
-                      labelText: 'Hours',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
+              const SizedBox(height: 20.0),
+              ElevatedButton(
+                onPressed: _submitForm,
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 16.0),
                 ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: DropdownButtonFormField<int>(
-                    value: _selectedMinutes,
-                    items: List.generate(60, (index) => index)
-                        .map((minute) => DropdownMenuItem(value: minute, child: Text('$minute min')))
-                        .toList(),
-                    onChanged: (value) => setState(() => _selectedMinutes = value!),
-                    decoration: const InputDecoration(
-                      labelText: 'Minutes',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            ElevatedButton(
-              onPressed: _saveChanges,
-              child: const Text('Save Changes'),
-            ),
-          ],
+                child: const Text('Update Trail'),
+              ),
+            ],
+          ),
         ),
       ),
     );
