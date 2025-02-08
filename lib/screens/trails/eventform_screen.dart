@@ -16,6 +16,7 @@ class EventFormScreen extends StatefulWidget {
 
 class _EventFormScreenState extends State<EventFormScreen> {
   final _formKey = GlobalKey<FormState>();
+  final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _noticeController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
@@ -37,8 +38,22 @@ class _EventFormScreenState extends State<EventFormScreen> {
 
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
+      if (_eventDate == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select an trail date')),
+        );
+        return;
+      }
+
+      if (_selectedHours == 0 && _selectedMinutes == 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please select a valid trail duration')),
+        );
+        return;
+      }
+
       final newEvent = TrailData(
-        name: 'New Event',
+        name: _nameController.text ,
         description: _descriptionController.text,
         difficulty: _difficulty,
         notice: _noticeController.text,
@@ -57,8 +72,8 @@ class _EventFormScreenState extends State<EventFormScreen> {
     final DateTime today = DateTime.now();
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: today.add(const Duration(days: 1)), // Default to tomorrow
-      firstDate: today.add(const Duration(days: 1)), // Restrict past dates
+      initialDate: today.add(const Duration(days: 1)),
+      firstDate: today.add(const Duration(days: 1)),
       lastDate: DateTime(2101),
     );
 
@@ -72,7 +87,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Event')),
+      appBar: AppBar(title: const Text('Create Trail')),
       body: SingleChildScrollView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.all(16.0),
@@ -81,12 +96,30 @@ class _EventFormScreenState extends State<EventFormScreen> {
           child: Column(
             children: [
               TextFormField(
-                controller: _descriptionController,
+                controller: _nameController,
                 decoration: const InputDecoration(
-                  labelText: 'Event Description',
+                  labelText: 'Trail Name',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value == null || value.isEmpty ? 'Please enter event description' : null,
+                validator: (value) => value == null || value.isEmpty ? 'Please enter Trail name' : null,
+              ),
+              const SizedBox(height: 16.0),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(
+                  labelText: 'Trail Description',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) => value == null || value.isEmpty ? 'Please enter Trail description' : null,
+              ),
+              const SizedBox(height: 16.0),
+              TextFormField(
+                controller: _locationController,
+                decoration: const InputDecoration(
+                  labelText: 'Location',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) => value == null || value.isEmpty ? 'Please enter the Trail location' : null,
               ),
               const SizedBox(height: 16.0),
               DropdownButtonFormField<String>(
@@ -117,19 +150,12 @@ class _EventFormScreenState extends State<EventFormScreen> {
                   labelText: 'Number of Participants',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the number of participants';
-                  }
-                  if (int.tryParse(value) == null) {
-                    return 'Please enter a valid integer';
-                  }
-                  return null;
-                },
+                validator: (value) => value == null || value.isEmpty || int.tryParse(value) == null
+                    ? 'Please enter a valid number of participants'
+                    : null,
               ),
               const SizedBox(height: 16.0),
 
-              // Date Picker with Future Date Restriction
               GestureDetector(
                 onTap: _selectDate,
                 child: Container(
@@ -143,8 +169,8 @@ class _EventFormScreenState extends State<EventFormScreen> {
                     children: [
                       Text(
                         _eventDate == null
-                            ? 'Select Event Date'
-                            : 'Event Date: ${DateFormat('yyyy-MM-dd').format(_eventDate!)}',
+                            ? 'Select Trail Date'
+                            : 'Trail Date: ${DateFormat('yyyy-MM-dd').format(_eventDate!)}',
                         style: const TextStyle(fontSize: 16.0),
                       ),
                       const Icon(Icons.calendar_today),
@@ -154,7 +180,6 @@ class _EventFormScreenState extends State<EventFormScreen> {
               ),
               const SizedBox(height: 16.0),
 
-              // Duration Picker (Hours & Minutes)
               Row(
                 children: [
                   Expanded(
@@ -188,7 +213,6 @@ class _EventFormScreenState extends State<EventFormScreen> {
               ),
               const SizedBox(height: 16.0),
 
-              // Image Upload
               Wrap(
                 children: _eventImages
                     .map((image) => Padding(
@@ -204,7 +228,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
               const SizedBox(height: 20.0),
               ElevatedButton(
                 onPressed: _submitForm,
-                child: const Text('Save Event'),
+                child: const Text('Save Trail'),
               ),
             ],
           ),
