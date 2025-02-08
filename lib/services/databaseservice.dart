@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:hiker_connect/models/trail_data.dart';
@@ -21,8 +22,8 @@ class DatabaseService {
 
   // Getter for the database
   Future<Database> get database async {
-    if (_db != null) return _db!; // If the database is already initialized, return it
-    _db = await getDatabase(); // Otherwise, initialize it
+    if (_db != null) return _db!;
+    _db = await getDatabase();
     return _db!;
   }
 
@@ -54,12 +55,33 @@ class DatabaseService {
     return database;
   }
 
+  // Utility method to encode images list to JSON string
+  String _encodeImages(List<String> images) {
+    return jsonEncode(images);
+  }
+
+  // Utility method to decode JSON string back to images list
+  List<String> _decodeImages(String imagesJson) {
+    if (imagesJson.isEmpty) return [];
+    try {
+      List<dynamic> decoded = jsonDecode(imagesJson);
+      return decoded.map((e) => e.toString()).toList();
+    } catch (e) {
+      print('Error decoding images: $e');
+      return [];
+    }
+  }
+
   // Insert event data
   Future<int> insertTrails(TrailData event) async {
     final db = await database;
+    final Map<String, dynamic> data = event.toMap();
+    // Encode images before saving to database
+    data[_images] = _encodeImages(event.images);
+
     return await db.insert(
       _trailTableName,
-      event.toMap(),
+      data,
       conflictAlgorithm: ConflictAlgorithm.replace,
     );
   }
@@ -71,11 +93,54 @@ class DatabaseService {
 
     // Convert the List<Map<String, dynamic>> into a List<TrailData>
     return List.generate(maps.length, (i) {
-      return TrailData.fromMap(maps[i]);
+      // Decode images before creating TrailData object
+      final Map<String, dynamic> data = Map<String, dynamic>.from(maps[i]);
+      data[_images] = _decodeImages(maps[i][_images].toString());
+      return TrailData.fromMap(data);
     });
   }
 
-  // Example: Verify the connection by inserting and fetching a test record
+  // Update an existing trail
+  Future<int> updateTrail(TrailData event) async {
+    final db = await database;
+    final Map<String, dynamic> data = event.toMap();
+    data[_images] = _encodeImages(event.images);
+
+    return await db.update(
+      _trailTableName,
+      data,
+      where: '$_name = ?',
+      whereArgs: [event.name],
+    );
+  }
+
+  // Delete a trail
+  Future<int> deleteTrail(String name) async {
+    final db = await database;
+    return await db.delete(
+      _trailTableName,
+      where: '$_name = ?',
+      whereArgs: [name],
+    );
+  }
+
+  // Get a single trail by name
+  Future<TrailData?> getTrailByName(String name) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      _trailTableName,
+      where: '$_name = ?',
+      whereArgs: [name],
+    );
+
+    if (maps.isEmpty) return null;
+
+    final Map<String, dynamic> data = Map<String, dynamic>.from(maps.first);
+    data[_images] = _decodeImages(maps.first[_images].toString());
+    return TrailData.fromMap(data);
+  }
+
+  // Verify database connection
   Future<bool> verifyConnection() async {
     try {
       Database db = await database;
@@ -101,14 +166,21 @@ class DatabaseService {
       List<Map<String, dynamic>> result = await db.query(_trailTableName);
       if (result.isNotEmpty) {
         print('Database Connection Verified!');
-        return true;  // If data is retrieved, the connection is successful
+        return true;
       } else {
         print('Database is empty or error occurred');
         return false;
       }
     } catch (e) {
       print('Error verifying database connection: $e');
-      return false;  // If an error occurs, the connection is likely not established
+      return false;
     }
+  }
+
+  // Close the database
+  Future<void> close() async {
+    final db = await database;
+    await db.close();
+    _db = null;
   }
 }

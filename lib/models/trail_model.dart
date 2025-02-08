@@ -1,11 +1,9 @@
-import 'dart:io';
-
 class Trail {
   final String name;
   final String description;
   final String difficulty;
   final String notice;
-  final List<File> images;
+  final List<String> images;  // Changed from List<File> to List<String>
 
   Trail({
     required this.name,
