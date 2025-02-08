@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hiker_connect/models/trail_data.dart';
+import '../../services/databaseservice.dart';
 import 'event_edit_screen.dart';
 import 'eventform_screen.dart';
 
@@ -70,17 +71,30 @@ class TrailListScreenState extends State<TrailListScreen> {
       ),
     );
   }
+  Future<void> _loadEvents() async {
+    List<TrailData> trailList = await DatabaseService.instance.getTrails();
+    setState(() {
+      events = trailList;
+    });
+  }
+  @override
+  void initState() {
+    super.initState();
+    _loadEvents(); // Fetch events when the screen is loaded
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Trails')),
       body: events.isEmpty
-          ? const Center(child: Text("No events found. Click + to add an event."))
-          : ListView(
-        padding: const EdgeInsets.all(10),
-        children: events.map((event) {
-          bool isJoined = joinedEvents.contains(event);
+          ? const Center(child: CircularProgressIndicator()) // Show loading indicator while fetching events
+          : ListView.builder(
+          padding: const EdgeInsets.all(10),
+          itemCount: events.length, // Total number of items in the list
+          itemBuilder: (context, index) {
+            final event = events[index]; // Get event at current index
+            bool isJoined = joinedEvents.contains(event);
           return Card(
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
@@ -153,7 +167,7 @@ class TrailListScreenState extends State<TrailListScreen> {
               ),
             ),
           );
-        }).toList(),
+        }
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _navigateToEventForm,
