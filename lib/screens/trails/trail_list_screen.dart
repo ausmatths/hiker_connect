@@ -1,8 +1,10 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:hiker_connect/models/trail_data.dart';
 import '../../services/databaseservice.dart';
 import 'event_edit_screen.dart';
-import 'eventform_screen.dart';
+import 'eventform_screen.dart' as create_screen;
 
 
 class TrailListScreen extends StatefulWidget {
@@ -36,7 +38,7 @@ class TrailListScreenState extends State<TrailListScreen> {
     Navigator.push<TrailData>(
       context,
       MaterialPageRoute(
-        builder: (context) => const EventFormScreen(),
+        builder: (context) => const create_screen.EventFormScreen(), // Use alias
       ),
     ).then((newEvent) {
       if (newEvent != null && newEvent.name.isNotEmpty) {
@@ -140,7 +142,23 @@ class TrailListScreenState extends State<TrailListScreen> {
                         children: event.images.map((imagePath) {
                           return Padding(
                             padding: const EdgeInsets.all(4.0),
-                            child: Image.network(imagePath, height: 80, width: 80, fit: BoxFit.cover),
+                            child: Image.file(
+                              File(imagePath),  // Convert the path string to a File object
+                              height: 80,
+                              width: 80,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  height: 80,
+                                  width: 80,
+                                  color: Colors.grey[200],
+                                  child: const Icon(
+                                    Icons.broken_image,
+                                    color: Colors.grey,
+                                  ),
+                                );
+                              },
+                            ),
                           );
                         }).toList(),
                       ),
