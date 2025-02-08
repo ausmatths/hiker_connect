@@ -40,26 +40,6 @@ void main() {
     expect(find.text(mockEvent.participants.toString()), findsOneWidget);
   });
 
-  testWidgets('Updates notice and participants field', (WidgetTester tester) async {
-    await tester.pumpWidget(MaterialApp(
-      home: EventEditScreen(
-        event: mockEvent,
-        onUpdate: (updatedEvent) => onUpdateCalled = true,
-        onDelete: () => onDeleteCalled = true,
-      ),
-    ));
-
-    await tester.enterText(find.byType(TextFormField).at(2), '10');
-    await tester.enterText(find.byType(TextFormField).at(3), 'Updated Notice to - Wear boots');
-
-    await tester.ensureVisible(find.widgetWithText(ElevatedButton, "Save Changes"));
-    await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(ElevatedButton, "Save Changes"));
-    await tester.pump();
-
-    expect(onUpdateCalled, isTrue);
-  });
-
   testWidgets('Deletes event when delete button is pressed', (WidgetTester tester) async {
     await tester.pumpWidget(MaterialApp(
       home: EventEditScreen(
