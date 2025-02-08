@@ -33,7 +33,7 @@ void main() {
       ),
     ));
 
-    expect(find.text('Edit Event'), findsOneWidget);
+    expect(find.text('Edit Trail'), findsOneWidget);
     expect(find.text('A scenic mountain hike'), findsOneWidget);
     expect(find.text('Trailhead A'), findsOneWidget);
     expect(find.text('Bring water and snacks'), findsOneWidget);
@@ -50,9 +50,11 @@ void main() {
     ));
 
     await tester.enterText(find.byType(TextFormField).at(2), '10');
-    await tester.enterText(find.byType(TextFormField).at(3), 'Updated Notice');
+    await tester.enterText(find.byType(TextFormField).at(3), 'Updated Notice to - Wear boots');
 
-    await tester.tap(find.text('Save Changes'));
+    await tester.ensureVisible(find.widgetWithText(ElevatedButton, "Save Changes"));
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(ElevatedButton, "Save Changes"));
     await tester.pump();
 
     expect(onUpdateCalled, isTrue);

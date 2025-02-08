@@ -6,9 +6,9 @@ void main() {
   testWidgets('EventFormScreen should validate inputs and submit', (WidgetTester tester) async {
     await tester.pumpWidget(const MaterialApp(home: EventFormScreen()));
 
-    expect(find.byType(TextFormField), findsNWidgets(4));
+    expect(find.byType(TextFormField), findsNWidgets(5));
     expect(find.byType(DropdownButtonFormField<String>), findsOneWidget);
-    expect(find.text('Save Event'), findsOneWidget);
+    expect(find.text('Save Trail'), findsOneWidget);
 
     await tester.enterText(find.byType(TextFormField).at(0), 'Test Event Description');
     await tester.enterText(find.byType(TextFormField).at(1), 'Test Location');
@@ -21,7 +21,7 @@ void main() {
     await tester.pump();
 
 
-    await tester.tap(find.text('Save Event'));
+    await tester.tap(find.text('Save Trail'));
     await tester.pump();
 
 
