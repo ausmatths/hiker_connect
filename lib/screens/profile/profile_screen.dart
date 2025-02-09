@@ -2,25 +2,34 @@ import 'package:flutter/material.dart';
 import 'package:hiker_connect/models/user_model.dart';
 import 'package:hiker_connect/services/firebase_auth.dart';
 import 'package:hiker_connect/screens/profile/edit_profile_screen.dart';
+import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String? userId;
-  const ProfileScreen({super.key, this.userId});
+  final AuthService? authService;
+
+  const ProfileScreen({
+    super.key,
+    this.userId,
+    this.authService,
+  });
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  final AuthService _authService = AuthService();
+  late final AuthService _authService;
   late Future<UserModel?> _userFuture;
   bool _isCurrentUser = false;
 
   @override
   void initState() {
     super.initState();
+    _authService = widget.authService ?? Provider.of<AuthService>(context, listen: false);
     _loadUserData();
   }
+
 
   void _loadUserData() {
     if (widget.userId != null) {
@@ -101,10 +110,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             unselectedLabelColor: Colors.grey,
             indicatorColor: Colors.deepPurple,
             tabs: const [
-              Tab(text: 'Info'),
-              Tab(text: 'Medical'),
-              Tab(text: 'Emergency'),
-              Tab(text: 'Social'),
+              Tab(key: ValueKey('info_tab'), text: 'Info'),
+              Tab(key: ValueKey('medical_tab'), text: 'Medical'),
+              Tab(key: ValueKey('emergency_tab'), text: 'Emergency'),
+              Tab(key: ValueKey('social_tab'), text: 'Social'),
             ],
           ),
         ),
