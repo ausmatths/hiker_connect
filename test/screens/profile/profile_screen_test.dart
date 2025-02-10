@@ -4,10 +4,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
-import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
 import 'package:hiker_connect/models/user_model.dart';
 import 'package:hiker_connect/screens/profile/profile_screen.dart';
 import 'package:hiker_connect/services/firebase_auth.dart';
+import 'package:mockito/annotations.dart';
+
+import 'profile_screen_test.mocks.dart';
+
+@GenerateMocks([User], customMocks: [
+  MockSpec<User>(as: #MockFirebaseUser),
+])
 
 class MockAuthService extends Mock implements AuthService {
   UserModel? _mockUserData;
@@ -34,10 +40,11 @@ void main() {
 
   late MockAuthService mockAuthService;
   late UserModel testUser;
-  late MockUser mockUser;
+  late MockFirebaseUser mockUser;
 
   setUp(() {
-    mockUser = MockUser(uid: 'test-uid');
+    mockUser = MockFirebaseUser();
+    when(mockUser.uid).thenReturn('test-uid');
     testUser = UserModel(
       uid: 'test-uid',
       email: 'test@example.com',
