@@ -1,5 +1,28 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+class UserLocation {
+  final GeoPoint? geoPoint;
+  final String? address;
+
+  UserLocation({this.geoPoint, this.address});
+
+  Map<String, dynamic> toMap() {
+    return {
+      'geoPoint': geoPoint,
+      'address': address,
+    };
+  }
+
+  factory UserLocation.fromMap(dynamic map) {
+    if (map == null) return UserLocation();
+    final safeMap = _convertToStringKeyMap(map);
+    return UserLocation(
+      geoPoint: safeMap['geoPoint'] as GeoPoint?,
+      address: safeMap['address'] as String?,
+    );
+  }
+}
+
 class EmergencyContact {
   final String name;
   final String relationship;
@@ -11,44 +34,38 @@ class EmergencyContact {
     required this.phoneNumber,
   });
 
-  Map<String, dynamic> toMap() => {
-    'name': name,
-    'relationship': relationship,
-    'phoneNumber': phoneNumber,
-  };
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'relationship': relationship,
+      'phoneNumber': phoneNumber,
+    };
+  }
 
-  factory EmergencyContact.fromMap(Map<String, dynamic> map) => EmergencyContact(
-    name: map['name'] ?? '',
-    relationship: map['relationship'] ?? '',
-    phoneNumber: map['phoneNumber'] ?? '',
-  );
+  factory EmergencyContact.fromMap(dynamic map) {
+    final safeMap = _convertToStringKeyMap(map);
+    return EmergencyContact(
+      name: (safeMap['name'] as String?) ?? '',
+      relationship: (safeMap['relationship'] as String?) ?? '',
+      phoneNumber: (safeMap['phoneNumber'] as String?) ?? '',
+    );
+  }
 }
 
-class UserLocation {
-  final GeoPoint geoPoint;
-  final String address;
-
-  UserLocation({
-    required this.geoPoint,
-    required this.address,
-  });
-
-  Map<String, dynamic> toMap() => {
-    'geoPoint': geoPoint,
-    'address': address,
-  };
-
-  factory UserLocation.fromMap(Map<String, dynamic> map) => UserLocation(
-    geoPoint: map['geoPoint'] as GeoPoint,
-    address: map['address'] ?? '',
-  );
+// Helper function to convert dynamic maps to Map<String, dynamic>
+Map<String, dynamic> _convertToStringKeyMap(dynamic map) {
+  if (map is Map<String, dynamic>) return map;
+  if (map is Map) {
+    return map.map((key, value) => MapEntry(key.toString(), value));
+  }
+  return {};
 }
 
 class UserModel {
   final String uid;
   final String email;
   final String displayName;
-  final String? photoUrl;
+  final String photoUrl; // Changed to non-nullable
   final String? bio;
   final List<String> interests;
   final DateTime createdAt;
@@ -56,28 +73,26 @@ class UserModel {
   final bool isEmailVerified;
   final List<String> following;
   final List<String> followers;
-
-  // New fields
   final String? phoneNumber;
   final UserLocation? location;
-  final List<EmergencyContact> emergencyContacts;
+  final List<EmergencyContact>? emergencyContacts;
   final String? bloodType;
-  final List<String> medicalConditions;
-  final List<String> medications;
+  final List<String>? medicalConditions;
+  final List<String>? medications;
   final String? insuranceInfo;
   final String? allergies;
   final DateTime? dateOfBirth;
   final String? gender;
-  final double? height; // in cm
-  final double? weight; // in kg
+  final double? height;
+  final double? weight;
   final String? preferredLanguage;
-  final Map<String, String>? socialLinks; // platform -> url
+  final Map<String, String>? socialLinks;
 
   UserModel({
     required this.uid,
     required this.email,
     required this.displayName,
-    this.photoUrl,
+    String? photoUrl,
     this.bio,
     this.interests = const [],
     required this.createdAt,
@@ -87,10 +102,10 @@ class UserModel {
     this.followers = const [],
     this.phoneNumber,
     this.location,
-    this.emergencyContacts = const [],
+    this.emergencyContacts,
     this.bloodType,
-    this.medicalConditions = const [],
-    this.medications = const [],
+    this.medicalConditions,
+    this.medications,
     this.insuranceInfo,
     this.allergies,
     this.dateOfBirth,
@@ -99,164 +114,134 @@ class UserModel {
     this.weight,
     this.preferredLanguage,
     this.socialLinks,
-  });
+  }) : photoUrl = photoUrl ?? ''; // Provide a default empty string
+
+  Map<String, dynamic> toMap() {
+    return {
+      'uid': uid,
+      'email': email,
+      'displayName': displayName,
+      'photoUrl': photoUrl.isEmpty ? null : photoUrl, // Only store non-empty photoUrl
+      'bio': bio,
+      'interests': interests,
+      'createdAt': Timestamp.fromDate(createdAt),
+      'lastActive': Timestamp.fromDate(lastActive),
+      'isEmailVerified': isEmailVerified,
+      'following': following,
+      'followers': followers,
+      'phoneNumber': phoneNumber,
+      'location': location?.toMap(),
+      'emergencyContacts': emergencyContacts?.map((e) => e.toMap()).toList(),
+      'bloodType': bloodType,
+      'medicalConditions': medicalConditions,
+      'medications': medications,
+      'insuranceInfo': insuranceInfo,
+      'allergies': allergies,
+      'dateOfBirth': dateOfBirth != null ? Timestamp.fromDate(dateOfBirth!) : null,
+      'gender': gender,
+      'height': height,
+      'weight': weight,
+      'preferredLanguage': preferredLanguage,
+      'socialLinks': socialLinks,
+    };
+  }
 
   factory UserModel.fromFirestore(DocumentSnapshot doc) {
-    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    // Handle both Map<String, dynamic> and dynamic data
+    final rawData = doc.data();
+    final data = _convertToStringKeyMap(rawData);
 
     return UserModel(
       uid: doc.id,
-      email: data['email'] ?? '',
-      displayName: data['displayName'] ?? '',
-      photoUrl: data['photoUrl'],
-      bio: data['bio'],
-      interests: List<String>.from(data['interests'] ?? []),
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
-      lastActive: (data['lastActive'] as Timestamp).toDate(),
-      isEmailVerified: data['isEmailVerified'] ?? false,
-      following: List<String>.from(data['following'] ?? []),
-      followers: List<String>.from(data['followers'] ?? []),
-      phoneNumber: data['phoneNumber'],
+      email: _safeGetString(data, 'email'),
+      displayName: _safeGetString(data, 'displayName', defaultValue: 'User'),
+      photoUrl: _safeGetString(data, 'photoUrl'), // No default value for photoUrl
+      bio: _safeGetString(data, 'bio'),
+      interests: _safeGetStringList(data, 'interests'),
+      createdAt: _safeGetTimestamp(data, 'createdAt'),
+      lastActive: _safeGetTimestamp(data, 'lastActive'),
+      isEmailVerified: _safeGetBool(data, 'isEmailVerified'),
+      following: _safeGetStringList(data, 'following'),
+      followers: _safeGetStringList(data, 'followers'),
+      phoneNumber: _safeGetString(data, 'phoneNumber'),
       location: data['location'] != null
           ? UserLocation.fromMap(data['location'])
           : null,
-      emergencyContacts: (data['emergencyContacts'] as List<dynamic>? ?? [])
-          .map((e) => EmergencyContact.fromMap(e as Map<String, dynamic>))
-          .toList(),
-      bloodType: data['bloodType'],
-      medicalConditions: List<String>.from(data['medicalConditions'] ?? []),
-      medications: List<String>.from(data['medications'] ?? []),
-      insuranceInfo: data['insuranceInfo'],
-      allergies: data['allergies'],
-      dateOfBirth: data['dateOfBirth'] != null
-          ? (data['dateOfBirth'] as Timestamp).toDate()
-          : null,
-      gender: data['gender'],
-      height: data['height']?.toDouble(),
-      weight: data['weight']?.toDouble(),
-      preferredLanguage: data['preferredLanguage'],
-      socialLinks: data['socialLinks'] != null
-          ? Map<String, String>.from(data['socialLinks'])
-          : null,
+      emergencyContacts: _safeGetEmergencyContacts(data, 'emergencyContacts'),
+      bloodType: _safeGetString(data, 'bloodType'),
+      medicalConditions: _safeGetStringList(data, 'medicalConditions'),
+      medications: _safeGetStringList(data, 'medications'),
+      insuranceInfo: _safeGetString(data, 'insuranceInfo'),
+      allergies: _safeGetString(data, 'allergies'),
+      dateOfBirth: _safeGetTimestamp(data, 'dateOfBirth'),
+      gender: _safeGetString(data, 'gender'),
+      height: _safeGetDouble(data, 'height'),
+      weight: _safeGetDouble(data, 'weight'),
+      preferredLanguage: _safeGetString(data, 'preferredLanguage'),
+      socialLinks: _safeGetSocialLinks(data, 'socialLinks'),
     );
   }
 
-  Map<String, dynamic> toMap() => {
-    'email': email,
-    'displayName': displayName,
-    'photoUrl': photoUrl,
-    'bio': bio,
-    'interests': interests,
-    'createdAt': Timestamp.fromDate(createdAt),
-    'lastActive': Timestamp.fromDate(lastActive),
-    'isEmailVerified': isEmailVerified,
-    'following': following,
-    'followers': followers,
-    'phoneNumber': phoneNumber,
-    'location': location?.toMap(),
-    'emergencyContacts': emergencyContacts.map((e) => e.toMap()).toList(),
-    'bloodType': bloodType,
-    'medicalConditions': medicalConditions,
-    'medications': medications,
-    'insuranceInfo': insuranceInfo,
-    'allergies': allergies,
-    'dateOfBirth': dateOfBirth != null ? Timestamp.fromDate(dateOfBirth!) : null,
-    'gender': gender,
-    'height': height,
-    'weight': weight,
-    'preferredLanguage': preferredLanguage,
-    'socialLinks': socialLinks,
-  };
-
-  UserModel copyWith({
-    String? displayName,
-    String? photoUrl,
-    String? bio,
-    List<String>? interests,
-    DateTime? lastActive,
-    bool? isEmailVerified,
-    List<String>? following,
-    List<String>? followers,
-    String? phoneNumber,
-    UserLocation? location,
-    List<EmergencyContact>? emergencyContacts,
-    String? bloodType,
-    List<String>? medicalConditions,
-    List<String>? medications,
-    String? insuranceInfo,
-    String? allergies,
-    DateTime? dateOfBirth,
-    String? gender,
-    double? height,
-    double? weight,
-    String? preferredLanguage,
-    Map<String, String>? socialLinks,
-  }) {
-    return UserModel(
-      uid: uid,
-      email: email,
-      displayName: displayName ?? this.displayName,
-      photoUrl: photoUrl ?? this.photoUrl,
-      bio: bio ?? this.bio,
-      interests: interests ?? this.interests,
-      createdAt: createdAt,
-      lastActive: lastActive ?? this.lastActive,
-      isEmailVerified: isEmailVerified ?? this.isEmailVerified,
-      following: following ?? this.following,
-      followers: followers ?? this.followers,
-      phoneNumber: phoneNumber ?? this.phoneNumber,
-      location: location ?? this.location,
-      emergencyContacts: emergencyContacts ?? this.emergencyContacts,
-      bloodType: bloodType ?? this.bloodType,
-      medicalConditions: medicalConditions ?? this.medicalConditions,
-      medications: medications ?? this.medications,
-      insuranceInfo: insuranceInfo ?? this.insuranceInfo,
-      allergies: allergies ?? this.allergies,
-      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
-      gender: gender ?? this.gender,
-      height: height ?? this.height,
-      weight: weight ?? this.weight,
-      preferredLanguage: preferredLanguage ?? this.preferredLanguage,
-      socialLinks: socialLinks ?? this.socialLinks,
-    );
+  // Safe type conversion helpers
+  static String _safeGetString(Map<String, dynamic> data, String key, {String defaultValue = ''}) {
+    return (data[key] as String?) ?? defaultValue;
   }
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-          other is UserModel &&
-              runtimeType == other.runtimeType &&
-              uid == other.uid &&
-              email == other.email &&
-              displayName == other.displayName &&
-              photoUrl == other.photoUrl &&
-              bio == other.bio &&
-              interests.toString() == other.interests.toString() &&
-              following.toString() == other.following.toString() &&
-              followers.toString() == other.followers.toString() &&
-              phoneNumber == other.phoneNumber &&
-              location == other.location &&
-              emergencyContacts.toString() == other.emergencyContacts.toString() &&
-              bloodType == other.bloodType &&
-              medicalConditions.toString() == other.medicalConditions.toString() &&
-              medications.toString() == other.medications.toString() &&
-              insuranceInfo == other.insuranceInfo;
+  static List<String> _safeGetStringList(Map<String, dynamic> data, String key) {
+    final value = data[key];
+    if (value == null) return [];
+    if (value is List) {
+      return value.map((e) => e?.toString() ?? '').whereType<String>().toList();
+    }
+    return [];
+  }
 
-  @override
-  int get hashCode =>
-      uid.hashCode ^
-      email.hashCode ^
-      displayName.hashCode ^
-      photoUrl.hashCode ^
-      bio.hashCode ^
-      interests.hashCode ^
-      following.hashCode ^
-      followers.hashCode ^
-      phoneNumber.hashCode ^
-      location.hashCode ^
-      emergencyContacts.hashCode ^
-      bloodType.hashCode ^
-      medicalConditions.hashCode ^
-      medications.hashCode ^
-      insuranceInfo.hashCode;
+  static DateTime _safeGetTimestamp(Map<String, dynamic> data, String key) {
+    final timestamp = data[key];
+    if (timestamp == null) return DateTime.now();
+    return (timestamp is Timestamp) ? timestamp.toDate() : DateTime.now();
+  }
+
+  static bool _safeGetBool(Map<String, dynamic> data, String key) {
+    return (data[key] as bool?) ?? false;
+  }
+
+  static double? _safeGetDouble(Map<String, dynamic> data, String key) {
+    final value = data[key];
+    if (value == null) return null;
+    return (value is num) ? value.toDouble() : null;
+  }
+
+  static List<EmergencyContact>? _safeGetEmergencyContacts(Map<String, dynamic> data, String key) {
+    final contacts = data[key];
+    if (contacts == null) return null;
+
+    try {
+      if (contacts is List) {
+        return contacts
+            .map((contact) => EmergencyContact.fromMap(contact))
+            .whereType<EmergencyContact>()
+            .toList();
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Map<String, String>? _safeGetSocialLinks(Map<String, dynamic> data, String key) {
+    final links = data[key];
+    if (links == null) return null;
+
+    try {
+      if (links is Map) {
+        return links.map((key, value) =>
+            MapEntry(key.toString(), value?.toString() ?? '')
+        );
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
 }

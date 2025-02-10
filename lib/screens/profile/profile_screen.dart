@@ -6,12 +6,10 @@ import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String? userId;
-  final AuthService? authService;
 
   const ProfileScreen({
     super.key,
     this.userId,
-    this.authService,
   });
 
   @override
@@ -19,26 +17,82 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  late final AuthService _authService;
+  static const double _avatarRadius = 50.0;
+  static const double _sectionSpacing = 16.0;
+  static const double _sectionTitleSize = 16.0;
+  static const Color _indicatorColor = Colors.deepPurple;
+  late AuthService _authService;
   late Future<UserModel?> _userFuture;
   bool _isCurrentUser = false;
 
   @override
   void initState() {
     super.initState();
-    _authService = widget.authService ?? Provider.of<AuthService>(context, listen: false);
-    _loadUserData();
+    // Initialize with a placeholder future to prevent null checks
+    _userFuture = Future.value(null);
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    try {
+      // Get AuthService and initialize
+      _authService = Provider.of<AuthService>(context, listen: false);
+      _loadUserData();
+    } catch (e) {
+      _handleInitializationError(e);
+    }
+  }
 
   void _loadUserData() {
-    if (widget.userId != null) {
-      _userFuture = _authService.getUserData(widget.userId!);
-      _isCurrentUser = widget.userId == _authService.currentUser?.uid;
-    } else {
-      _userFuture = _authService.getCurrentUserData();
-      _isCurrentUser = true;
+    try {
+      if (widget.userId != null) {
+        _userFuture = _authService.getUserData(widget.userId!);
+        _isCurrentUser = widget.userId == _authService.currentUser?.uid;
+      } else {
+        _userFuture = _authService.getCurrentUserData();
+        _isCurrentUser = true;
+      }
+
+      // Force rebuild if the state is mounted
+      if (mounted) setState(() {});
+    } catch (e) {
+      _handleInitializationError(e);
     }
+  }
+
+  void _handleInitializationError(Object error) {
+    // Defer showing the error dialog to ensure widget is fully built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Initialization Error'),
+            content: Text(error.toString()),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  // Optionally retry initialization
+                  _loadUserData();
+                },
+                child: const Text('Retry'),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+            ],
+          ),
+        );
+      }
+    });
+
+    // Set a null future to show an error state
+    setState(() {
+      _userFuture = Future.value(null);
+    });
   }
 
   Future<void> _editProfile(UserModel user) async {
@@ -49,10 +103,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    if (result == true) {
+    if (result == true && mounted) {
       setState(() {
         _loadUserData();
       });
+    }
+  }
+
+  Future<void> _handleSignOut() async {
+    try {
+      await _authService.signOut();
+      // Consider navigating to login screen or showing a success message
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error signing out: $e')),
+        );
+      }
     }
   }
 
@@ -91,17 +158,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               IconButton(
                 icon: const Icon(Icons.logout, color: Colors.black),
-                onPressed: () async {
-                  try {
-                    await _authService.signOut();
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error signing out: $e')),
-                      );
-                    }
-                  }
-                },
+                onPressed: _handleSignOut,
               ),
             ],
           ],
@@ -192,14 +249,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Column(
               children: [
                 CircleAvatar(
-                  radius: 50,
-                  backgroundImage: user.photoUrl != null
-                      ? NetworkImage(user.photoUrl!)
+                  radius: _avatarRadius,
+                  backgroundColor: Colors.deepPurple.shade50,
+                  backgroundImage: user.photoUrl.isNotEmpty
+                      ? NetworkImage(user.photoUrl)
                       : null,
-                  child: user.photoUrl == null
+                  onBackgroundImageError: user.photoUrl.isNotEmpty
+                      ? (exception, stackTrace) {
+                    debugPrint('Error loading profile image: $exception');
+                  }
+                      : null,
+                  child: user.photoUrl.isEmpty
                       ? Text(
-                    user.displayName[0].toUpperCase(),
-                    style: const TextStyle(fontSize: 32),
+                    user.displayName.isNotEmpty
+                        ? user.displayName[0].toUpperCase()
+                        : '?',
+                    style: TextStyle(
+                      fontSize: 32,
+                      color: Colors.deepPurple,
+                    ),
                   )
                       : null,
                 ),
@@ -264,6 +332,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildMedicalInfoTab(UserModel user) {
+    final medicalConditions = user.medicalConditions ?? [];
+    final medications = user.medications ?? [];
+    final allergies = user.allergies ?? '';
+    final bloodType = user.bloodType ?? '';
+    final insuranceInfo = user.insuranceInfo ?? '';
+
+    final bool hasNoMedicalInfo = medicalConditions.isEmpty &&
+        medications.isEmpty &&
+        allergies.isEmpty &&
+        bloodType.isEmpty &&
+        insuranceInfo.isEmpty;
+
+    if (hasNoMedicalInfo) {
+      return const Center(
+        child: Text('No medical information available'),
+      );
+    }
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -273,14 +359,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
           _buildSection('Allergies', user.allergies),
           _buildSection('Insurance Info', user.insuranceInfo),
 
-          if (user.medicalConditions.isNotEmpty)
-            _buildListSection('Medical Conditions', user.medicalConditions),
+          if (medicalConditions.isNotEmpty)
+            _buildListSection('Medical Conditions', medicalConditions),
 
-          if (user.medications.isNotEmpty)
-            _buildListSection('Medications', user.medications),
+          if (medications.isNotEmpty)
+            _buildListSection('Medications', medications),
 
-          if (user.medicalConditions.isEmpty &&
-              user.medications.isEmpty &&
+          if (medicalConditions.isEmpty &&
+              medications.isEmpty &&
               user.bloodType == null &&
               user.allergies == null &&
               user.insuranceInfo == null)
@@ -299,7 +385,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildEmergencyContactsTab(UserModel user) {
-    if (user.emergencyContacts.isEmpty) {
+    final emergencyContacts = user.emergencyContacts ?? [];
+
+    if (emergencyContacts.isEmpty) {
       return Center(
         child: Text(
           'No emergency contacts added',
@@ -310,9 +398,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: user.emergencyContacts.length,
+      itemCount: emergencyContacts.length,
       itemBuilder: (context, index) {
-        final contact = user.emergencyContacts[index];
+        final contact = emergencyContacts[index];
         return Card(
           elevation: 2,
           margin: const EdgeInsets.only(bottom: 12),
@@ -338,7 +426,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildSocialTab(UserModel user) {
-    if (user.socialLinks?.isEmpty ?? true) {
+    final socialLinks = user.socialLinks ?? {};
+
+    if (socialLinks.isEmpty) {
       return const Center(
         child: Text('No social links added'),
       );
@@ -346,10 +436,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: user.socialLinks!.length,
+      itemCount: socialLinks.length,
       itemBuilder: (context, index) {
-        final platform = user.socialLinks!.keys.elementAt(index);
-        final link = user.socialLinks![platform];
+        final platform = socialLinks.keys.elementAt(index);
+        final link = socialLinks[platform];
         return Card(
           child: ListTile(
             leading: Icon(_getSocialIcon(platform)),
@@ -392,7 +482,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
         const SizedBox(height: 8),
-        Wrap(
+        // Use ListView.builder for larger lists
+        items.length > 10
+            ? ListView.builder(
+          shrinkWrap: true,
+          itemCount: items.length,
+          itemBuilder: (context, index) => Chip(
+            label: Text(items[index]),
+            backgroundColor: Colors.deepPurple.shade50,
+          ),
+        )
+            : Wrap(
           spacing: 8,
           runSpacing: 8,
           children: items.map((item) => Chip(

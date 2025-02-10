@@ -1,44 +1,32 @@
-import 'dart:async';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth_mocks/firebase_auth_mocks.dart';
-import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
-import 'package:google_sign_in_mocks/google_sign_in_mocks.dart';
 import 'package:hiker_connect/models/user_model.dart';
 import 'package:hiker_connect/screens/profile/profile_screen.dart';
 import 'package:hiker_connect/services/firebase_auth.dart';
 
 class MockAuthService extends Mock implements AuthService {
   UserModel? _mockUserData;
-  final User _mockUser = MockUser(uid: 'test-uid');
-  final Completer<UserModel?> _completer = Completer<UserModel?>();
+  User? _mockUser;
 
-  MockAuthService({UserModel? initialUserData}) {
-    _mockUserData = initialUserData;
+  MockAuthService({UserModel? mockUserData, User? mockUser})
+      : _mockUserData = mockUserData,
+        _mockUser = mockUser;
+
+  void updateMockData({UserModel? userData, User? user}) {
+    _mockUserData = userData;
+    _mockUser = user;
   }
+
+  @override
+  Future<UserModel?> getCurrentUserData() async => _mockUserData;
 
   @override
   User? get currentUser => _mockUser;
-
-  @override
-  Future<UserModel?> getCurrentUserData() async {
-    return Future.delayed(const Duration(milliseconds: 100), () => _mockUserData);
-  }
-
-  @override
-  Future<UserModel?> getUserData(String uid) async {
-    return Future.delayed(const Duration(milliseconds: 100), () => _mockUserData);
-  }
-
-  void updateMockData(UserModel? userData) {
-    _mockUserData = userData;
-  }
 }
 
 void main() {
@@ -46,14 +34,16 @@ void main() {
 
   late MockAuthService mockAuthService;
   late UserModel testUser;
+  late MockUser mockUser;
 
   setUp(() {
+    mockUser = MockUser(uid: 'test-uid');
     testUser = UserModel(
       uid: 'test-uid',
       email: 'test@example.com',
       displayName: 'Test User',
       bio: 'Test bio',
-      photoUrl: null, // Remove network image URL
+      photoUrl: null,
       location: UserLocation(
         geoPoint: const GeoPoint(0, 0),
         address: '123 Test St',
@@ -75,6 +65,11 @@ void main() {
       interests: [],
       socialLinks: {},
     );
+
+    mockAuthService = MockAuthService(
+        mockUserData: testUser,
+        mockUser: mockUser
+    );
   });
 
   Widget createTestableWidget(Widget child) {
@@ -93,32 +88,31 @@ void main() {
   group('ProfileScreen Widget Tests', () {
     testWidgets('ProfileScreen shows loading indicator when user data is null',
             (WidgetTester tester) async {
-          // Initialize mockAuthService with null data
-          mockAuthService = MockAuthService(initialUserData: null);
+          mockAuthService.updateMockData(
+              userData: null,
+              user: mockUser
+          );
 
           await tester.pumpWidget(createTestableWidget(
-              ProfileScreen(authService: mockAuthService)
+              const ProfileScreen()
           ));
 
-          // Initial frame
-          await tester.pump();
-
-          // Verify loading indicator is shown
           expect(find.byType(CircularProgressIndicator), findsOneWidget);
+          await tester.pumpAndSettle();
         });
 
     testWidgets('ProfileScreen loads and displays user data',
             (WidgetTester tester) async {
-          // Initialize mockAuthService with test data
-          mockAuthService = MockAuthService(initialUserData: testUser);
+          mockAuthService.updateMockData(
+              userData: testUser,
+              user: mockUser
+          );
 
           await tester.pumpWidget(createTestableWidget(
-              ProfileScreen(authService: mockAuthService)
+              const ProfileScreen()
           ));
 
-          // Wait for the Future to complete and UI to update
-          await tester.pump();
-          await tester.pump(const Duration(milliseconds: 100));
+          await tester.pumpAndSettle();
 
           expect(find.text('Test User'), findsOneWidget);
           expect(find.text('Test bio'), findsOneWidget);
@@ -126,17 +120,17 @@ void main() {
 
     testWidgets('Medical tab displays correct information',
             (WidgetTester tester) async {
-          mockAuthService = MockAuthService(initialUserData: testUser);
+          mockAuthService.updateMockData(
+              userData: testUser,
+              user: mockUser
+          );
 
           await tester.pumpWidget(createTestableWidget(
-              ProfileScreen(authService: mockAuthService)
+              const ProfileScreen()
           ));
 
-          // Wait for the initial data to load
-          await tester.pump();
-          await tester.pump(const Duration(milliseconds: 100));
+          await tester.pumpAndSettle();
 
-          // Find and tap the Medical tab
           await tester.tap(find.text('Medical'));
           await tester.pumpAndSettle();
 

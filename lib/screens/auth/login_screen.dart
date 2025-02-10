@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hiker_connect/services/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import 'dart:developer' as developer;
+
+import '../../services/auth_service_interface.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,7 +14,6 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _authService = AuthService();
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -23,22 +26,42 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void initState() {
     super.initState();
-    _checkLoginState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _checkLoginState();
+      }
+    });
   }
 
   Future<void> _checkLoginState() async {
+    if (!mounted) return;
+
     try {
       setState(() => _isChecking = true);
-      final currentUser = _authService.currentUser;
+
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final currentUser = authService.currentUser;
+
       if (currentUser != null && mounted) {
         Navigator.of(context).pushReplacementNamed('/home');
       }
+    } catch (e) {
+      developer.log(
+          'Login state check error',
+          name: 'LoginScreen',
+          error: e
+      );
     } finally {
-      if (mounted) setState(() => _isChecking = false);
+      if (mounted) {
+        setState(() => _isChecking = false);
+      }
     }
   }
 
   Future<void> _resetPassword() async {
+    // Use context.read to get AuthService safely
+    final authService = context.read<AuthService>();
+
     if (_emailController.text.isEmpty) {
       setState(() => _errorMessage = 'Please enter your email first');
       return;
@@ -50,7 +73,7 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      await _authService.resetPassword(_emailController.text.trim());
+      await authService.resetPassword(_emailController.text.trim());
       if (mounted) {
         setState(() => _errorMessage = 'Password reset email sent. Please check your inbox.');
       }
@@ -64,13 +87,16 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signInWithGoogle() async {
+    // Use context.read to get AuthService safely
+    final authService = context.read<AuthService>();
+
     setState(() {
       _isLoading = true;
       _errorMessage = '';
     });
 
     try {
-      final userModel = await _authService.signInWithGoogle();
+      final userModel = await authService.signInWithGoogle();
       if (userModel != null && mounted) {
         Navigator.of(context).pushReplacementNamed('/home');
       }
@@ -84,6 +110,9 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
+    // Use context.read to get IAuthService
+    final authService = context.read<IAuthService>();
+
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
@@ -91,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
       });
 
       try {
-        final userModel = await _authService.signInWithEmailAndPassword(
+        final userModel = await authService.signInWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
