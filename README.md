@@ -66,9 +66,9 @@ Success Criteria:
 **Milestone 2: Event Management**
 
 * Develop event creation features enabling users to:
-1. Create a new hiking trail, and if a user joins the trail, that specific event will be added to their personal event page.
-2. Select trails from the database for events
-3. Set event details (Like - date, time, location, etc,,..) - To personal calendar
+1. User can create a new hiking trail, that specific event will be saved to their personal trail screen.
+2. User can browse all events from the trail database displayed in the homescreen, when the user clicks on "join event" the event will be displayed in the events screen.
+3. User can set event details (Like - date, time, location, etc,,..) - also add the event to the device calendar
 4. Specify participant limits and RSVP deadlines
 
 * Build event participation features allowing users to:
@@ -80,6 +80,7 @@ Success Criteria:
 Success Criteria:
 * Users can create and manage hiking events
 * Users can successfully join events
+* Event details are accurately displayed to all participants
 
 **Milestone 3: Enhanced Features**
 
