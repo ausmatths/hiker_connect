@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/ausmatths/hiker_connect/branch/main/graph/badge.svg)](https://codecov.io/gh/ausmatths/hiker_connect)
+
 ##Hiker Connect App Design
 
 **Team Member: Austin Matthews, Navami Bhat and Shrinkhla Sinha.**
