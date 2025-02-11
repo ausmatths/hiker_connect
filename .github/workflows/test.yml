@@ -1,9 +1,9 @@
 name: Test & Coverage
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]  # Changed to master
   pull_request:
-    branches: [ main ]
+    branches: [ master ]  # Changed to master
 
 jobs:
   test:
@@ -14,7 +14,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.27.3'
+          flutter-version: '3.27.3'  # Updated to your current version
           channel: 'stable'
 
       - name: Install dependencies
@@ -26,5 +26,5 @@ jobs:
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
-          token: ${{ secrets.a03066a3-523d-4e56-a82d-b26f29679557 }}
+          token: ${{ secrets.CODECOV_TOKEN }}  # Use GitHub secret
           file: coverage/lcov.info
