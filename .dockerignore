@@ -1,0 +1,16 @@
+build/
+.dart_tool/
+.git/
+.github/
+.gitignore
+.packages
+.pub/
+coverage/
+.idea/
+.vscode/
+*.iml
+*.log
+.flutter-plugins
+.flutter-plugins-dependencies
+**/ios/Pods/
+**/android/.gradle/

@@ -1,0 +1,24 @@
+services:
+  mobile_dev:
+    build:
+      context: .
+      platforms:
+        - "linux/arm64"
+    volumes:
+      - .:/home/developer/app
+      - flutter-cache:/home/developer/.pub-cache
+      - android-cache:/home/developer/.gradle
+    environment:
+      - ANDROID_SDK_ROOT=/opt/android-sdk
+      - FLUTTER_HOME=/home/developer/flutter
+      - CHROME_EXECUTABLE=/usr/bin/chromium-browser
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    privileged: true
+    user: developer
+    entrypoint: /home/developer/entrypoint.sh
+    command: tail -f /dev/null
+
+volumes:
+  flutter-cache:
+  android-cache:
