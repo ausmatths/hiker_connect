@@ -3,6 +3,7 @@ import 'package:hiker_connect/models/user_model.dart';
 import 'package:hiker_connect/services/firebase_auth.dart';
 import 'package:hiker_connect/screens/profile/edit_profile_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:hiker_connect/services/auth_service_interface.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String? userId;
@@ -18,17 +19,12 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   static const double _avatarRadius = 50.0;
-  static const double _sectionSpacing = 16.0;
-  static const double _sectionTitleSize = 16.0;
-  static const Color _indicatorColor = Colors.deepPurple;
-  late AuthService _authService;
   late Future<UserModel?> _userFuture;
   bool _isCurrentUser = false;
 
   @override
   void initState() {
     super.initState();
-    // Initialize with a placeholder future to prevent null checks
     _userFuture = Future.value(null);
   }
 
@@ -36,25 +32,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     try {
-      // Get AuthService and initialize
-      _authService = Provider.of<AuthService>(context, listen: false);
-      _loadUserData();
+      final authService = context.read<AuthService>();
+      _loadUserData(authService);
     } catch (e) {
       _handleInitializationError(e);
     }
   }
 
-  void _loadUserData() {
+  void _loadUserData(AuthService authService) {
     try {
       if (widget.userId != null) {
-        _userFuture = _authService.getUserData(widget.userId!);
-        _isCurrentUser = widget.userId == _authService.currentUser?.uid;
+        _userFuture = authService.getUserData(widget.userId!);
+        _isCurrentUser = widget.userId == authService.currentUser?.uid;
       } else {
-        _userFuture = _authService.getCurrentUserData();
+        _userFuture = authService.getCurrentUserData();
         _isCurrentUser = true;
       }
 
-      // Force rebuild if the state is mounted
       if (mounted) setState(() {});
     } catch (e) {
       _handleInitializationError(e);
@@ -62,7 +56,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   void _handleInitializationError(Object error) {
-    // Defer showing the error dialog to ensure widget is fully built
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         showDialog(
@@ -74,8 +67,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  // Optionally retry initialization
-                  _loadUserData();
+                  final authService = context.read<AuthService>();
+                  _loadUserData(authService);
                 },
                 child: const Text('Retry'),
               ),
@@ -89,13 +82,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
     });
 
-    // Set a null future to show an error state
     setState(() {
       _userFuture = Future.value(null);
     });
   }
 
   Future<void> _editProfile(UserModel user) async {
+    final authService = context.read<AuthService>();
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -105,15 +98,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (result == true && mounted) {
       setState(() {
-        _loadUserData();
+        _loadUserData(authService);
       });
     }
   }
 
   Future<void> _handleSignOut() async {
     try {
-      await _authService.signOut();
-      // Consider navigating to login screen or showing a success message
+      final authService = context.read<AuthService>();
+      await authService.signOut();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -126,42 +119,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 4,
-      child: Scaffold(
+        length: 4,
+        child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          title: const Text(
-            'Profile',
-            style: TextStyle(color: Colors.black),
-          ),
-          centerTitle: true,
-          actions: [
-            if (_isCurrentUser) ...[
-              IconButton(
-                icon: const Icon(Icons.edit, color: Colors.black),
-                onPressed: () async {
-                  try {
-                    final user = await _userFuture;
-                    if (user != null && mounted) {
-                      await _editProfile(user);
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error loading profile: $e')),
-                      );
-                    }
-                  }
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.logout, color: Colors.black),
-                onPressed: _handleSignOut,
-              ),
-            ],
-          ],
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+        'Profile',
+        style: TextStyle(color: Colors.black),
+    ),
+    centerTitle: true,
+    actions: [
+    if (_isCurrentUser) ...[
+    IconButton(
+    icon: const Icon(Icons.edit, color: Colors.black),
+    onPressed: () async {
+    try {
+    final user = await _userFuture;
+    if (user != null && mounted) {
+    await _editProfile(user);
+    }
+    } catch (e) {
+    if (mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text('Error loading profile: $e')),
+    );
+    }
+    }
+    },
+    ),
+    IconButton(
+    icon: const Icon(Icons.logout, color: Colors.black),
+    onPressed: _handleSignOut,
+    ),
+    ],
+    ],
           bottom: TabBar(
             labelColor: Colors.black,
             unselectedLabelColor: Colors.grey,
@@ -174,68 +167,71 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
         ),
-        body: SafeArea(
-          child: FutureBuilder<UserModel?>(
-            future: _userFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurple),
-                  ),
-                );
-              }
+          body: SafeArea(
+            child: FutureBuilder<UserModel?>(
+              future: _userFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurple),
+                    ),
+                  );
+                }
 
-              if (snapshot.hasError) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.error_outline,
-                        color: Colors.red,
-                        size: 60,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Error loading profile',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        snapshot.error.toString(),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () => setState(() => _loadUserData()),
-                        child: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                );
-              }
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          color: Colors.red,
+                          size: 60,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Error loading profile',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          snapshot.error.toString(),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.grey[600]),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: () {
+                            final authService = context.read<AuthService>();
+                            setState(() => _loadUserData(authService));
+                          },
+                          child: const Text('Retry'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
 
-              final user = snapshot.data;
-              if (user == null) {
-                return const Center(
-                  child: Text('User not found'),
-                );
-              }
+                final user = snapshot.data;
+                if (user == null) {
+                  return const Center(
+                    child: Text('User not found'),
+                  );
+                }
 
-              return TabBarView(
-                children: [
-                  _buildBasicInfoTab(user),
-                  _buildMedicalInfoTab(user),
-                  _buildEmergencyContactsTab(user),
-                  _buildSocialTab(user),
-                ],
-              );
-            },
+                return TabBarView(
+                  children: [
+                    _buildBasicInfoTab(user),
+                    _buildMedicalInfoTab(user),
+                    _buildEmergencyContactsTab(user),
+                    _buildSocialTab(user),
+                  ],
+                );
+              },
+            ),
           ),
         ),
-      ),
     );
   }
 
@@ -245,65 +241,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Column(
-              children: [
-                CircleAvatar(
-                  radius: _avatarRadius,
-                  backgroundColor: Colors.deepPurple.shade50,
-                  backgroundImage: user.photoUrl.isNotEmpty
-                      ? NetworkImage(user.photoUrl)
-                      : null,
-                  onBackgroundImageError: user.photoUrl.isNotEmpty
-                      ? (exception, stackTrace) {
-                    debugPrint('Error loading profile image: $exception');
-                  }
-                      : null,
-                  child: user.photoUrl.isEmpty
-                      ? Text(
-                    user.displayName.isNotEmpty
-                        ? user.displayName[0].toUpperCase()
-                        : '?',
-                    style: TextStyle(
-                      fontSize: 32,
-                      color: Colors.deepPurple,
-                    ),
-                  )
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  user.displayName,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildStatColumn('Followers', user.followers.length),
-                    _buildStatColumn('Following', user.following.length),
-                  ],
-                ),
-              ],
-            ),
+      Center(
+      child: Column(
+      children: [
+        CircleAvatar(
+        radius: _avatarRadius,
+        backgroundColor: Colors.deepPurple.shade50,
+        backgroundImage: user.photoUrl.isNotEmpty
+            ? NetworkImage(user.photoUrl)
+            : null,
+        onBackgroundImageError: user.photoUrl.isNotEmpty
+            ? (exception, stackTrace) {
+          debugPrint('Error loading profile image: $exception');
+        }
+            : null,
+        child: user.photoUrl.isEmpty
+            ? Text(
+          user.displayName.isNotEmpty
+              ? user.displayName[0].toUpperCase()
+              : '?',
+          style: const TextStyle(
+            fontSize: 32,
+            color: Colors.deepPurple,
           ),
-          const SizedBox(height: 24),
+        )
+            : null,
+      ),
+      const SizedBox(height: 16),
+      Text(
+        user.displayName,
+        style: Theme.of(context).textTheme.headlineSmall,
+      ),
+      const SizedBox(height: 16),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildStatColumn('Followers', user.followers.length),
+          _buildStatColumn('Following', user.following.length),
+        ],
+      ),
+      ],
+    ),
+    ),
+    const SizedBox(height: 24),
 
-          _buildSection('Bio', user.bio),
-          _buildSection('Phone', user.phoneNumber),
-          if (user.location != null)
-            _buildSection('Address', user.location!.address),
-          _buildSection('Gender', user.gender),
-          if (user.dateOfBirth != null)
-            _buildSection('Date of Birth',
-                '${user.dateOfBirth!.day}/${user.dateOfBirth!.month}/${user.dateOfBirth!.year}'
-            ),
-          if (user.height != null)
-            _buildSection('Height', '${user.height} cm'),
-          if (user.weight != null)
-            _buildSection('Weight', '${user.weight} kg'),
-          _buildSection('Language', user.preferredLanguage),
-
+    _buildSection('Bio', user.bio),
+    _buildSection('Phone', user.phoneNumber),
+    if (user.location != null)
+    _buildSection('Address', user.location!.address),
+    _buildSection('Gender', user.gender),
+    if (user.dateOfBirth != null)
+    _buildSection(
+    'Date of Birth',
+    '${user.dateOfBirth!.day}/${user.dateOfBirth!.month}/${user.dateOfBirth!.year}',
+    ),
+    if (user.height != null)
+    _buildSection('Height', '${user.height} cm'),
+    if (user.weight != null)
+    _buildSection('Weight', '${user.weight} kg'),
+    _buildSection('Language', user.preferredLanguage),
           if (user.interests.isNotEmpty) ...[
             const SizedBox(height: 16),
             const Text(
@@ -364,21 +360,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           if (medications.isNotEmpty)
             _buildListSection('Medications', medications),
-
-          if (medicalConditions.isEmpty &&
-              medications.isEmpty &&
-              user.bloodType == null &&
-              user.allergies == null &&
-              user.insuranceInfo == null)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: Text(
-                  'No medical information added',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-              ),
-            ),
         ],
       ),
     );

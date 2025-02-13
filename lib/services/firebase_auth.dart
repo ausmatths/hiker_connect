@@ -1,12 +1,15 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:hiker_connect/models/user_model.dart';
 import 'auth_service_interface.dart';
 import 'dart:developer' as developer;
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 
-class AuthService implements IAuthService {
+
+class AuthService extends ChangeNotifier implements IAuthService {
   final FirebaseAuth _auth;
   final FirebaseFirestore _firestore;
   final GoogleSignIn _googleSignIn;
@@ -38,12 +41,27 @@ class AuthService implements IAuthService {
       final doc = await _firestore.collection('users').doc(uid).get();
       return doc.exists ? UserModel.fromFirestore(doc) : null;
     } catch (e, stackTrace) {
-      developer.log(
-        'Failed to get user data',
-        name: 'AuthService',
-        error: e,
-        stackTrace: stackTrace,
-      );
+      // Enhanced error logging to catch App Check errors
+      if (e is FirebaseException && e.code == 'permission-denied') {
+        developer.log(
+          'App Check or Permission Error: Failed to get user data',
+          name: 'AuthService',
+          error: {
+            'error': e,
+            'code': e.code,
+            'message': e.message,
+            'plugin': e.plugin,
+          },
+          stackTrace: stackTrace,
+        );
+      } else {
+        developer.log(
+          'Failed to get user data',
+          name: 'AuthService',
+          error: e,
+          stackTrace: stackTrace,
+        );
+      }
       rethrow;
     }
   }
@@ -171,16 +189,32 @@ class AuthService implements IAuthService {
           createdAt: DateTime.now(),
           lastActive: DateTime.now(),
           isEmailVerified: firebaseUser.emailVerified,
-          photoUrl: firebaseUser.photoURL ?? '', // Ensure empty string for no photo
+          photoUrl: firebaseUser.photoURL ?? '',
           interests: [],
           following: [],
           followers: [],
         );
 
-        await _firestore
-            .collection('users')
-            .doc(firebaseUser.uid)
-            .set(newUser.toMap());
+        try {
+          await _firestore
+              .collection('users')
+              .doc(firebaseUser.uid)
+              .set(newUser.toMap());
+        } catch (e) {
+          if (e is FirebaseException && e.code == 'permission-denied') {
+            developer.log(
+              'App Check or Permission Error: Failed to create user document',
+              name: 'AuthService',
+              error: {
+                'error': e,
+                'code': e.code,
+                'message': e.message,
+                'plugin': e.plugin,
+              },
+            );
+          }
+          rethrow;
+        }
 
         return newUser;
       }
@@ -436,6 +470,7 @@ class AuthService implements IAuthService {
 
       // Then Firebase sign out
       await _auth.signOut();
+      notifyListeners(); // Add notification after successful sign out
       developer.log(
         'Successfully signed out from Firebase',
         name: 'AuthService',
