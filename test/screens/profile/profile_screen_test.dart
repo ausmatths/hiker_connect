@@ -9,6 +9,7 @@ import 'package:hiker_connect/screens/profile/profile_screen.dart';
 import 'package:hiker_connect/services/firebase_auth.dart';
 import 'package:mockito/annotations.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:flutter/foundation.dart';
 
 import 'profile_screen_test.mocks.dart';
 
@@ -16,7 +17,7 @@ import 'profile_screen_test.mocks.dart';
   MockSpec<User>(as: #MockFirebaseUser),
 ])
 
-class MockAuthService extends Mock implements AuthService {
+class MockAuthService with ChangeNotifier implements AuthService {
   UserModel? _mockUserData;
   User? _mockUser;
 
@@ -27,13 +28,79 @@ class MockAuthService extends Mock implements AuthService {
   void updateMockData({UserModel? userData, User? user}) {
     _mockUserData = userData;
     _mockUser = user;
+    notifyListeners();
   }
+
+  @override
+  Stream<User?> get authStateChanges => Stream.value(_mockUser);
+
+  @override
+  User? get currentUser => _mockUser;
 
   @override
   Future<UserModel?> getCurrentUserData() async => _mockUserData;
 
   @override
-  User? get currentUser => _mockUser;
+  Future<UserModel?> getUserData(String uid) async => _mockUserData;
+
+  @override
+  Future<void> resetPassword(String email) async {
+    // Mock implementation
+    return;
+  }
+
+  @override
+  Future<UserModel?> signInWithEmailAndPassword({
+    required String email,
+    required String password,
+  }) async {
+    return _mockUserData;
+  }
+
+  @override
+  Future<UserModel?> signInWithGoogle() async {
+    return _mockUserData;
+  }
+
+  @override
+  Future<UserModel?> signUpWithEmailAndPassword({
+    required String email,
+    required String password,
+    required String displayName,
+  }) async {
+    return _mockUserData;
+  }
+
+  @override
+  Future<void> signOut() async {
+    _mockUser = null;
+    _mockUserData = null;
+    notifyListeners();
+  }
+
+  @override
+  Future<void> updateUserProfile({
+    String? displayName,
+    String? bio,
+    List<String>? interests,
+    String? phoneNumber,
+    UserLocation? location,
+    DateTime? dateOfBirth,
+    String? gender,
+    double? height,
+    double? weight,
+    String? preferredLanguage,
+    String? bloodType,
+    String? allergies,
+    String? insuranceInfo,
+    List<String>? medicalConditions,
+    List<String>? medications,
+    List<EmergencyContact>? emergencyContacts,
+    Map<String, String>? socialLinks,
+  }) async {
+    // Mock implementation
+    return;
+  }
 }
 
 class MockFirestore extends Mock implements FirebaseFirestore {
@@ -91,8 +158,12 @@ void main() {
     return MaterialApp(
       home: MultiProvider(
         providers: [
-          Provider<AuthService>.value(value: mockAuthService),
-          Provider<FirebaseFirestore>.value(value: mockFirestore),
+          ChangeNotifierProvider<AuthService>.value(
+            value: mockAuthService,
+          ),
+          Provider<FirebaseFirestore>.value(
+            value: mockFirestore,
+          ),
         ],
         child: child,
       ),
