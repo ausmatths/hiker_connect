@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hiker_connect/services/firebase_auth.dart';
+import 'package:hiker_connect/utils/async_context_handler.dart';
+import 'package:hiker_connect/utils/logger.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -20,37 +22,36 @@ class _SignUpScreenState extends State<SignUpScreen> {
   String _errorMessage = '';
 
   Future<void> _signUp() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-        _errorMessage = '';
-      });
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
-      try {
-        print('Attempting to sign up with email: ${_emailController.text}');
+    AsyncContextHandler.safeAsyncOperation(
+      context,
+          () async {
+        setState(() {
+          _isLoading = true;
+          _errorMessage = '';
+        });
+
         final userModel = await _authService.signUpWithEmailAndPassword(
           email: _emailController.text.trim(),
           password: _passwordController.text.trim(),
           displayName: _displayNameController.text.trim(),
         );
-        print('Sign up successful: $userModel');
 
-        if (mounted) {
-          Navigator.of(context).pushReplacementNamed('/home');
-        }
-      } catch (e) {
-        print('Sign up error: $e');
+        AppLogger.info('Sign up successful: $userModel');
+      },
+      onSuccess: () {
+        Navigator.of(context).pushReplacementNamed('/home');
+      },
+      onError: (error) {
+        AppLogger.error('Sign up error', stackTrace: StackTrace.current);
         setState(() {
-          _errorMessage = e.toString();
+          _errorMessage = error.toString();
         });
-      } finally {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-        }
-      }
-    }
+      },
+    );
   }
 
   @override

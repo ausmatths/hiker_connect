@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hiker_connect/services/firebase_auth.dart';
 import 'package:hiker_connect/models/user_model.dart';
+import 'package:hiker_connect/utils/async_context_handler.dart';
+import 'package:hiker_connect/utils/logger.dart';
 
 class EditProfileScreen extends StatefulWidget {
   final UserModel user;
@@ -71,21 +74,33 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void initState() {
     super.initState();
-    print('User data in initState: ${widget.user.toMap()}');
+    if (kDebugMode) {
+      print('User data in initState: ${widget.user.toMap()}');
+    }
 
     try {
-      print('Initializing controllers...');
+      if (kDebugMode) {
+        print('Initializing controllers...');
+      }
       _initializeControllers();
-      print('Controllers initialized successfully');
+      if (kDebugMode) {
+        print('Controllers initialized successfully');
+      }
     } catch (e, stackTrace) {
-      print('Error initializing controllers: $e');
-      print('Stack trace: $stackTrace');
+      if (kDebugMode) {
+        print('Error initializing controllers: $e');
+      }
+      if (kDebugMode) {
+        print('Stack trace: $stackTrace');
+      }
     }
   }
 
   void _initializeControllers() {
     try {
-      print('Initializing with user data: ${widget.user.toMap()}');
+      if (kDebugMode) {
+        print('Initializing with user data: ${widget.user.toMap()}');
+      }
 
       // Basic Info with null safety
       _displayNameController = TextEditingController(text: widget.user.displayName);
@@ -119,10 +134,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         );
       }
 
-      print('Controllers initialized successfully');
+      if (kDebugMode) {
+        print('Controllers initialized successfully');
+      }
     } catch (e, stackTrace) {
-      print('Error in _initializeControllers: $e');
-      print('Stack trace: $stackTrace');
+      if (kDebugMode) {
+        print('Error in _initializeControllers: $e');
+      }
+      if (kDebugMode) {
+        print('Stack trace: $stackTrace');
+      }
       // Re-initialize with defaults if there's an error
       _initializeWithDefaults();
     }
@@ -177,54 +198,55 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   Future<void> _saveProfile() async {
-    print('Starting save profile...');
-    print('Form validation state: ${_formKey.currentState?.validate()}');
-
-    try {
-      setState(() {
-        _isLoading = true;
-        _errorMessage = '';
-      });
-
-      await _authService.updateUserProfile(
-        displayName: _displayNameController.text,
-        bio: _bioController.text,
-        interests: _selectedInterests,
-        phoneNumber: _phoneController.text,
-        location: _addressController.text.isEmpty ? null : UserLocation(
-          geoPoint: widget.user.location?.geoPoint ?? const GeoPoint(0, 0),
-          address: _addressController.text,
-        ),
-        dateOfBirth: _selectedDateOfBirth,
-        gender: _selectedGender,
-        height: _heightController.text.isEmpty ? null : double.tryParse(_heightController.text),
-        weight: _weightController.text.isEmpty ? null : double.tryParse(_weightController.text),
-        preferredLanguage: _languageController.text,
-        bloodType: _bloodTypeController.text,
-        allergies: _allergiesController.text,
-        insuranceInfo: _insuranceInfoController.text,
-        medicalConditions: _medicalConditions,
-        medications: _medications,
-        emergencyContacts: _emergencyContacts,
-        socialLinks: Map.fromEntries(
-            _socialLinksControllers.entries
-                .where((e) => e.value.text.isNotEmpty)
-                .map((e) => MapEntry(e.key, e.value.text))
-        ),
-      );
-
-      print('Profile updated successfully');
-      if (mounted) {
-        Navigator.pop(context, true);
-      }
-    } catch (e) {
-      print('Error saving profile: $e');
-      setState(() => _errorMessage = e.toString());
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
     }
+
+    AsyncContextHandler.safeAsyncOperation(
+      context,
+          () async {
+        setState(() {
+          _isLoading = true;
+          _errorMessage = '';
+        });
+
+        await _authService.updateUserProfile(
+          displayName: _displayNameController.text,
+          bio: _bioController.text,
+          interests: _selectedInterests,
+          phoneNumber: _phoneController.text,
+          location: _addressController.text.isEmpty ? null : UserLocation(
+            geoPoint: widget.user.location?.geoPoint ?? const GeoPoint(0, 0),
+            address: _addressController.text,
+          ),
+          dateOfBirth: _selectedDateOfBirth,
+          gender: _selectedGender,
+          height: _heightController.text.isEmpty ? null : double.tryParse(_heightController.text),
+          weight: _weightController.text.isEmpty ? null : double.tryParse(_weightController.text),
+          preferredLanguage: _languageController.text,
+          bloodType: _bloodTypeController.text,
+          allergies: _allergiesController.text,
+          insuranceInfo: _insuranceInfoController.text,
+          medicalConditions: _medicalConditions,
+          medications: _medications,
+          emergencyContacts: _emergencyContacts,
+          socialLinks: Map.fromEntries(
+              _socialLinksControllers.entries
+                  .where((e) => e.value.text.isNotEmpty)
+                  .map((e) => MapEntry(e.key, e.value.text))
+          ),
+        );
+
+        AppLogger.info('Profile updated successfully');
+      },
+      onSuccess: () {
+        Navigator.pop(context, true);
+      },
+      onError: (error) {
+        AppLogger.error('Error saving profile', stackTrace: StackTrace.current);
+        setState(() => _errorMessage = error.toString());
+      },
+    );
   }
 
   @override

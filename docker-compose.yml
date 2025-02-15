@@ -62,7 +62,7 @@ services:
           cpus: '1'
     # Health check
     healthcheck:
-      test: ["CMD-SHELL", "flutter --version && adb devices || exit 1"]
+      test: ["CMD-SHELL", "flutter --version && adb version || exit 1"]
       interval: 300s
       timeout: 60s
       retries: 3

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:hiker_connect/models/trail_data.dart';
 import 'package:hiker_connect/services/databaseservice.dart';
+import 'package:hiker_connect/utils/async_context_handler.dart';
+import 'package:hiker_connect/utils/logger.dart';
 
 class TrailEditScreen extends StatefulWidget {
   final String trailName;
@@ -38,70 +40,113 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
   }
 
   Future<void> _loadTrailData() async {
-    try {
-      final trail = await DatabaseService.instance.getTrailByName(widget.trailName);
-      if (trail != null) {
-        setState(() {
-          _descriptionController.text = trail.description;
-          _noticeController.text = trail.notice;
-          _locationController.text = trail.location;
-          _participantsController.text = trail.participants.toString();
-          _difficulty = trail.difficulty;
-          _images = trail.images;
-          _selectedDate = trail.date;
-          _duration = trail.duration;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('Error loading trail data: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Error loading trail data')),
-      );
-    }
+    AsyncContextHandler.safeAsyncOperation(
+      context,
+          () async {
+        final trail = await DatabaseService.instance.getTrailByName(widget.trailName);
+        if (trail != null) {
+          setState(() {
+            _descriptionController.text = trail.description;
+            _noticeController.text = trail.notice;
+            _locationController.text = trail.location;
+            _participantsController.text = trail.participants.toString();
+            _difficulty = trail.difficulty;
+            _images = trail.images;
+            _selectedDate = trail.date;
+            _duration = trail.duration;
+            _isLoading = false;
+          });
+        }
+      },
+      onError: (error) {
+        AppLogger.error('Error loading trail data', stackTrace: StackTrace.current);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error loading trail data')),
+        );
+        setState(() => _isLoading = false);
+      },
+    );
   }
 
   Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _images.add(pickedFile.path);
-      });
-    }
+    AsyncContextHandler.safeAsyncOperation(
+      context,
+          () async {
+        final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+        if (pickedFile != null) {
+          setState(() {
+            _images.add(pickedFile.path);
+          });
+        }
+      },
+      onError: (error) {
+        AppLogger.error('Error picking image', stackTrace: StackTrace.current);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error selecting image')),
+        );
+      },
+    );
   }
 
   Future<void> _selectDate() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+    AsyncContextHandler.safeAsyncOperation(
+      context,
+          () async {
+        final DateTime? picked = await showDatePicker(
+          context: context,
+          initialDate: _selectedDate,
+          firstDate: DateTime.now(),
+          lastDate: DateTime.now().add(const Duration(days: 365)),
+        );
+        if (picked != null && picked != _selectedDate) {
+          setState(() {
+            _selectedDate = picked;
+          });
+        }
+      },
+      onError: (error) {
+        AppLogger.error('Error selecting date', stackTrace: StackTrace.current);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error selecting date')),
+        );
+      },
     );
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
   }
 
   Future<void> _selectDuration() async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay(
-        hour: _duration.inHours,
-        minute: (_duration.inMinutes % 60),
-      ),
+    AsyncContextHandler.safeAsyncOperation(
+      context,
+          () async {
+        final TimeOfDay? picked = await showTimePicker(
+          context: context,
+          initialTime: TimeOfDay(
+            hour: _duration.inHours,
+            minute: (_duration.inMinutes % 60),
+          ),
+        );
+        if (picked != null) {
+          setState(() {
+            _duration = Duration(hours: picked.hour, minutes: picked.minute);
+          });
+        }
+      },
+      onError: (error) {
+        AppLogger.error('Error selecting duration', stackTrace: StackTrace.current);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error selecting duration')),
+        );
+      },
     );
-    if (picked != null) {
-      setState(() {
-        _duration = Duration(hours: picked.hour, minutes: picked.minute);
-      });
-    }
   }
 
   Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      try {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    AsyncContextHandler.safeAsyncOperation(
+      context,
+          () async {
         final updatedTrail = TrailData(
           name: widget.trailName,
           description: _descriptionController.text,
@@ -116,22 +161,24 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
 
         await DatabaseService.instance.updateTrail(updatedTrail);
 
-        if (mounted) {
-          widget.onUpdate?.call(updatedTrail);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Trail Updated Successfully!')),
-          );
-          Navigator.pop(context);
-        }
-      } catch (e) {
-        print('Error updating trail: $e');
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Error updating trail')),
-          );
-        }
-      }
-    }
+        // Call onUpdate callback if provided
+        widget.onUpdate?.call(updatedTrail);
+
+        AppLogger.info('Trail updated successfully: ${widget.trailName}');
+      },
+      onSuccess: () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Trail Updated Successfully!')),
+        );
+        Navigator.pop(context);
+      },
+      onError: (error) {
+        AppLogger.error('Error updating trail', stackTrace: StackTrace.current);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error updating trail')),
+        );
+      },
+    );
   }
 
   @override

@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../models/trail_data.dart';
+import 'package:hiker_connect/utils/async_context_handler.dart';
+import 'package:hiker_connect/utils/logger.dart';
 
 class EventEditScreen extends StatefulWidget {
   final TrailData event;
@@ -60,6 +62,7 @@ class _EventEditScreenState extends State<EventEditScreen> {
   }
 
   Future<void> _pickImage() async {
+    // Check image limit
     if (_eventImages.length >= 5) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Maximum 5 images allowed')),
@@ -67,27 +70,42 @@ class _EventEditScreenState extends State<EventEditScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
-    try {
-      final pickedFile = await ImagePicker().pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1200,
-        maxHeight: 1200,
-        imageQuality: 85,
-      );
+    AsyncContextHandler.safeAsyncOperation(
+      context,
+          () async {
+        // Set loading state
+        setState(() => _isLoading = true);
 
-      if (pickedFile != null) {
-        setState(() {
-          _eventImages.add(pickedFile.path);
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error picking image: ${e.toString()}')),
-      );
-    } finally {
-      setState(() => _isLoading = false);
-    }
+        // Pick image with specific constraints
+        final pickedFile = await ImagePicker().pickImage(
+          source: ImageSource.gallery,
+          maxWidth: 1200,
+          maxHeight: 1200,
+          imageQuality: 85,
+        );
+
+        // Add image if picked
+        if (pickedFile != null) {
+          setState(() {
+            _eventImages.add(pickedFile.path);
+          });
+        }
+      },
+      onSuccess: () {
+        // Ensure loading state is reset
+        setState(() => _isLoading = false);
+      },
+      onError: (error) {
+        // Log and show error
+        AppLogger.error('Error picking image', stackTrace: StackTrace.current);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking image: $error')),
+        );
+
+        // Reset loading state
+        setState(() => _isLoading = false);
+      },
+    );
   }
 
   void _submitForm() {
@@ -110,18 +128,29 @@ class _EventEditScreenState extends State<EventEditScreen> {
   }
 
   Future<void> _selectDate() async {
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: _eventDate,
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2101),
-    );
+    AsyncContextHandler.safeAsyncOperation(
+      context,
+          () async {
+        final DateTime? picked = await showDatePicker(
+          context: context,
+          initialDate: _eventDate,
+          firstDate: DateTime.now(),
+          lastDate: DateTime(2101),
+        );
 
-    if (picked != null && picked != _eventDate) {
-      setState(() {
-        _eventDate = picked;
-      });
-    }
+        if (picked != null && picked != _eventDate) {
+          setState(() {
+            _eventDate = picked;
+          });
+        }
+      },
+      onError: (error) {
+        AppLogger.error('Error selecting date', stackTrace: StackTrace.current);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error selecting date: $error')),
+        );
+      },
+    );
   }
 
   @override

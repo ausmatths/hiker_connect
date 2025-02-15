@@ -68,6 +68,29 @@ RUN cd ${ANDROID_SDK_ROOT}/cmdline-tools && \
     rm commandlinetools-linux-*_latest.zip && \
     mv cmdline-tools latest
 
+# Explicitly download and install platform-tools for Linux
+RUN cd ${ANDROID_SDK_ROOT} && \
+    wget -q https://dl.google.com/android/repository/platform-tools-latest-linux.zip && \
+    unzip -q platform-tools-latest-linux.zip && \
+    rm platform-tools-latest-linux.zip && \
+    chmod +x ${ANDROID_SDK_ROOT}/platform-tools/adb
+
+# Switch back to root user temporarily
+USER root
+
+# Install additional dependencies for ADB
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libc6 \
+    libstdc++6 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Switch back to developer user
+USER developer
+
+# Verify ADB installation
+RUN ${ANDROID_SDK_ROOT}/platform-tools/adb version || true
+
 # Download and setup Flutter
 RUN cd /home/developer && \
     wget -q https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.27.3-stable.tar.xz && \

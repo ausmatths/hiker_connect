@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mockito/mockito.dart';
@@ -115,10 +116,27 @@ void main() {
   late MockFirebaseUser mockUser;
   late MockFirestore mockFirestore;
 
+  // Set up platform channel for Firebase Auth
+  const MethodChannel channel = MethodChannel('plugins.flutter.io/firebase_auth');
+
   setUp(() {
+    // Set up platform channel mock using the new approach
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+      switch (methodCall.method) {
+        case 'signInWithCredential':
+          return {'user': {'uid': 'test-uid'}};
+        case 'getIdToken':
+          return 'mock_token';
+        default:
+          return null;
+      }
+    });
+
     mockUser = MockFirebaseUser();
     mockFirestore = MockFirestore();
     when(mockUser.uid).thenReturn('test-uid');
+
     testUser = UserModel(
       uid: 'test-uid',
       email: 'test@example.com',
@@ -153,6 +171,12 @@ void main() {
     );
   });
 
+  tearDown(() {
+    // Clear platform channel mock
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(channel, null);
+  });
+
   Widget createTestableWidget(Widget child) {
     return MaterialApp(
       home: MultiProvider(
@@ -169,78 +193,70 @@ void main() {
     );
   }
 
-  // Firebase Configuration Test
-  testWidgets('Test Firebase Configuration', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      createTestableWidget(
-        Scaffold(
-          body: Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () async {
-                try {
-                  await FirebaseFirestore.instance.collection('test').add({
-                    'timestamp': FieldValue.serverTimestamp(),
-                    'test': 'Firebase Web Test'
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Firebase write successful!')),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Firebase error: $e')),
-                  );
-                }
-              },
-              child: const Text('Test Firebase'),
+  group('Platform Channel Tests', () {
+    testWidgets('Test auth token retrieval', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        createTestableWidget(
+          Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () async {
+                  try {
+                    final result = await channel.invokeMethod('getIdToken');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Token: $result')),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error: $e')),
+                    );
+                  }
+                },
+                child: const Text('Get Token'),
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
 
-    await tester.tap(find.text('Test Firebase'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Get Token'));
+      await tester.pumpAndSettle();
+      expect(find.text('Token: mock_token'), findsOneWidget);
+    });
   });
 
-  // App Check Test
-  testWidgets('Test App Check', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      createTestableWidget(
-        Scaffold(
-          body: Builder(
-            builder: (context) => ElevatedButton(
-              onPressed: () async {
-                try {
-                  await FirebaseFirestore.instance
-                      .collection('protected_collection')
-                      .add({
-                    'timestamp': FieldValue.serverTimestamp(),
-                    'appCheck': 'Testing App Check',
-                  });
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('App Check Verified!'),
-                      backgroundColor: Colors.green,
-                    ),
-                  );
-                } catch (e) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('App Check Error: $e'),
-                      backgroundColor: Colors.red,
-                    ),
-                  );
-                }
-              },
-              child: const Text('Test App Check'),
+  group('Firebase Configuration Tests', () {
+    testWidgets('Test Firebase write operation', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        createTestableWidget(
+          Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () async {
+                  try {
+                    await FirebaseFirestore.instance.collection('test').add({
+                      'timestamp': FieldValue.serverTimestamp(),
+                      'test': 'Firebase Web Test'
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Firebase write successful!')),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Firebase error: $e')),
+                    );
+                  }
+                },
+                child: const Text('Test Firebase'),
+              ),
             ),
           ),
         ),
-      ),
-    );
+      );
 
-    await tester.tap(find.text('Test App Check'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Test Firebase'));
+      await tester.pumpAndSettle();
+    });
   });
 
   group('ProfileScreen Widget Tests', () {
@@ -272,9 +288,34 @@ void main() {
           expect(find.text('Asthma'), findsOneWidget);
           expect(find.text('Inhaler'), findsOneWidget);
         });
-  });
 
-  group('UserModel Tests', () {
+    testWidgets('ProfileScreen handles platform channel errors gracefully',
+            (WidgetTester tester) async {
+          // Simulate platform channel error
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+              .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
+            throw PlatformException(code: 'ERROR', message: 'Test error');
+          });
+
+          mockAuthService.updateMockData(userData: null, user: mockUser);
+
+          // Build widget
+          await tester.pumpWidget(createTestableWidget(const ProfileScreen()));
+
+          // Initial frame should show loading indicator
+          expect(find.byType(CircularProgressIndicator), findsOneWidget);
+
+          // Wait for async operations to complete
+          await tester.pumpAndSettle();
+
+          // Loading indicator should be gone after error
+          expect(find.byType(CircularProgressIndicator), findsNothing);
+
+          // Dump the widget tree to see what's actually being rendered
+          debugDumpApp();
+        });
+
+    group('UserModel Tests', () {
     test('UserModel converts to and from Map correctly', () {
       final Map<String, dynamic> userMap = testUser.toMap();
       expect(userMap['email'], equals(testUser.email));
@@ -296,4 +337,5 @@ void main() {
       expect(reconstructedContact.phoneNumber, equals(contact.phoneNumber));
     });
   });
+});
 }

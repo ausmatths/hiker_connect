@@ -7,6 +7,8 @@ import 'dart:core';
 
 import '../../models/trail_data.dart';
 import '../../services/databaseservice.dart';
+import 'package:hiker_connect/utils/async_context_handler.dart';
+import 'package:hiker_connect/utils/logger.dart';
 
 class EventFormScreen extends StatefulWidget {
   const EventFormScreen({super.key});
@@ -30,67 +32,114 @@ class _EventFormScreenState extends State<EventFormScreen> {
   int _selectedMinutes = 0;
 
   Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _eventImages.add(File(pickedFile.path));
-      });
-    }
+    AsyncContextHandler.safeAsyncOperation(
+      context,
+          () async {
+        final pickedFile = await ImagePicker().pickImage(
+          source: ImageSource.gallery,
+          maxWidth: 1200,
+          maxHeight: 1200,
+          imageQuality: 85,
+        );
+
+        if (pickedFile != null) {
+          setState(() {
+            _eventImages.add(File(pickedFile.path));
+          });
+        }
+        return Future.value();
+      },
+      onError: (error) {
+        AppLogger.error('Error picking image', stackTrace: StackTrace.current);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error selecting image: $error')),
+        );
+        return Future.value();
+      },
+    );
   }
 
   Future<void> _submitForm() async {
-    if (_formKey.currentState!.validate()) {
-      if (_eventDate == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select an trail date')),
+    AsyncContextHandler.safeAsyncOperation(
+      context,
+          () async {
+        if (!_formKey.currentState!.validate()) {
+          return Future.value();
+        }
+
+        if (_eventDate == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please select a trail date')),
+          );
+          return Future.value();
+        }
+
+        if (_selectedHours == 0 && _selectedMinutes == 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Please select a valid trail duration')),
+          );
+          return Future.value();
+        }
+
+        final newEvent = TrailData(
+          name: _nameController.text,
+          description: _descriptionController.text,
+          difficulty: _difficulty,
+          notice: _noticeController.text,
+          images: _eventImages.map((image) => image.path).toList(),
+          date: _eventDate ?? DateTime.now(),
+          location: _locationController.text,
+          participants: int.tryParse(_participantsController.text) ?? 0,
+          duration: Duration(hours: _selectedHours, minutes: _selectedMinutes),
         );
-        return;
-      }
 
-      if (_selectedHours == 0 && _selectedMinutes == 0) {
+        // Use DatabaseService to insert the event
+        await dbService.insertTrails(newEvent);
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Please select a valid trail duration')),
+          const SnackBar(content: Text('Event saved successfully')),
         );
-        return;
-      }
 
-      final newEvent = TrailData(
-        name: _nameController.text ,
-        description: _descriptionController.text,
-        difficulty: _difficulty,
-        notice: _noticeController.text,
-        images: _eventImages.map((image) => image.path).toList(),
-        date: _eventDate ?? DateTime.now(),
-        location: _locationController.text,
-        participants: int.tryParse(_participantsController.text) ?? 0,
-        duration: Duration(hours: _selectedHours, minutes: _selectedMinutes),
-      );
-
-      // Use DatabaseService to insert the event
-      await dbService.insertTrails(newEvent);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Event saved successfully')),
-      );
-
-      Navigator.pop(context, newEvent);
-    }
+        Navigator.pop(context, newEvent);
+        return Future.value();
+      },
+      onError: (error) {
+        AppLogger.error('Error submitting trail', stackTrace: StackTrace.current);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error saving trail: $error')),
+        );
+        return Future.value();
+      },
+    );
   }
 
   Future<void> _selectDate() async {
-    final DateTime today = DateTime.now();
-    final DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: today.add(const Duration(days: 1)), // Default to tomorrow
-      firstDate: today.add(const Duration(days: 1)), // Restrict past dates
-      lastDate: DateTime(2101),
-    );
+    AsyncContextHandler.safeAsyncOperation(
+      context,
+          () async {
+        final DateTime today = DateTime.now();
+        final DateTime? picked = await showDatePicker(
+          context: context,
+          initialDate: today.add(const Duration(days: 1)), // Default to tomorrow
+          firstDate: today.add(const Duration(days: 1)), // Restrict past dates
+          lastDate: DateTime(2101),
+        );
 
-    if (picked != null && picked != _eventDate) {
-      setState(() {
-        _eventDate = picked;
-      });
-    }
+        if (picked != null && picked != _eventDate) {
+          setState(() {
+            _eventDate = picked;
+          });
+        }
+        return Future.value();
+      },
+      onError: (error) {
+        AppLogger.error('Error selecting date', stackTrace: StackTrace.current);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error selecting date: $error')),
+        );
+        return Future.value();
+      },
+    );
   }
 
   @override
@@ -247,5 +296,15 @@ class _EventFormScreenState extends State<EventFormScreen> {
         ),
       ),
     );
+  }
+  @override
+  void dispose() {
+    // Dispose all text editing controllers
+    _nameController.dispose();
+    _descriptionController.dispose();
+    _noticeController.dispose();
+    _locationController.dispose();
+    _participantsController.dispose();
+    super.dispose();
   }
 }

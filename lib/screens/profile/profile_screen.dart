@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hiker_connect/models/user_model.dart';
 import 'package:hiker_connect/services/firebase_auth.dart';
 import 'package:hiker_connect/screens/profile/edit_profile_screen.dart';
+import 'package:hiker_connect/utils/async_context_handler.dart';
+import 'package:hiker_connect/utils/logger.dart';
 import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -30,15 +32,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    try {
-      final authService = context.read<AuthService>();
-      _loadUserData(authService);
-    } catch (e) {
-      _handleInitializationError(e);
-    }
+    AsyncContextHandler.safeAsyncOperation(
+      context,
+          () async {
+        final authService = context.read<AuthService>();
+        await _loadUserData(authService);
+      },
+      onError: (error) {
+        AppLogger.error('Error loading user dependencies', stackTrace: StackTrace.current);
+        _handleInitializationError(error);
+      },
+    );
   }
 
-  void _loadUserData(AuthService authService) {
+  Future<void> _loadUserData(AuthService authService) async {
     try {
       if (widget.userId != null) {
         _userFuture = authService.getUserData(widget.userId!);
@@ -48,16 +55,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
         _isCurrentUser = true;
       }
 
-      if (mounted) setState(() {});
+      if (mounted) {
+        setState(() {});
+      }
     } catch (e) {
-      _handleInitializationError(e);
+      await _handleInitializationError(e);
     }
   }
 
-  void _handleInitializationError(Object error) {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        showDialog(
+  Future<void> _handleInitializationError(Object error) async {
+    await AsyncContextHandler.safeAsyncOperation(
+      context,
+          () async {
+        await showDialog(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Initialization Error'),
@@ -78,8 +88,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
         );
-      }
-    });
+      },
+      onError: (dialogError) {
+        AppLogger.error('Error showing initialization error dialog',
+            stackTrace: StackTrace.current
+        );
+      },
+    );
 
     setState(() {
       _userFuture = Future.value(null);
@@ -87,73 +102,103 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _editProfile(UserModel user) async {
-    final authService = context.read<AuthService>();
-    final result = await Navigator.push(
+    await AsyncContextHandler.safeAsyncOperation(
       context,
-      MaterialPageRoute(
-        builder: (context) => EditProfileScreen(user: user),
-      ),
-    );
+          () async {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EditProfileScreen(user: user),
+          ),
+        );
 
-    if (result == true && mounted) {
-      setState(() {
-        _loadUserData(authService);
-      });
-    }
+        if (result == true) {
+          final authService = context.read<AuthService>();
+          setState(() {
+            _loadUserData(authService);
+          });
+        }
+        return Future.value();
+      },
+      onError: (error) {
+        AppLogger.error('Error editing profile', stackTrace: StackTrace.current);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading profile: $error')),
+        );
+        return Future.value();
+      },
+    );
   }
 
   Future<void> _handleSignOut() async {
     try {
-      final authService = context.read<AuthService>();
-      await authService.signOut();
+      await AsyncContextHandler.safeAsyncOperation(
+        context,
+            () async {
+          final authService = context.read<AuthService>();
+          await authService.signOut();
+          return Future.value();
+        },
+        onError: (error) {
+          AppLogger.error('Error signing out', stackTrace: StackTrace.current);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error signing out: $error')),
+          );
+          return Future.value();
+        },
+      );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error signing out: $e')),
-        );
-      }
+      AppLogger.error('Unexpected error during sign out', stackTrace: StackTrace.current);
+      return Future.value();
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-        length: 4,
-        child: Scaffold(
+      length: 4,
+      child: Scaffold(
         backgroundColor: Colors.white,
         appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: const Text(
-        'Profile',
-        style: TextStyle(color: Colors.black),
-    ),
-    centerTitle: true,
-    actions: [
-    if (_isCurrentUser) ...[
-    IconButton(
-    icon: const Icon(Icons.edit, color: Colors.black),
-    onPressed: () async {
-    try {
-    final user = await _userFuture;
-    if (user != null && mounted) {
-    await _editProfile(user);
-    }
-    } catch (e) {
-    if (mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text('Error loading profile: $e')),
-    );
-    }
-    }
-    },
-    ),
-    IconButton(
-    icon: const Icon(Icons.logout, color: Colors.black),
-    onPressed: _handleSignOut,
-    ),
-    ],
-    ],
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: const Text(
+            'Profile',
+            style: TextStyle(color: Colors.black),
+          ),
+          centerTitle: true,
+          actions: [
+            if (_isCurrentUser) ...[
+              IconButton(
+                icon: const Icon(Icons.edit, color: Colors.black),
+                onPressed: () async {
+                  await AsyncContextHandler.safeAsyncOperation(
+                    context,
+                        () async {
+                      final user = await _userFuture;
+                      if (user != null) {
+                        await _editProfile(user);
+                      }
+                      return Future.value();
+                    },
+                    onError: (error) {
+                      AppLogger.error('Error loading profile for editing',
+                          stackTrace: StackTrace.current
+                      );
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error loading profile: $error')),
+                      );
+                      return Future.value();
+                    },
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.logout, color: Colors.black),
+                onPressed: _handleSignOut,
+              ),
+            ],
+          ],
           bottom: TabBar(
             labelColor: Colors.black,
             unselectedLabelColor: Colors.grey,
@@ -166,71 +211,86 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
         ),
-          body: SafeArea(
-            child: FutureBuilder<UserModel?>(
-              future: _userFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurple),
-                    ),
-                  );
-                }
-
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.error_outline,
-                          color: Colors.red,
-                          size: 60,
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Error loading profile',
-                          style: Theme.of(context).textTheme.titleLarge,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          snapshot.error.toString(),
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: () {
-                            final authService = context.read<AuthService>();
-                            setState(() => _loadUserData(authService));
-                          },
-                          child: const Text('Retry'),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-
-                final user = snapshot.data;
-                if (user == null) {
-                  return const Center(
-                    child: Text('User not found'),
-                  );
-                }
-
-                return TabBarView(
-                  children: [
-                    _buildBasicInfoTab(user),
-                    _buildMedicalInfoTab(user),
-                    _buildEmergencyContactsTab(user),
-                    _buildSocialTab(user),
-                  ],
+        body: SafeArea(
+          child: FutureBuilder<UserModel?>(
+            future: _userFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurple),
+                  ),
                 );
-              },
-            ),
+              }
+
+              if (snapshot.hasError) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.error_outline,
+                        color: Colors.red,
+                        size: 60,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Error loading profile',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        snapshot.error.toString(),
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey[600]),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () async {
+                          await AsyncContextHandler.safeAsyncOperation(
+                            context,
+                                () async {
+                              final authService = context.read<AuthService>();
+                              setState(() => _loadUserData(authService));
+                              return Future.value();
+                            },
+                            onError: (error) {
+                              AppLogger.error('Error reloading user data',
+                                  stackTrace: StackTrace.current
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Failed to reload user data: $error')),
+                              );
+                              return Future.value();
+                            },
+                          );
+                        },
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              final user = snapshot.data;
+              if (user == null) {
+                return const Center(
+                  child: Text('User not found'),
+                );
+              }
+
+              return TabBarView(
+                children: [
+                  _buildBasicInfoTab(user),
+                  _buildMedicalInfoTab(user),
+                  _buildEmergencyContactsTab(user),
+                  _buildSocialTab(user),
+                ],
+              );
+            },
           ),
         ),
+      ),
     );
   }
 
