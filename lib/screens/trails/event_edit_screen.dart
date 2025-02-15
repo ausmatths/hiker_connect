@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import '../../models/trail_data.dart';
 
@@ -11,11 +10,11 @@ class EventEditScreen extends StatefulWidget {
   final VoidCallback onDelete;
 
   const EventEditScreen({
-    Key? key,
+    super.key,
     required this.event,
     required this.onUpdate,
     required this.onDelete,
-  }) : super(key: key);
+  });
 
   @override
   _EventEditScreenState createState() => _EventEditScreenState();
@@ -343,7 +342,7 @@ class _EventEditScreenState extends State<EventEditScreen> {
                               ),
                             ),
                           ],
-                        )).toList(),
+                        )),
                         if (_eventImages.length < 5)
                           GestureDetector(
                             onTap: _isLoading ? null : _pickImage,

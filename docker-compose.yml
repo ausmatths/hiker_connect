@@ -1,24 +1,101 @@
 services:
   mobile_dev:
+    container_name: flutter_dev
+    platform: linux/amd64
     build:
       context: .
-      platforms:
-        - "linux/arm64"
+      args:
+        - FLUTTER_VERSION=3.27.3
     volumes:
+      # Project files
       - .:/home/developer/app
+      # Cache volumes
       - flutter-cache:/home/developer/.pub-cache
       - android-cache:/home/developer/.gradle
+      # Android settings and ADB
+      - ${HOME}/.android:/home/developer/.android
+      - ${HOME}/Library/Android/sdk:/opt/android-sdk:cached
+      # Development tools
+      - ${HOME}/.gitconfig:/home/developer/.gitconfig:ro
+      - ${HOME}/.ssh:/home/developer/.ssh:ro
+      # VS Code settings
+      - ${HOME}/.vscode-server:/home/developer/.vscode-server
+      # ADB socket
+      - /tmp/adb-5037:/tmp/adb-5037
+      # USB devices for physical device support
+      - /dev/bus/usb:/dev/bus/usb
     environment:
+      # Android and Flutter settings
       - ANDROID_SDK_ROOT=/opt/android-sdk
       - FLUTTER_HOME=/home/developer/flutter
-      - CHROME_EXECUTABLE=/usr/bin/chromium-browser
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - FLUTTER_ROOT=/home/developer/flutter
+      - ANDROID_HOME=/opt/android-sdk
+      - ANDROID_AVD_HOME=/home/developer/.android/avd
+      # ADB settings
+      - ADB_SERVER_SOCKET=unix:/tmp/adb-5037
+      - PATH=/home/developer/flutter/bin:/opt/android-sdk/platform-tools:/opt/android-sdk/cmdline-tools/latest/bin:$PATH
+      # Development settings
+      - FLUTTER_DEBUG=true
+      - FLUTTER_ANALYTICS_ENABLED=false
+      # Locale settings
+      - LANG=en_US.UTF-8
+      - LANGUAGE=en_US:en
+      - LC_ALL=en_US.UTF-8
+      # Java settings
+      - JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
+    network_mode: host
     privileged: true
     user: developer
     entrypoint: /home/developer/entrypoint.sh
     command: tail -f /dev/null
+    # Development settings
+    tty: true
+    stdin_open: true
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2'
+        reservations:
+          memory: 2G
+          cpus: '1'
+    # Health check
+    healthcheck:
+      test: ["CMD-SHELL", "flutter --version && adb devices || exit 1"]
+      interval: 300s
+      timeout: 60s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # Security and performance options
+    security_opt:
+      - seccomp:unconfined
+      - apparmor:unconfined
+    shm_size: '2gb'
+    ipc: host
+    # Device access
+    devices:
+      - /dev/kvm:/dev/kvm
+      - /dev/bus/usb:/dev/bus/usb
+    # Capabilities
+    cap_add:
+      - ALL
 
 volumes:
   flutter-cache:
+    name: flutter-cache-${COMPOSE_PROJECT_NAME:-default}
+    driver: local
+    driver_opts:
+      type: none
+      device: ${HOME}/.pub-cache
+      o: bind
   android-cache:
+    name: android-cache-${COMPOSE_PROJECT_NAME:-default}
+    driver: local
+    driver_opts:
+      type: none
+      device: ${HOME}/.gradle
+      o: bind

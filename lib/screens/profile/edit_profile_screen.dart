@@ -169,7 +169,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _insuranceInfoController.dispose();
 
     // Dispose social links controllers
-    _socialLinksControllers.values.forEach((controller) => controller.dispose());
+    for (var controller in _socialLinksControllers.values) {
+      controller.dispose();
+    }
 
     super.dispose();
   }

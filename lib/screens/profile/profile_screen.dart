@@ -3,7 +3,6 @@ import 'package:hiker_connect/models/user_model.dart';
 import 'package:hiker_connect/services/firebase_auth.dart';
 import 'package:hiker_connect/screens/profile/edit_profile_screen.dart';
 import 'package:provider/provider.dart';
-import 'package:hiker_connect/services/auth_service_interface.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String? userId;

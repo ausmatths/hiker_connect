@@ -1,109 +1,146 @@
-FROM --platform=linux/arm64 ubuntu:20.04
+FROM --platform=linux/amd64 ubuntu:20.04
 
-# Avoid timezone prompt
-ENV TZ=UTC
-RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+# Set environment variables
+ENV TZ="UTC" \
+    DEBIAN_FRONTEND="noninteractive" \
+    LANG="en_US.UTF-8" \
+    LANGUAGE="en_US:en" \
+    LC_ALL="en_US.UTF-8" \
+    ANDROID_SDK_ROOT="/opt/android-sdk" \
+    ANDROID_HOME="/opt/android-sdk" \
+    FLUTTER_HOME="/home/developer/flutter" \
+    PATH="/home/developer/flutter/bin:/opt/android-sdk/platform-tools:/opt/android-sdk/cmdline-tools/latest/bin:${PATH}"
 
-# Install necessary dependencies
-RUN apt-get update && apt-get install -y \
+# Set timezone and install dependencies
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
     curl \
     git \
     unzip \
     xz-utils \
     zip \
     sudo \
-    openjdk-11-jdk \
     wget \
     cmake \
     ninja-build \
     pkg-config \
-    ruby-full \
-    ruby-bundler \
     libstdc++6 \
     libpulse0 \
     libglu1-mesa \
     ca-certificates \
     clang \
     libgtk-3-dev \
-    liblzma-dev \
-    chromium-browser \
-    netcat \
-    && rm -rf /var/lib/apt/lists/*
+    usbutils \
+    socat \
+    locales \
+    fonts-liberation \
+    gpg \
+    gpg-agent \
+    && rm -rf /var/lib/apt/lists/* \
+    && locale-gen en_US.UTF-8
 
-# Create a non-root user
-RUN useradd -ms /bin/bash developer
-RUN adduser developer sudo
-RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+# Install JDK 17
+RUN wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | apt-key add - && \
+    echo "deb https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends temurin-17-jdk && \
+    rm -rf /var/lib/apt/lists/*
 
-# Configure git
-RUN git config --system http.postBuffer 524288000
-RUN git config --system http.maxRequestBuffer 524288000
-RUN git config --system core.compression 9
-RUN git config --system https.maxRequestBuffer 524288000
+# Set JAVA_HOME
+ENV JAVA_HOME="/usr/lib/jvm/temurin-17-jdk-amd64"
+ENV PATH="$JAVA_HOME/bin:$PATH"
 
-# Install Android SDK
-ENV ANDROID_SDK_ROOT /opt/android-sdk
-ENV ANDROID_HOME /opt/android-sdk
-ENV PATH ${PATH}:${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin:${ANDROID_SDK_ROOT}/platform-tools
-
-# Download SDK tools
-RUN mkdir -p ${ANDROID_SDK_ROOT} && \
-    cd ${ANDROID_SDK_ROOT} && \
-    wget -q https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip && \
-    unzip -q commandlinetools-linux-*_latest.zip && \
-    rm commandlinetools-linux-*_latest.zip && \
-    mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools/latest && \
-    mv ${ANDROID_SDK_ROOT}/cmdline-tools/bin ${ANDROID_SDK_ROOT}/cmdline-tools/latest/ && \
-    mv ${ANDROID_SDK_ROOT}/cmdline-tools/lib ${ANDROID_SDK_ROOT}/cmdline-tools/latest/
-
-# Set correct permissions
-RUN chown -R developer:developer ${ANDROID_SDK_ROOT}
-RUN chmod -R a+x ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/*
+# Create a non-root user and setup permissions
+RUN useradd -ms /bin/bash developer && \
+    adduser developer sudo && \
+    echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
+    mkdir -p ${ANDROID_SDK_ROOT}/cmdline-tools && \
+    chown -R developer:developer /opt/android-sdk
 
 # Switch to developer user
 USER developer
 
-# Set up Chrome for web development
-ENV CHROME_EXECUTABLE=/usr/bin/chromium-browser
+# Download and setup Android SDK
+RUN cd ${ANDROID_SDK_ROOT}/cmdline-tools && \
+    wget -q https://dl.google.com/android/repository/commandlinetools-linux-8512546_latest.zip && \
+    unzip -q commandlinetools-linux-*_latest.zip && \
+    rm commandlinetools-linux-*_latest.zip && \
+    mv cmdline-tools latest
 
-# Accept licenses and install Android SDK packages
-RUN yes | sdkmanager --licenses && \
-    sdkmanager --install \
-    "platforms;android-33" \
+# Download and setup Flutter
+RUN cd /home/developer && \
+    wget -q https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.27.3-stable.tar.xz && \
+    tar xf flutter_linux_3.27.3-stable.tar.xz && \
+    rm flutter_linux_3.27.3-stable.tar.xz
+
+# Install Android platform tools and accept licenses
+RUN yes | JAVA_HOME=${JAVA_HOME} ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses > /dev/null 2>&1 || true && \
+    JAVA_HOME=${JAVA_HOME} ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager \
+    "platforms;android-34" \
+    "build-tools;34.0.0" \
+    "platform-tools" \
     "build-tools;33.0.0" \
     "extras;android;m2repository" \
-    "extras;google;m2repository"
+    "extras;google;m2repository" \
+    "system-images;android-34;google_apis;x86_64"
 
-# Set up Flutter
-ENV FLUTTER_HOME=/home/developer/flutter
-ENV PATH=$FLUTTER_HOME/bin:$PATH
+# Configure Flutter
+RUN flutter config --no-analytics && \
+    flutter config --enable-android && \
+    flutter precache && \
+    git config --global --add safe.directory ${FLUTTER_HOME}
 
-# Install Flutter
-RUN git clone --branch stable https://github.com/flutter/flutter.git ${FLUTTER_HOME}
-
-# Set Flutter permissions
-RUN chown -R developer:developer ${FLUTTER_HOME}
-
-# Initialize Flutter
-RUN cd ${FLUTTER_HOME} && \
-    flutter channel stable && \
-    flutter upgrade && \
-    flutter config --no-analytics && \
-    flutter config --enable-android --enable-ios && \
-    flutter config --enable-linux-desktop && \
-    flutter precache
-
-# Create startup script
+# Create entrypoint script
 RUN echo '#!/bin/bash\n\
-export ADB_SERVER_SOCKET=tcp:host.docker.internal:5037\n\
+\n\
+# Setup environment\n\
+export JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64\n\
+export PATH=$JAVA_HOME/bin:$PATH\n\
+\n\
+# Verify environment\n\
+for var in ANDROID_SDK_ROOT ANDROID_HOME FLUTTER_HOME JAVA_HOME; do\n\
+    if [ -z "${!var}" ]; then\n\
+        echo "Error: $var is not set"\n\
+        exit 1\n\
+    fi\n\
+done\n\
+\n\
+# Wait for ADB socket\n\
+for i in {1..30}; do\n\
+    if [ -S /tmp/adb-5037 ]; then\n\
+        echo "ADB socket found"\n\
+        break\n\
+    fi\n\
+    echo "Waiting for ADB socket... ($i/30)"\n\
+    sleep 1\n\
+done\n\
+\n\
+# Configure ADB\n\
+if [ -S /tmp/adb-5037 ]; then\n\
+    export ADB_SERVER_SOCKET=unix:/tmp/adb-5037\n\
+    echo "Using ADB socket at /tmp/adb-5037"\n\
+fi\n\
+\n\
+# Print environment information\n\
+echo "Environment:"\n\
+echo "  Flutter: ${FLUTTER_HOME}"\n\
+echo "  Android SDK: ${ANDROID_SDK_ROOT}"\n\
+echo "  Java Home: ${JAVA_HOME}"\n\
+\n\
+# Print versions\n\
+echo "Versions:"\n\
+flutter --version\n\
+dart --version\n\
+java -version\n\
+\n\
+# Execute the provided command\n\
 exec "$@"' > /home/developer/entrypoint.sh && \
     chmod +x /home/developer/entrypoint.sh
 
-# Set up working directory
+# Set working directory
 WORKDIR /home/developer/app
 
-# Copy the Flutter project files
-COPY --chown=developer:developer . .
-
-# Get Flutter dependencies
-RUN flutter pub get
+# Set entrypoint and default command
+ENTRYPOINT ["/home/developer/entrypoint.sh"]
+CMD ["tail", "-f", "/dev/null"]

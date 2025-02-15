@@ -9,7 +9,6 @@ import 'package:hiker_connect/screens/profile/profile_screen.dart';
 import 'package:hiker_connect/services/firebase_auth.dart';
 import 'package:mockito/annotations.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
-import 'package:flutter/foundation.dart';
 
 import 'profile_screen_test.mocks.dart';
 
