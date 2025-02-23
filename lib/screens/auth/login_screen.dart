@@ -3,8 +3,6 @@ import 'package:hiker_connect/services/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'dart:developer' as developer;
 
-import '../../services/auth_service_interface.dart';
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -38,8 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       setState(() => _isChecking = true);
-
-      final authService = Provider.of<AuthService>(context, listen: false);
+      final authService = context.read<AuthService>();
       final currentUser = authService.currentUser;
 
       if (currentUser != null && mounted) {
@@ -59,7 +56,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _resetPassword() async {
-    // Use context.read to get AuthService safely
     final authService = context.read<AuthService>();
 
     if (_emailController.text.isEmpty) {
@@ -87,7 +83,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _signInWithGoogle() async {
-    // Use context.read to get AuthService safely
     final authService = context.read<AuthService>();
 
     setState(() {
@@ -110,8 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _login() async {
-    // Use context.read to get IAuthService
-    final authService = context.read<IAuthService>();
+    final authService = context.read<AuthService>();  // Changed from IAuthService
 
     if (_formKey.currentState!.validate()) {
       setState(() {

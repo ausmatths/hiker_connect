@@ -7,8 +7,8 @@ class HikerAuthProvider extends InheritedWidget {
   const HikerAuthProvider({
     super.key,
     required this.authService,
-    required Widget child,
-  }) : super(child: child);
+    required super.child,
+  });
 
   static AuthService of(BuildContext context) {
     final provider = context.dependOnInheritedWidgetOfExactType<HikerAuthProvider>();

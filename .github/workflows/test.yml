@@ -1,0 +1,30 @@
+name: Test & Coverage
+on:
+  push:
+    branches: [ master ]  # Changed to master
+  pull_request:
+    branches: [ master ]  # Changed to master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.27.3'  # Updated to your current version
+          channel: 'stable'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run tests with coverage
+        run: flutter test --coverage
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}  # Use GitHub secret
+          file: coverage/lcov.info

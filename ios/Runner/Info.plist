@@ -39,6 +39,22 @@
         </dict>
     </array>
 
+    <key>FDAllowedProviderTypes</key>
+    <array>
+        <string>DEVICE_CHECK</string>
+        <string>DEBUG</string>
+    </array>
+
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>com.ausmatths.hikerConnect</string>
+            </array>
+        </dict>
+    </array>
+
     <key>GIDClientID</key>
     <string>967683373829-v2dg79vtpr1qr8buh5h3j10ejsaq06ah.apps.googleusercontent.com</string>
 

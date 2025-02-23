@@ -2,10 +2,13 @@ import 'dart:convert';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:hiker_connect/models/trail_data.dart';
+import 'package:hiker_connect/utils/logger.dart';
 
 class DatabaseService {
   static Database? _db;
   static final DatabaseService instance = DatabaseService._constructor();
+
+  static const int _currentVersion = 1;
 
   final String _trailTableName = 'trails';
   final String _name = 'name';
@@ -20,167 +23,225 @@ class DatabaseService {
 
   DatabaseService._constructor();
 
-  // Getter for the database
   Future<Database> get database async {
     if (_db != null) return _db!;
-    _db = await getDatabase();
+    _db = await _initDatabase();
     return _db!;
   }
 
-  // Function to initialize the database
-  Future<Database> getDatabase() async {
-    final dbDirpath = await getDatabasesPath();
-    final dbpath = join(dbDirpath, 'trail.db');
+  Future<Database> _initDatabase() async {
+    try {
+      final dbDirpath = await getDatabasesPath();
+      final dbpath = join(dbDirpath, 'trail.db');
 
-    // Open or create the database
-    final database = await openDatabase(
-      dbpath,
-      version: 1,
-      onCreate: (db, version) async {
-        await db.execute('''
-          CREATE TABLE $_trailTableName (
-            $_name TEXT,
-            $_description TEXT,
-            $_difficulty TEXT,
-            $_notice TEXT,
-            $_images TEXT,
-            $_date TEXT,
-            $_location TEXT,
-            $_participants INTEGER,
-            $_duration INTEGER
-          )
-        ''');
-      },
-    );
-    return database;
+      return await openDatabase(
+        dbpath,
+        version: _currentVersion,
+        onCreate: _onCreate,
+        onUpgrade: _onUpgrade,
+        onDowngrade: onDatabaseDowngradeDelete,
+      );
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to initialize database: $e', stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
-  // Utility method to encode images list to JSON string
+  Future<void> _onCreate(Database db, int version) async {
+    try {
+      await db.execute('''
+        CREATE TABLE $_trailTableName (
+          $_name TEXT PRIMARY KEY,
+          $_description TEXT,
+          $_difficulty TEXT,
+          $_notice TEXT,
+          $_images TEXT,
+          $_date TEXT,
+          $_location TEXT,
+          $_participants INTEGER,
+          $_duration INTEGER
+        )
+      ''');
+      AppLogger.info('Database created successfully at version $version');
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to create database tables: $e', stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    try {
+      // Add upgrade logic here when needed
+      AppLogger.info('Database upgraded from version $oldVersion to $newVersion');
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to upgrade database: $e', stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
   String _encodeImages(List<String> images) {
-    return jsonEncode(images);
+    try {
+      return jsonEncode(images);
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to encode images: $e', stackTrace: stackTrace);
+      return '[]';
+    }
   }
 
-  // Utility method to decode JSON string back to images list
   List<String> _decodeImages(String imagesJson) {
     if (imagesJson.isEmpty) return [];
     try {
       List<dynamic> decoded = jsonDecode(imagesJson);
       return decoded.map((e) => e.toString()).toList();
-    } catch (e) {
-      print('Error decoding images: $e');
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to decode images: $e', stackTrace: stackTrace);
       return [];
     }
   }
 
-  // Insert event data
-  Future<int> insertTrails(TrailData event) async {
+  Future<int> insertTrails(TrailData trail) async {
     final db = await database;
-    final Map<String, dynamic> data = event.toMap();
-    // Encode images before saving to database
-    data[_images] = _encodeImages(event.images);
+    try {
+      return await db.transaction((txn) async {
+        final Map<String, dynamic> data = trail.toMap();
+        data[_images] = _encodeImages(trail.images);
 
-    return await db.insert(
-      _trailTableName,
-      data,
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+        final result = await txn.insert(
+          _trailTableName,
+          data,
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+
+        AppLogger.info('Trail inserted successfully: ${trail.name}');
+        return result;
+      });
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to insert trail: $e', stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
-  // Get all events
   Future<List<TrailData>> getTrails() async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(_trailTableName);
-
-    // Convert the List<Map<String, dynamic>> into a List<TrailData>
-    return List.generate(maps.length, (i) {
-      // Decode images before creating TrailData object
-      final Map<String, dynamic> data = Map<String, dynamic>.from(maps[i]);
-      data[_images] = _decodeImages(maps[i][_images].toString());
-      return TrailData.fromMap(data);
-    });
+    try {
+      final List<Map<String, dynamic>> maps = await db.query(_trailTableName);
+      return List.generate(maps.length, (i) {
+        final Map<String, dynamic> data = Map<String, dynamic>.from(maps[i]);
+        data[_images] = _decodeImages(maps[i][_images].toString());
+        return TrailData.fromMap(data);
+      });
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to get trails: $e', stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
-  // Update an existing trail
-  Future<int> updateTrail(TrailData event) async {
+  Future<int> updateTrail(TrailData trail) async {
     final db = await database;
-    final Map<String, dynamic> data = event.toMap();
-    data[_images] = _encodeImages(event.images);
+    try {
+      return await db.transaction((txn) async {
+        final Map<String, dynamic> data = trail.toMap();
+        data[_images] = _encodeImages(trail.images);
 
-    return await db.update(
-      _trailTableName,
-      data,
-      where: '$_name = ?',
-      whereArgs: [event.name],
-    );
+        final result = await txn.update(
+          _trailTableName,
+          data,
+          where: '$_name = ?',
+          whereArgs: [trail.name],
+        );
+
+        AppLogger.info('Trail updated successfully: ${trail.name}');
+        return result;
+      });
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to update trail: $e', stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
-  // Delete a trail
   Future<int> deleteTrail(String name) async {
     final db = await database;
-    return await db.delete(
-      _trailTableName,
-      where: '$_name = ?',
-      whereArgs: [name],
-    );
+    try {
+      return await db.transaction((txn) async {
+        final result = await txn.delete(
+          _trailTableName,
+          where: '$_name = ?',
+          whereArgs: [name],
+        );
+
+        AppLogger.info('Trail deleted successfully: $name');
+        return result;
+      });
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to delete trail: $e', stackTrace: stackTrace);
+      rethrow;
+    }
   }
 
-  // Get a single trail by name
   Future<TrailData?> getTrailByName(String name) async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      _trailTableName,
-      where: '$_name = ?',
-      whereArgs: [name],
-    );
-
-    if (maps.isEmpty) return null;
-
-    final Map<String, dynamic> data = Map<String, dynamic>.from(maps.first);
-    data[_images] = _decodeImages(maps.first[_images].toString());
-    return TrailData.fromMap(data);
-  }
-
-  // Verify database connection
-  Future<bool> verifyConnection() async {
     try {
-      Database db = await database;
-
-      // Insert a dummy record
-      await db.insert(
+      final List<Map<String, dynamic>> maps = await db.query(
         _trailTableName,
-        {
-          _name: 'Test Event',
-          _description: 'Test description',
-          _difficulty: 'Medium',
-          _notice: 'Test notice',
-          _images: '[]',
-          _date: DateTime.now().toIso8601String(),
-          _location: 'Test Location',
-          _participants: 10,
-          _duration: 120,
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
+        where: '$_name = ?',
+        whereArgs: [name],
       );
 
-      // Retrieve the inserted record
-      List<Map<String, dynamic>> result = await db.query(_trailTableName);
-      if (result.isNotEmpty) {
-        print('Database Connection Verified!');
-        return true;
-      } else {
-        print('Database is empty or error occurred');
-        return false;
-      }
-    } catch (e) {
-      print('Error verifying database connection: $e');
+      if (maps.isEmpty) return null;
+
+      final Map<String, dynamic> data = Map<String, dynamic>.from(maps.first);
+      data[_images] = _decodeImages(maps.first[_images].toString());
+      return TrailData.fromMap(data);
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to get trail by name: $e', stackTrace: stackTrace);
+      rethrow;
+    }
+  }
+
+  Future<bool> verifyConnection() async {
+    try {
+      final db = await database;
+      await db.transaction((txn) async {
+        await txn.insert(
+          _trailTableName,
+          {
+            _name: 'Test Trail',
+            _description: 'Test description',
+            _difficulty: 'Easy',
+            _notice: 'Test notice',
+            _images: '[]',
+            _date: DateTime.now().toIso8601String(),
+            _location: 'Test Location',
+            _participants: 10,
+            _duration: 120,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+
+        final result = await txn.query(_trailTableName);
+        if (result.isEmpty) {
+          throw Exception('Database verification failed: no test data found');
+        }
+      });
+
+      AppLogger.info('Database connection verified successfully');
+      return true;
+    } catch (e, stackTrace) {
+      AppLogger.error('Database verification failed: $e', stackTrace: stackTrace);
       return false;
     }
   }
 
-  // Close the database
   Future<void> close() async {
-    final db = await database;
-    await db.close();
-    _db = null;
+    try {
+      if (_db != null) {
+        await _db!.close();
+        _db = null;
+        AppLogger.info('Database closed successfully');
+      }
+    } catch (e, stackTrace) {
+      AppLogger.error('Failed to close database: $e', stackTrace: stackTrace);
+      rethrow;
+    }
   }
 }

@@ -47,6 +47,7 @@ class DefaultFirebaseOptions {
     projectId: 'hiker-connect',
     authDomain: 'hiker-connect.firebaseapp.com',
     storageBucket: 'hiker-connect.firebasestorage.app',
+    measurementId: 'G-H4ZVJBQWW1',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -63,6 +64,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '967683373829',
     projectId: 'hiker-connect',
     storageBucket: 'hiker-connect.firebasestorage.app',
+    iosClientId: '967683373829-etonh967dnlo7mrmtha7qvbl78u9a3s9.apps.googleusercontent.com',
     iosBundleId: 'com.ausmatths.hikerConnect',
   );
 
@@ -72,6 +74,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '967683373829',
     projectId: 'hiker-connect',
     storageBucket: 'hiker-connect.firebasestorage.app',
+    iosClientId: '967683373829-uiu2p09vi3j6er3cobi7r354fbm5pird.apps.googleusercontent.com',
     iosBundleId: 'com.example.hikerConnect',
   );
 
@@ -82,6 +85,7 @@ class DefaultFirebaseOptions {
     projectId: 'hiker-connect',
     authDomain: 'hiker-connect.firebaseapp.com',
     storageBucket: 'hiker-connect.firebasestorage.app',
+    measurementId: 'G-85ZZM444KG',
   );
 
 }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:hiker_connect/models/user_model.dart';
 import 'package:hiker_connect/services/firebase_auth.dart';
 import 'package:hiker_connect/screens/profile/edit_profile_screen.dart';
+import 'package:hiker_connect/utils/async_context_handler.dart';
+import 'package:hiker_connect/utils/logger.dart';
 import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -18,54 +20,54 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   static const double _avatarRadius = 50.0;
-  static const double _sectionSpacing = 16.0;
-  static const double _sectionTitleSize = 16.0;
-  static const Color _indicatorColor = Colors.deepPurple;
-  late AuthService _authService;
   late Future<UserModel?> _userFuture;
   bool _isCurrentUser = false;
 
   @override
   void initState() {
     super.initState();
-    // Initialize with a placeholder future to prevent null checks
     _userFuture = Future.value(null);
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    try {
-      // Get AuthService and initialize
-      _authService = Provider.of<AuthService>(context, listen: false);
-      _loadUserData();
-    } catch (e) {
-      _handleInitializationError(e);
-    }
+    AsyncContextHandler.safeAsyncOperation(
+      context,
+          () async {
+        final authService = context.read<AuthService>();
+        await _loadUserData(authService);
+      },
+      onError: (error) {
+        AppLogger.error('Error loading user dependencies', stackTrace: StackTrace.current);
+        _handleInitializationError(error);
+      },
+    );
   }
 
-  void _loadUserData() {
+  Future<void> _loadUserData(AuthService authService) async {
     try {
       if (widget.userId != null) {
-        _userFuture = _authService.getUserData(widget.userId!);
-        _isCurrentUser = widget.userId == _authService.currentUser?.uid;
+        _userFuture = authService.getUserData(widget.userId!);
+        _isCurrentUser = widget.userId == authService.currentUser?.uid;
       } else {
-        _userFuture = _authService.getCurrentUserData();
+        _userFuture = authService.getCurrentUserData();
         _isCurrentUser = true;
       }
 
-      // Force rebuild if the state is mounted
-      if (mounted) setState(() {});
+      if (mounted) {
+        setState(() {});
+      }
     } catch (e) {
-      _handleInitializationError(e);
+      await _handleInitializationError(e);
     }
   }
 
-  void _handleInitializationError(Object error) {
-    // Defer showing the error dialog to ensure widget is fully built
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        showDialog(
+  Future<void> _handleInitializationError(Object error) async {
+    await AsyncContextHandler.safeAsyncOperation(
+      context,
+          () async {
+        await showDialog(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Initialization Error'),
@@ -74,8 +76,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
-                  // Optionally retry initialization
-                  _loadUserData();
+                  final authService = context.read<AuthService>();
+                  _loadUserData(authService);
                 },
                 child: const Text('Retry'),
               ),
@@ -86,40 +88,68 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ],
           ),
         );
-      }
-    });
+      },
+      onError: (dialogError) {
+        AppLogger.error('Error showing initialization error dialog',
+            stackTrace: StackTrace.current
+        );
+      },
+    );
 
-    // Set a null future to show an error state
     setState(() {
       _userFuture = Future.value(null);
     });
   }
 
   Future<void> _editProfile(UserModel user) async {
-    final result = await Navigator.push(
+    await AsyncContextHandler.safeAsyncOperation(
       context,
-      MaterialPageRoute(
-        builder: (context) => EditProfileScreen(user: user),
-      ),
-    );
+          () async {
+        final result = await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => EditProfileScreen(user: user),
+          ),
+        );
 
-    if (result == true && mounted) {
-      setState(() {
-        _loadUserData();
-      });
-    }
+        if (result == true) {
+          final authService = context.read<AuthService>();
+          setState(() {
+            _loadUserData(authService);
+          });
+        }
+        return Future.value();
+      },
+      onError: (error) {
+        AppLogger.error('Error editing profile', stackTrace: StackTrace.current);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading profile: $error')),
+        );
+        return Future.value();
+      },
+    );
   }
 
   Future<void> _handleSignOut() async {
     try {
-      await _authService.signOut();
-      // Consider navigating to login screen or showing a success message
+      await AsyncContextHandler.safeAsyncOperation(
+        context,
+            () async {
+          final authService = context.read<AuthService>();
+          await authService.signOut();
+          return Future.value();
+        },
+        onError: (error) {
+          AppLogger.error('Error signing out', stackTrace: StackTrace.current);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error signing out: $error')),
+          );
+          return Future.value();
+        },
+      );
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error signing out: $e')),
-        );
-      }
+      AppLogger.error('Unexpected error during sign out', stackTrace: StackTrace.current);
+      return Future.value();
     }
   }
 
@@ -142,18 +172,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
               IconButton(
                 icon: const Icon(Icons.edit, color: Colors.black),
                 onPressed: () async {
-                  try {
-                    final user = await _userFuture;
-                    if (user != null && mounted) {
-                      await _editProfile(user);
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error loading profile: $e')),
+                  await AsyncContextHandler.safeAsyncOperation(
+                    context,
+                        () async {
+                      final user = await _userFuture;
+                      if (user != null) {
+                        await _editProfile(user);
+                      }
+                      return Future.value();
+                    },
+                    onError: (error) {
+                      AppLogger.error('Error loading profile for editing',
+                          stackTrace: StackTrace.current
                       );
-                    }
-                  }
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Error loading profile: $error')),
+                      );
+                      return Future.value();
+                    },
+                  );
                 },
               ),
               IconButton(
@@ -209,7 +246,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton(
-                        onPressed: () => setState(() => _loadUserData()),
+                        onPressed: () async {
+                          await AsyncContextHandler.safeAsyncOperation(
+                            context,
+                                () async {
+                              final authService = context.read<AuthService>();
+                              setState(() => _loadUserData(authService));
+                              return Future.value();
+                            },
+                            onError: (error) {
+                              AppLogger.error('Error reloading user data',
+                                  stackTrace: StackTrace.current
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Failed to reload user data: $error')),
+                              );
+                              return Future.value();
+                            },
+                          );
+                        },
                         child: const Text('Retry'),
                       ),
                     ],
@@ -245,65 +300,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Column(
-              children: [
-                CircleAvatar(
-                  radius: _avatarRadius,
-                  backgroundColor: Colors.deepPurple.shade50,
-                  backgroundImage: user.photoUrl.isNotEmpty
-                      ? NetworkImage(user.photoUrl)
-                      : null,
-                  onBackgroundImageError: user.photoUrl.isNotEmpty
-                      ? (exception, stackTrace) {
-                    debugPrint('Error loading profile image: $exception');
-                  }
-                      : null,
-                  child: user.photoUrl.isEmpty
-                      ? Text(
-                    user.displayName.isNotEmpty
-                        ? user.displayName[0].toUpperCase()
-                        : '?',
-                    style: TextStyle(
-                      fontSize: 32,
-                      color: Colors.deepPurple,
-                    ),
-                  )
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  user.displayName,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildStatColumn('Followers', user.followers.length),
-                    _buildStatColumn('Following', user.following.length),
-                  ],
-                ),
-              ],
-            ),
+      Center(
+      child: Column(
+      children: [
+        CircleAvatar(
+        radius: _avatarRadius,
+        backgroundColor: Colors.deepPurple.shade50,
+        backgroundImage: user.photoUrl.isNotEmpty
+            ? NetworkImage(user.photoUrl)
+            : null,
+        onBackgroundImageError: user.photoUrl.isNotEmpty
+            ? (exception, stackTrace) {
+          debugPrint('Error loading profile image: $exception');
+        }
+            : null,
+        child: user.photoUrl.isEmpty
+            ? Text(
+          user.displayName.isNotEmpty
+              ? user.displayName[0].toUpperCase()
+              : '?',
+          style: const TextStyle(
+            fontSize: 32,
+            color: Colors.deepPurple,
           ),
-          const SizedBox(height: 24),
+        )
+            : null,
+      ),
+      const SizedBox(height: 16),
+      Text(
+        user.displayName,
+        style: Theme.of(context).textTheme.headlineSmall,
+      ),
+      const SizedBox(height: 16),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildStatColumn('Followers', user.followers.length),
+          _buildStatColumn('Following', user.following.length),
+        ],
+      ),
+      ],
+    ),
+    ),
+    const SizedBox(height: 24),
 
-          _buildSection('Bio', user.bio),
-          _buildSection('Phone', user.phoneNumber),
-          if (user.location != null)
-            _buildSection('Address', user.location!.address),
-          _buildSection('Gender', user.gender),
-          if (user.dateOfBirth != null)
-            _buildSection('Date of Birth',
-                '${user.dateOfBirth!.day}/${user.dateOfBirth!.month}/${user.dateOfBirth!.year}'
-            ),
-          if (user.height != null)
-            _buildSection('Height', '${user.height} cm'),
-          if (user.weight != null)
-            _buildSection('Weight', '${user.weight} kg'),
-          _buildSection('Language', user.preferredLanguage),
-
+    _buildSection('Bio', user.bio),
+    _buildSection('Phone', user.phoneNumber),
+    if (user.location != null)
+    _buildSection('Address', user.location!.address),
+    _buildSection('Gender', user.gender),
+    if (user.dateOfBirth != null)
+    _buildSection(
+    'Date of Birth',
+    '${user.dateOfBirth!.day}/${user.dateOfBirth!.month}/${user.dateOfBirth!.year}',
+    ),
+    if (user.height != null)
+    _buildSection('Height', '${user.height} cm'),
+    if (user.weight != null)
+    _buildSection('Weight', '${user.weight} kg'),
+    _buildSection('Language', user.preferredLanguage),
           if (user.interests.isNotEmpty) ...[
             const SizedBox(height: 16),
             const Text(
@@ -364,21 +419,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           if (medications.isNotEmpty)
             _buildListSection('Medications', medications),
-
-          if (medicalConditions.isEmpty &&
-              medications.isEmpty &&
-              user.bloodType == null &&
-              user.allergies == null &&
-              user.insuranceInfo == null)
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: Text(
-                  'No medical information added',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-              ),
-            ),
         ],
       ),
     );

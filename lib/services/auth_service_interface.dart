@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hiker_connect/models/user_model.dart';
 
 abstract class IAuthService {
