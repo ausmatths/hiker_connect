@@ -39,16 +39,16 @@ class _EventEditScreenState extends State<EventEditScreen> {
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.event.name);
-    _descriptionController = TextEditingController(text: widget.event.description);
-    _noticeController = TextEditingController(text: widget.event.notice);
-    _locationController = TextEditingController(text: widget.event.location);
-    _participantsController = TextEditingController(text: widget.event.participants.toString());
-    _difficulty = widget.event.difficulty;
-    _eventDate = widget.event.date;
-    _eventImages = List.from(widget.event.images);
-    _selectedHours = widget.event.duration.inHours;
-    _selectedMinutes = widget.event.duration.inMinutes % 60;
+    _nameController = TextEditingController(text: widget.event.trailName);
+    _descriptionController = TextEditingController(text: widget.event.trailDescription);
+    _noticeController = TextEditingController(text: widget.event.trailNotice);
+    _locationController = TextEditingController(text: widget.event.trailLocation);
+    _participantsController = TextEditingController(text: widget.event.trailParticipantNumber.toString());
+    _difficulty = widget.event.trailDifficulty;
+    _eventDate = widget.event.trailDate;
+    _eventImages = List.from(widget.event.trailImages);
+    _selectedHours = widget.event.trailDuration.inHours;
+    _selectedMinutes = widget.event.trailDuration.inMinutes % 60;
   }
 
   @override
@@ -111,15 +111,16 @@ class _EventEditScreenState extends State<EventEditScreen> {
   void _submitForm() {
     if (_formKey.currentState!.validate()) {
       final updatedEvent = TrailData(
-        name: _nameController.text,
-        description: _descriptionController.text,
-        difficulty: _difficulty,
-        notice: _noticeController.text,
-        images: _eventImages,
-        date: _eventDate,
-        location: _locationController.text,
-        participants: int.tryParse(_participantsController.text) ?? 0,
-        duration: Duration(hours: _selectedHours, minutes: _selectedMinutes),
+        trailId: widget.event.trailId,
+        trailName: _nameController.text,
+        trailDescription: _descriptionController.text,
+        trailDifficulty: _difficulty,
+        trailNotice: _noticeController.text,
+        trailImages: _eventImages,
+        trailDate: _eventDate,
+        trailLocation: _locationController.text,
+        trailParticipantNumber: int.tryParse(_participantsController.text) ?? 0,
+        trailDuration: Duration(hours: _selectedHours, minutes: _selectedMinutes),
       );
 
       widget.onUpdate(updatedEvent);
