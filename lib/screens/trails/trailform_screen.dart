@@ -46,14 +46,14 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
         final trail = await DatabaseService.instance.getTrailByName(widget.trailName);
         if (trail != null) {
           setState(() {
-            _descriptionController.text = trail.description;
-            _noticeController.text = trail.notice;
-            _locationController.text = trail.location;
-            _participantsController.text = trail.participants.toString();
-            _difficulty = trail.difficulty;
-            _images = trail.images;
-            _selectedDate = trail.date;
-            _duration = trail.duration;
+            _descriptionController.text = trail.trailDescription;
+            _noticeController.text = trail.trailNotice;
+            _locationController.text = trail.trailLocation;
+            _participantsController.text = trail.trailParticipantNumber.toString();
+            _difficulty = trail.trailDifficulty;
+            _images = trail.trailImages;
+            _selectedDate = trail.trailDate;
+            _duration = trail.trailDuration;
             _isLoading = false;
           });
         }
@@ -148,15 +148,16 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
       context,
           () async {
         final updatedTrail = TrailData(
-          name: widget.trailName,
-          description: _descriptionController.text,
-          difficulty: _difficulty,
-          notice: _noticeController.text,
-          images: _images,
-          date: _selectedDate,
-          location: _locationController.text,
-          participants: int.parse(_participantsController.text),
-          duration: _duration,
+          trailId: 0,
+          trailName: widget.trailName,
+          trailDescription: _descriptionController.text,
+          trailDifficulty: _difficulty,
+          trailNotice: _noticeController.text,
+          trailImages: _images,
+          trailDate: _selectedDate,
+          trailLocation: _locationController.text,
+          trailParticipantNumber: int.parse(_participantsController.text),
+          trailDuration: _duration,
         );
 
         await DatabaseService.instance.updateTrail(updatedTrail);

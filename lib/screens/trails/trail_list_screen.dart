@@ -41,7 +41,7 @@ class TrailListScreenState extends State<TrailListScreen> {
         builder: (context) => const create_screen.EventFormScreen(), // Use alias
       ),
     ).then((newEvent) {
-      if (newEvent != null && newEvent.name.isNotEmpty) {
+      if (newEvent != null && newEvent.trailName.isNotEmpty) {
         setState(() {
           events.add(newEvent);
         });
@@ -57,7 +57,7 @@ class TrailListScreenState extends State<TrailListScreen> {
           event: event,
           onUpdate: (updatedEvent) {
             setState(() {
-              int index = events.indexWhere((e) => e.name == event.name);
+              int index = events.indexWhere((e) => e.trailName == event.trailName);
               if (index != -1) {
                 events[index] = updatedEvent;
               }
@@ -110,36 +110,36 @@ class TrailListScreenState extends State<TrailListScreen> {
                 children: [
                   // Event Name
                   Text(
-                    event.name.isNotEmpty ? event.name : "Untitled Event",
+                    event.trailName.isNotEmpty ? event.trailName : "Untitled Event",
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 5),
 
                   // Event Description
-                  if (event.description.isNotEmpty)
-                    Text(event.description, style: const TextStyle(fontSize: 16)),
+                  if (event.trailDescription.isNotEmpty)
+                    Text(event.trailDescription, style: const TextStyle(fontSize: 16)),
                   const SizedBox(height: 5),
 
                   // Event Details
-                  Text('Location: ${event.location}', style: const TextStyle(fontSize: 14)),
+                  Text('Location: ${event.trailLocation}', style: const TextStyle(fontSize: 14)),
                   const SizedBox(height: 5),
-                  Text('Difficulty: ${event.difficulty}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                  Text('Difficulty: ${event.trailDifficulty}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
                   const SizedBox(height: 5),
-                  Text('Notice: ${event.notice}', style: const TextStyle(fontSize: 14)),
+                  Text('Notice: ${event.trailNotice}', style: const TextStyle(fontSize: 14)),
                   const SizedBox(height: 5),
-                  Text('Date: ${event.date.toString().split(' ')[0]}', style: const TextStyle(fontSize: 14)),
+                  Text('Date: ${event.trailDate.toString().split(' ')[0]}', style: const TextStyle(fontSize: 14)),
                   const SizedBox(height: 5),
-                  Text('Participants: ${event.participants}', style: const TextStyle(fontSize: 14)),
+                  Text('Participants: ${event.trailParticipantNumber}', style: const TextStyle(fontSize: 14)),
                   const SizedBox(height: 5),
-                  Text('Duration: ${event.duration.inHours}h ${event.duration.inMinutes % 60}m', style: const TextStyle(fontSize: 14)),
+                  Text('Duration: ${event.trailDuration.inHours}h ${event.trailDuration.inMinutes % 60}m', style: const TextStyle(fontSize: 14)),
                   const SizedBox(height: 5),
 
-                  if (event.images.isNotEmpty)
+                  if (event.trailImages.isNotEmpty)
                     SizedBox(
                       height: 100,
                       child: ListView(
                         scrollDirection: Axis.horizontal,
-                        children: event.images.map((imagePath) {
+                        children: event.trailImages.map((imagePath) {
                           return Padding(
                             padding: const EdgeInsets.all(4.0),
                             child: Image.file(
