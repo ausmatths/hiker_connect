@@ -1,7 +1,15 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:hive/hive.dart';
+part 'user_model.g.dart';
 
+
+@HiveType(typeId: 1)
 class UserLocation {
+
+  @HiveField(0)
   final GeoPoint? geoPoint;
+
+  @HiveField(1)
   final String? address;
 
   UserLocation({this.geoPoint, this.address});
@@ -23,9 +31,16 @@ class UserLocation {
   }
 }
 
+
+@HiveType(typeId: 2)
 class EmergencyContact {
+  @HiveField(0)
   final String name;
+
+  @HiveField(1)
   final String relationship;
+
+  @HiveField(2)
   final String phoneNumber;
 
   EmergencyContact({
@@ -61,31 +76,81 @@ Map<String, dynamic> _convertToStringKeyMap(dynamic map) {
   return {};
 }
 
+@HiveType(typeId: 3)
 class UserModel {
+  @HiveField(0)
   final String uid;
+
+  @HiveField(1)
   final String email;
+
+  @HiveField(2)
   final String displayName;
-  final String photoUrl; // Changed to non-nullable
+
+  @HiveField(3)
+  final String photoUrl;
+
+  @HiveField(4)
   final String? bio;
+
+  @HiveField(5)
   final List<String> interests;
+
+  @HiveField(6)
   final DateTime createdAt;
+
+  @HiveField(7)
   final DateTime lastActive;
+
+  @HiveField(8)
   final bool isEmailVerified;
+
+  @HiveField(9)
   final List<String> following;
+
+  @HiveField(10)
   final List<String> followers;
+
+  @HiveField(11)
   final String? phoneNumber;
+
+  @HiveField(12)
   final UserLocation? location;
+
+  @HiveField(13)
   final List<EmergencyContact>? emergencyContacts;
+
+  @HiveField(14)
   final String? bloodType;
+
+  @HiveField(15)
   final List<String>? medicalConditions;
+
+  @HiveField(16)
   final List<String>? medications;
+
+  @HiveField(17)
   final String? insuranceInfo;
+
+  @HiveField(18)
   final String? allergies;
+
+  @HiveField(19)
   final DateTime? dateOfBirth;
+
+  @HiveField(20)
   final String? gender;
+
+  @HiveField(21)
   final double? height;
+
+  @HiveField(22)
   final double? weight;
+
+  @HiveField(23)
   final String? preferredLanguage;
+
+  @HiveField(24)
   final Map<String, String>? socialLinks;
 
   UserModel({
