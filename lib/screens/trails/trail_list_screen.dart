@@ -74,7 +74,8 @@ class TrailListScreenState extends State<TrailListScreen> {
     );
   }
   Future<void> _loadEvents() async {
-    List<TrailData> trailList = await DatabaseService.instance.getTrails();
+    final databaseService = DatabaseService();
+    List<TrailData> trailList = await databaseService.getTrails();
     setState(() {
       events = trailList;
     });

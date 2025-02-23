@@ -19,7 +19,7 @@ class EventFormScreen extends StatefulWidget {
 
 class _EventFormScreenState extends State<EventFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final dbService = DatabaseService.instance;
+  final dbService = DatabaseService();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _noticeController = TextEditingController();
@@ -82,15 +82,16 @@ class _EventFormScreenState extends State<EventFormScreen> {
         }
 
         final newEvent = TrailData(
-          name: _nameController.text,
-          description: _descriptionController.text,
-          difficulty: _difficulty,
-          notice: _noticeController.text,
-          images: _eventImages.map((image) => image.path).toList(),
-          date: _eventDate ?? DateTime.now(),
-          location: _locationController.text,
-          participants: int.tryParse(_participantsController.text) ?? 0,
-          duration: Duration(hours: _selectedHours, minutes: _selectedMinutes),
+          trailId: 0,
+          trailName: _nameController.text,
+          trailDescription: _descriptionController.text,
+          trailDifficulty: _difficulty,
+          trailNotice: _noticeController.text,
+          trailImages: _eventImages.map((image) => image.path).toList(),
+          trailDate: _eventDate ?? DateTime.now(),
+          trailLocation: _locationController.text,
+          trailParticipantNumber: int.tryParse(_participantsController.text) ?? 0,
+          trailDuration: Duration(hours: _selectedHours, minutes: _selectedMinutes),
         );
 
         // Use DatabaseService to insert the event

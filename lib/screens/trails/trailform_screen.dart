@@ -43,7 +43,8 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
     AsyncContextHandler.safeAsyncOperation(
       context,
           () async {
-        final trail = await DatabaseService.instance.getTrailByName(widget.trailName);
+        final databaseService = DatabaseService();
+        final trail = await databaseService.getTrailByName(widget.trailName);
         if (trail != null) {
           setState(() {
             _descriptionController.text = trail.trailDescription;
@@ -160,7 +161,9 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
           trailDuration: _duration,
         );
 
-        await DatabaseService.instance.updateTrail(updatedTrail);
+       //await DatabaseService.instance.updateTrail(updatedTrail);
+        final hivedb= await DatabaseService();
+        await hivedb.updateTrail(widget.trailName,updatedTrail);
 
         // Call onUpdate callback if provided
         widget.onUpdate?.call(updatedTrail);
