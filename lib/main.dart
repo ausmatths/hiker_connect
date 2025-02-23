@@ -4,6 +4,10 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:hive/hive.dart';
+import 'package:path_provider/path_provider.dart' as path_provider;
+import 'package:hiker_connect/models/trail_data.dart';
+import 'package:hiker_connect/models/user_model.dart';
 import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
@@ -16,6 +20,7 @@ import 'package:hiker_connect/screens/profile/profile_screen.dart';
 import 'package:hiker_connect/screens/home_screen.dart';
 import 'firebase_options.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+
 
 class ErrorApp extends StatelessWidget {
   final Object error;
@@ -108,6 +113,16 @@ class App extends StatelessWidget {
 Future<void> main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
+    final appDocumentDirectory = await path_provider.getApplicationDocumentsDirectory();
+
+    Hive.init(appDocumentDirectory.path);
+
+    Hive.registerAdapter(TrailDataAdapter());
+    Hive.registerAdapter(UserModelAdapter());
+
+
+    await Hive.openBox<TrailData>('trailBox');
+    await Hive.openBox<UserModel>('userBox');
 
     FlutterError.onError = (FlutterErrorDetails details) {
       developer.log(
