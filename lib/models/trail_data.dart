@@ -37,33 +37,34 @@ class TrailData {
     required this.trailDuration,
   });
 
-  // Convert the TrailData to a map for insertion into the database
-  // Map<String, dynamic> toMap() {
-  //   return {
-  //     'name': name,
-  //     'description': description,
-  //     'difficulty': difficulty,
-  //     'notice': notice,
-  //     'images': images.join(','),  // Store images as comma-separated paths
-  //     'date': date.toIso8601String(),
-  //     'location': location,
-  //     'participants': participants,
-  //     'duration': duration.inMinutes,  // Store the duration in minutes
-  //   };
-  // }
-  //
-  // // Create from Map for retrieval
-  // factory TrailData.fromMap(Map<String, dynamic> map) {
-  //   return TrailData(
-  //     name: map['name'] ?? '',
-  //     description: map['description'] ?? '',
-  //     difficulty: map['difficulty'] ?? '',
-  //     notice: map['notice'] ?? '',
-  //     images: List<String>.from(map['images'] ?? []),
-  //     date: DateTime.parse(map['date']),
-  //     location: map['location'] ?? '',
-  //     participants: map['participants'] ?? 0,
-  //     duration: Duration(minutes: map['duration'] ?? 0),
-  //   );
-  // }
+  Map<String, dynamic> toMap() {
+    return {
+      'trailId': trailId,
+      'trailName': trailName,
+      'description': trailDescription,
+      'trailDifficulty': trailDifficulty,
+      'trailNotice': trailNotice,
+      'trailImages': trailImages.join(','),
+      'trailDate': trailDate.toIso8601String(),
+      'trailLocation': trailLocation,
+      'trailParticipantNumber': trailParticipantNumber,
+      'trailDuration': trailDuration.inMinutes,
+    };
+  }
+
+  // Create from Map for retrieval
+  factory TrailData.fromMap(Map<String, dynamic> map) {
+    return TrailData(
+      trailId: map['trailId'] ?? 0,
+      trailName: map['trailName'] ?? '',
+      trailDescription: map['trailDescription'] ?? '',
+      trailDifficulty: map['trailDifficulty'] ?? '',
+      trailNotice: map['trailNotice'] ?? '',
+      trailImages: List<String>.from(map['trailImages'] ?? []),
+      trailDate: DateTime.parse(map['trailDate']),
+      trailLocation: map['trailLocation'] ?? '',
+      trailParticipantNumber: map['trailParticipantNumber'] ?? 0,
+      trailDuration: Duration(minutes: map['trailDuration'] ?? 0),
+    );
+  }
 }
