@@ -243,7 +243,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         Navigator.pop(context, true);
       },
       onError: (error) {
-        AppLogger.error('Error saving profile', stackTrace: StackTrace.current);
+        // Updated error logging to match the new AppLogger implementation
+        AppLogger.error('Error saving profile: ${error.toString()}');
         setState(() => _errorMessage = error.toString());
       },
     );

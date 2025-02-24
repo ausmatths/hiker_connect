@@ -8,7 +8,11 @@ import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:hiker_connect/models/trail_data.dart';
 import 'package:hiker_connect/models/user_model.dart';
+import 'package:hiker_connect/models/event_data.dart';
+import 'package:hiker_connect/models/duration_adapter.dart'; // Add this import
+import 'package:hiker_connect/services/databaseservice.dart';
 import 'dart:developer' as developer;
+import 'dart:io';
 import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
 
 // Import screens and services
@@ -20,7 +24,6 @@ import 'package:hiker_connect/screens/profile/profile_screen.dart';
 import 'package:hiker_connect/screens/home_screen.dart';
 import 'firebase_options.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
-
 
 class ErrorApp extends StatelessWidget {
   final Object error;
@@ -113,16 +116,66 @@ class App extends StatelessWidget {
 Future<void> main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
+
+    // Get directory for Hive
     final appDocumentDirectory = await path_provider.getApplicationDocumentsDirectory();
+    final hivePath = '${appDocumentDirectory.path}/hive_boxes';
 
-    Hive.init(appDocumentDirectory.path);
+    // Close any existing Hive instances
+    await Hive.close();
 
-    Hive.registerAdapter(TrailDataAdapter());
-    Hive.registerAdapter(UserModelAdapter());
+    // For development only - clear Hive data to avoid adapter conflicts
+    // THIS WILL DELETE SAVED DATA - only use in development
+    try {
+      final directory = Directory(hivePath);
+      if (await directory.exists()) {
+        await directory.delete(recursive: true);
+        developer.log('Cleared Hive data directory', name: 'App Setup');
+      }
+    } catch (e) {
+      developer.log('Failed to clear Hive directory: $e', name: 'App Setup');
+    }
 
+    // Initialize Hive with a fresh directory
+    Hive.init(hivePath);
 
-    await Hive.openBox<TrailData>('trailBox');
-    await Hive.openBox<UserModel>('userBox');
+    // Debug: Check what adapters are registered
+    developer.log('Registering adapters...', name: 'App Setup');
+
+    // Register all adapters in the correct order
+    Hive.registerAdapter(TrailDataAdapter());   // TypeId 0
+    developer.log('TrailDataAdapter registered with typeId 0', name: 'App Setup');
+
+    Hive.registerAdapter(UserLocationAdapter()); // TypeId 1
+    developer.log('UserLocationAdapter registered with typeId 1', name: 'App Setup');
+
+    Hive.registerAdapter(EmergencyContactAdapter()); // TypeId 2
+    developer.log('EmergencyContactAdapter registered with typeId 2', name: 'App Setup');
+
+    Hive.registerAdapter(UserModelAdapter());  // TypeId 3
+    developer.log('UserModelAdapter registered with typeId 3', name: 'App Setup');
+
+    // Make sure your EventDataAdapter is modified to use typeId 4
+    try {
+      Hive.registerAdapter(EventDataAdapter()); // Should be TypeId 4
+      developer.log('EventDataAdapter registered successfully', name: 'App Setup');
+    } catch (e) {
+      developer.log('Failed to register EventDataAdapter: $e', name: 'App Setup');
+    }
+
+    // Register DurationAdapter for Duration serialization
+    try {
+      Hive.registerAdapter(DurationAdapter()); // TypeId 5
+      developer.log('DurationAdapter registered with typeId 5', name: 'App Setup');
+    } catch (e) {
+      developer.log('Failed to register DurationAdapter: $e', name: 'App Setup');
+    }
+
+    // Initialize DatabaseService without registering adapters again
+    developer.log('Initializing database service...', name: 'App Setup');
+    final dbService = DatabaseService();
+    await dbService.init();
+    developer.log('Database service initialized successfully', name: 'App Setup');
 
     FlutterError.onError = (FlutterErrorDetails details) {
       developer.log(

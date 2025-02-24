@@ -46,7 +46,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
         Navigator.of(context).pushReplacementNamed('/home');
       },
       onError: (error) {
-        AppLogger.error('Sign up error', stackTrace: StackTrace.current);
+        // Updated error logging to match the new AppLogger implementation
+        AppLogger.error('Sign up error: ${error.toString()}');
         setState(() {
           _errorMessage = error.toString();
         });

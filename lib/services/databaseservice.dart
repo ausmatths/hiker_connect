@@ -6,10 +6,10 @@ import 'package:hiker_connect/utils/logger.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
-
-  Box<TrailData>? _trailBox;
-  Box<UserModelAdapter>? _userBox;
-  Box<EventData>? _eventBox;
+  static Box<TrailData>? _trailBox;
+  // Fixed type - changed from UserModelAdapter to UserModel
+  static Box<UserModel>? _userBox;
+  static Box<EventData>? _eventBox;
 
   factory DatabaseService() {
     return _instance;
@@ -17,52 +17,44 @@ class DatabaseService {
 
   DatabaseService._internal();
 
-  // Initialize boxes if not already initialized
   Future<void> init() async {
-    if (_trailBox == null || !_trailBox!.isOpen) {
-      try {
-        Hive.registerAdapter(TrailDataAdapter());
-        Hive.registerAdapter(UserModelAdapter());
-        Hive.registerAdapter(EventDataAdapter());
-
-        _trailBox = await Hive.openBox<TrailData>('trailBox');
-        _userBox = await Hive.openBox<UserModelAdapter>('userBox');
-        _eventBox = await Hive.openBox<EventData>('eventBox');
-      } catch (e, stackTrace) {
-        AppLogger.error('Failed to initialize database: $e', stackTrace: stackTrace);
-        rethrow;
-      }
+    try {
+      // Don't register adapters here - they should only be registered once in main.dart
+      // Just open the boxes
+      _trailBox = await Hive.openBox<TrailData>('trailBox');
+      _userBox = await Hive.openBox<UserModel>('userBox');
+      _eventBox = await Hive.openBox<EventData>('eventBox');
+    } catch (e) {
+      AppLogger.error('Failed to initialize database: ${e.toString()}');
+      rethrow;
     }
   }
 
   Future<int> insertTrails(TrailData trail) async {
     try {
-      await init();
-      final box = _trailBox!;
+      final box = _trailBox ?? await Hive.openBox<TrailData>('trailBox');
       final resultKey = await box.add(trail);
       AppLogger.info('Trail inserted successfully: ${trail.trailName}');
       return resultKey;
-    } catch (e, stackTrace) {
-      AppLogger.error('Failed to insert trail: $e', stackTrace: stackTrace);
+    } catch (e) {
+      AppLogger.error('Failed to insert trail: ${trail.trailName} - ${e.toString()}');
       rethrow;
     }
   }
 
   Future<List<TrailData>> getTrails() async {
     try {
-      await init();
-      final box = _trailBox!;
+      final box = _trailBox ?? await Hive.openBox<TrailData>('trailBox');
       return box.values.toList();
-    } catch (e, stackTrace) {
-      AppLogger.error('Failed to get trails: $e', stackTrace: stackTrace);
+    } catch (e) {
+      AppLogger.error('Failed to get trails: ${e.toString()}');
       rethrow;
     }
   }
 
   Future<void> updateTrail(String trailName, TrailData trail) async {
     try {
-      await init();
-      final box = _trailBox!;
+      final box = _trailBox ?? await Hive.openBox<TrailData>('trailBox');
       int? resultKey;
 
       for (var i = 0; i < box.length; i++) {
@@ -76,17 +68,18 @@ class DatabaseService {
       if (resultKey != null) {
         await box.put(resultKey, trail);
         AppLogger.info('Trail updated successfully: ${trail.trailName}');
+      } else {
+        AppLogger.warning('No trail found to update with name: $trailName');
       }
-    } catch (e, stackTrace) {
-      AppLogger.error('Failed to update trail: $e', stackTrace: stackTrace);
+    } catch (e) {
+      AppLogger.error('Failed to update trail: $trailName - ${e.toString()}');
       rethrow;
     }
   }
 
   Future<TrailData?> getTrailByName(String name) async {
     try {
-      await init();
-      final box = _trailBox!;
+      final box = _trailBox ?? await Hive.openBox<TrailData>('trailBox');
 
       for (var i = 0; i < box.length; i++) {
         final trail = box.getAt(i);
@@ -94,9 +87,10 @@ class DatabaseService {
           return trail;
         }
       }
-      return null; // Explicitly return null if no trail is found
-    } catch (e, stackTrace) {
-      AppLogger.error('Failed to get trail by name: $e', stackTrace: stackTrace);
+      AppLogger.info('No trail found with name: $name');
+      return null;
+    } catch (e) {
+      AppLogger.error('Failed to get trail by name: $name - ${e.toString()}');
       rethrow;
     }
   }

@@ -50,7 +50,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
         return Future.value();
       },
       onError: (error) {
-        AppLogger.error('Error picking image', stackTrace: StackTrace.current);
+        AppLogger.error('Error picking image: ${error.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error selecting image: $error')),
         );
@@ -105,7 +105,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
         return Future.value();
       },
       onError: (error) {
-        AppLogger.error('Error submitting trail', stackTrace: StackTrace.current);
+        AppLogger.error('Error submitting trail: ${error.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error saving trail: $error')),
         );
@@ -134,7 +134,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
         return Future.value();
       },
       onError: (error) {
-        AppLogger.error('Error selecting date', stackTrace: StackTrace.current);
+        AppLogger.error('Error selecting date: ${error.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error selecting date: $error')),
         );

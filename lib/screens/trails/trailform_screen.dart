@@ -60,7 +60,7 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
         }
       },
       onError: (error) {
-        AppLogger.error('Error loading trail data', stackTrace: StackTrace.current);
+        AppLogger.error('Error loading trail data: ${error.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error loading trail data')),
         );
@@ -81,7 +81,7 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
         }
       },
       onError: (error) {
-        AppLogger.error('Error picking image', stackTrace: StackTrace.current);
+        AppLogger.error('Error picking image: ${error.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error selecting image')),
         );
@@ -106,7 +106,7 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
         }
       },
       onError: (error) {
-        AppLogger.error('Error selecting date', stackTrace: StackTrace.current);
+        AppLogger.error('Error selecting date: ${error.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error selecting date')),
         );
@@ -132,7 +132,7 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
         }
       },
       onError: (error) {
-        AppLogger.error('Error selecting duration', stackTrace: StackTrace.current);
+        AppLogger.error('Error selecting duration: ${error.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error selecting duration')),
         );
@@ -161,9 +161,8 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
           trailDuration: _duration,
         );
 
-       //await DatabaseService.instance.updateTrail(updatedTrail);
-        final hivedb= await DatabaseService();
-        await hivedb.updateTrail(widget.trailName,updatedTrail);
+        final hivedb = await DatabaseService();
+        await hivedb.updateTrail(widget.trailName, updatedTrail);
 
         // Call onUpdate callback if provided
         widget.onUpdate?.call(updatedTrail);
@@ -177,7 +176,7 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
         Navigator.pop(context);
       },
       onError: (error) {
-        AppLogger.error('Error updating trail', stackTrace: StackTrace.current);
+        AppLogger.error('Error updating trail: ${error.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Error updating trail')),
         );

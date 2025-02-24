@@ -9,12 +9,12 @@ class AppLogger {
       lineLength: 120,
       colors: true,
       printEmojis: true,
-      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart, // Updated this line
+      dateTimeFormat: DateTimeFormat.onlyTimeAndSinceStart,
     ),
     level: kDebugMode ? Level.debug : Level.error,
   );
 
-  static void debug(dynamic message, {Object? error}) {
+  static void debug(dynamic message, [dynamic error]) {
     if (kDebugMode) {
       _logger.d(message, error: error);
     }
@@ -26,11 +26,15 @@ class AppLogger {
     }
   }
 
-  static void warning(dynamic message) {
-    _logger.w(message);
+  static void warning(dynamic message, [dynamic error]) {
+    _logger.w(message, error: error);
   }
 
-  static void error(dynamic message, {StackTrace? stackTrace}) {
-    _logger.e(message, error: stackTrace);
+  static void error(dynamic message, [dynamic error, StackTrace? stackTrace]) {
+    if (error != null) {
+      _logger.e('$message\nError: $error${stackTrace != null ? '\nStack trace: $stackTrace' : ''}');
+    } else {
+      _logger.e(message);
+    }
   }
 }

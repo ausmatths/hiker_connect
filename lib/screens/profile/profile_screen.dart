@@ -39,7 +39,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         await _loadUserData(authService);
       },
       onError: (error) {
-        AppLogger.error('Error loading user dependencies', stackTrace: StackTrace.current);
+        AppLogger.error('Error loading user dependencies: ${error.toString()}');
         _handleInitializationError(error);
       },
     );
@@ -90,9 +90,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         );
       },
       onError: (dialogError) {
-        AppLogger.error('Error showing initialization error dialog',
-            stackTrace: StackTrace.current
-        );
+        AppLogger.error('Error showing initialization error dialog: ${dialogError.toString()}');
       },
     );
 
@@ -121,7 +119,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         return Future.value();
       },
       onError: (error) {
-        AppLogger.error('Error editing profile', stackTrace: StackTrace.current);
+        AppLogger.error('Error editing profile: ${error.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error loading profile: $error')),
         );
@@ -140,7 +138,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           return Future.value();
         },
         onError: (error) {
-          AppLogger.error('Error signing out', stackTrace: StackTrace.current);
+          AppLogger.error('Error signing out: ${error.toString()}');
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error signing out: $error')),
           );
@@ -148,7 +146,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         },
       );
     } catch (e) {
-      AppLogger.error('Unexpected error during sign out', stackTrace: StackTrace.current);
+      AppLogger.error('Unexpected error during sign out: ${e.toString()}');
       return Future.value();
     }
   }
@@ -182,9 +180,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       return Future.value();
                     },
                     onError: (error) {
-                      AppLogger.error('Error loading profile for editing',
-                          stackTrace: StackTrace.current
-                      );
+                      AppLogger.error('Error loading profile for editing: ${error.toString()}');
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('Error loading profile: $error')),
                       );
@@ -255,9 +251,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               return Future.value();
                             },
                             onError: (error) {
-                              AppLogger.error('Error reloading user data',
-                                  stackTrace: StackTrace.current
-                              );
+                              AppLogger.error('Error reloading user data: ${error.toString()}');
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(content: Text('Failed to reload user data: $error')),
                               );
@@ -300,65 +294,65 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-      Center(
-      child: Column(
-      children: [
-        CircleAvatar(
-        radius: _avatarRadius,
-        backgroundColor: Colors.deepPurple.shade50,
-        backgroundImage: user.photoUrl.isNotEmpty
-            ? NetworkImage(user.photoUrl)
-            : null,
-        onBackgroundImageError: user.photoUrl.isNotEmpty
-            ? (exception, stackTrace) {
-          debugPrint('Error loading profile image: $exception');
-        }
-            : null,
-        child: user.photoUrl.isEmpty
-            ? Text(
-          user.displayName.isNotEmpty
-              ? user.displayName[0].toUpperCase()
-              : '?',
-          style: const TextStyle(
-            fontSize: 32,
-            color: Colors.deepPurple,
+          Center(
+            child: Column(
+              children: [
+                CircleAvatar(
+                  radius: _avatarRadius,
+                  backgroundColor: Colors.deepPurple.shade50,
+                  backgroundImage: user.photoUrl.isNotEmpty
+                      ? NetworkImage(user.photoUrl)
+                      : null,
+                  onBackgroundImageError: user.photoUrl.isNotEmpty
+                      ? (exception, stackTrace) {
+                    debugPrint('Error loading profile image: $exception');
+                  }
+                      : null,
+                  child: user.photoUrl.isEmpty
+                      ? Text(
+                    user.displayName.isNotEmpty
+                        ? user.displayName[0].toUpperCase()
+                        : '?',
+                    style: const TextStyle(
+                      fontSize: 32,
+                      color: Colors.deepPurple,
+                    ),
+                  )
+                      : null,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  user.displayName,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildStatColumn('Followers', user.followers.length),
+                    _buildStatColumn('Following', user.following.length),
+                  ],
+                ),
+              ],
+            ),
           ),
-        )
-            : null,
-      ),
-      const SizedBox(height: 16),
-      Text(
-        user.displayName,
-        style: Theme.of(context).textTheme.headlineSmall,
-      ),
-      const SizedBox(height: 16),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildStatColumn('Followers', user.followers.length),
-          _buildStatColumn('Following', user.following.length),
-        ],
-      ),
-      ],
-    ),
-    ),
-    const SizedBox(height: 24),
+          const SizedBox(height: 24),
 
-    _buildSection('Bio', user.bio),
-    _buildSection('Phone', user.phoneNumber),
-    if (user.location != null)
-    _buildSection('Address', user.location!.address),
-    _buildSection('Gender', user.gender),
-    if (user.dateOfBirth != null)
-    _buildSection(
-    'Date of Birth',
-    '${user.dateOfBirth!.day}/${user.dateOfBirth!.month}/${user.dateOfBirth!.year}',
-    ),
-    if (user.height != null)
-    _buildSection('Height', '${user.height} cm'),
-    if (user.weight != null)
-    _buildSection('Weight', '${user.weight} kg'),
-    _buildSection('Language', user.preferredLanguage),
+          _buildSection('Bio', user.bio),
+          _buildSection('Phone', user.phoneNumber),
+          if (user.location != null)
+            _buildSection('Address', user.location!.address),
+          _buildSection('Gender', user.gender),
+          if (user.dateOfBirth != null)
+            _buildSection(
+              'Date of Birth',
+              '${user.dateOfBirth!.day}/${user.dateOfBirth!.month}/${user.dateOfBirth!.year}',
+            ),
+          if (user.height != null)
+            _buildSection('Height', '${user.height} cm'),
+          if (user.weight != null)
+            _buildSection('Weight', '${user.weight} kg'),
+          _buildSection('Language', user.preferredLanguage),
           if (user.interests.isNotEmpty) ...[
             const SizedBox(height: 16),
             const Text(

@@ -97,7 +97,7 @@ class _EventEditScreenState extends State<EventEditScreen> {
       },
       onError: (error) {
         // Log and show error
-        AppLogger.error('Error picking image', stackTrace: StackTrace.current);
+        AppLogger.error('Error picking image: ${error.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error picking image: $error')),
         );
@@ -146,7 +146,7 @@ class _EventEditScreenState extends State<EventEditScreen> {
         }
       },
       onError: (error) {
-        AppLogger.error('Error selecting date', stackTrace: StackTrace.current);
+        AppLogger.error('Error selecting date: ${error.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error selecting date: $error')),
         );
