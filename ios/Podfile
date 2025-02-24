@@ -33,7 +33,12 @@ target 'Runner' do
   use_frameworks!
   use_modular_headers!
 
-  pod 'FirebaseAppCheck'
+  # Specify Firebase versions explicitly
+  pod 'Firebase/Core', '11.8.0'
+  pod 'Firebase/Storage', '11.8.0'
+  pod 'Firebase/AppCheck', '11.8.0'
+  pod 'Firebase/Auth', '11.8.0'
+  pod 'Firebase/Firestore', '11.8.0'
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
   target 'RunnerTests' do

@@ -10,15 +10,16 @@ void main() {
 
   setUp(() {
     mockEvent = TrailData(
-      name: 'Mountain Hike',
-      description: 'A scenic mountain hike',
-      difficulty: 'Moderate',
-      notice: 'Bring water and snacks',
-      images: [],
-      date: DateTime.now().add(const Duration(days: 2)),
-      location: 'Trailhead A',
-      participants: 5,
-      duration: const Duration(hours: 3, minutes: 0),
+      trailId: 1,  // Changed from name
+      trailName: 'Mountain Hike',
+      trailDescription: 'A scenic mountain hike', // Changed from description
+      trailDifficulty: 'Moderate', // Changed from difficulty
+      trailNotice: 'Bring water and snacks', // Changed from notice
+      trailImages: [], // Changed from images
+      trailDate: DateTime.now().add(const Duration(days: 2)), // Changed from date
+      trailLocation: 'Trailhead A', // Changed from location
+      trailParticipantNumber: 5, // Changed from participants
+      trailDuration: const Duration(hours: 3, minutes: 0), // Changed from duration
     );
     onUpdateCalled = false;
     onDeleteCalled = false;
@@ -37,7 +38,7 @@ void main() {
     expect(find.text('A scenic mountain hike'), findsOneWidget);
     expect(find.text('Trailhead A'), findsOneWidget);
     expect(find.text('Bring water and snacks'), findsOneWidget);
-    expect(find.text(mockEvent.participants.toString()), findsOneWidget);
+    expect(find.text(mockEvent.trailParticipantNumber.toString()), findsOneWidget); // Changed from participants
   });
 
   testWidgets('Deletes event when delete button is pressed', (WidgetTester tester) async {
