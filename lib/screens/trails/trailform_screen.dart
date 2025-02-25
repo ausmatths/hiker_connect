@@ -5,6 +5,7 @@ import 'package:hiker_connect/models/trail_data.dart';
 import 'package:hiker_connect/services/databaseservice.dart';
 import 'package:hiker_connect/utils/async_context_handler.dart';
 import 'package:hiker_connect/utils/logger.dart';
+import 'package:provider/provider.dart';
 
 class TrailEditScreen extends StatefulWidget {
   final String trailName;
@@ -32,10 +33,14 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
   DateTime _selectedDate = DateTime.now();
   Duration _duration = const Duration(hours: 1);
   bool _isLoading = true;
+  late DatabaseService dbService;
+  int _trailId = 0; // Store original trail ID
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Get DatabaseService from provider
+    dbService = Provider.of<DatabaseService>(context, listen: false);
     _loadTrailData();
   }
 
@@ -43,10 +48,10 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
     AsyncContextHandler.safeAsyncOperation(
       context,
           () async {
-        final databaseService = DatabaseService();
-        final trail = await databaseService.getTrailByName(widget.trailName);
+        final trail = await dbService.getTrailByName(widget.trailName);
         if (trail != null) {
           setState(() {
+            _trailId = trail.trailId; // Save the original ID
             _descriptionController.text = trail.trailDescription;
             _noticeController.text = trail.trailNotice;
             _locationController.text = trail.trailLocation;
@@ -57,6 +62,12 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
             _duration = trail.trailDuration;
             _isLoading = false;
           });
+        } else {
+          AppLogger.warning('Trail not found: ${widget.trailName}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Trail not found')),
+          );
+          setState(() => _isLoading = false);
         }
       },
       onError: (error) {
@@ -73,18 +84,30 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
     AsyncContextHandler.safeAsyncOperation(
       context,
           () async {
-        final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+        setState(() => _isLoading = true);
+
+        final pickedFile = await ImagePicker().pickImage(
+          source: ImageSource.gallery,
+          maxWidth: 1200,
+          maxHeight: 1200,
+          imageQuality: 85,
+        );
+
         if (pickedFile != null) {
           setState(() {
             _images.add(pickedFile.path);
           });
         }
       },
+      onSuccess: () {
+        setState(() => _isLoading = false);
+      },
       onError: (error) {
         AppLogger.error('Error picking image: ${error.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error selecting image')),
+          SnackBar(content: Text('Error selecting image: $error')),
         );
+        setState(() => _isLoading = false);
       },
     );
   }
@@ -108,7 +131,7 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
       onError: (error) {
         AppLogger.error('Error selecting date: ${error.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error selecting date')),
+          SnackBar(content: Text('Error selecting date: $error')),
         );
       },
     );
@@ -134,7 +157,7 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
       onError: (error) {
         AppLogger.error('Error selecting duration: ${error.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error selecting duration')),
+          SnackBar(content: Text('Error selecting duration: $error')),
         );
       },
     );
@@ -148,8 +171,11 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
     AsyncContextHandler.safeAsyncOperation(
       context,
           () async {
+        setState(() => _isLoading = true);
+
+        // Use the original trailId if available, otherwise generate a new one
         final updatedTrail = TrailData(
-          trailId: 0,
+          trailId: _trailId, // Use the original ID
           trailName: widget.trailName,
           trailDescription: _descriptionController.text,
           trailDifficulty: _difficulty,
@@ -161,8 +187,8 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
           trailDuration: _duration,
         );
 
-        final hivedb = await DatabaseService();
-        await hivedb.updateTrail(widget.trailName, updatedTrail);
+        // Update trail in both local and cloud storage
+        await dbService.updateTrail(widget.trailName, updatedTrail);
 
         // Call onUpdate callback if provided
         widget.onUpdate?.call(updatedTrail);
@@ -171,15 +197,17 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
       },
       onSuccess: () {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Trail Updated Successfully!')),
+          const SnackBar(content: Text('Trail Updated Successfully in local and cloud storage!')),
         );
-        Navigator.pop(context);
+        setState(() => _isLoading = false);
+        Navigator.pop(context, true); // Return success
       },
       onError: (error) {
         AppLogger.error('Error updating trail: ${error.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Error updating trail')),
+          SnackBar(content: Text('Error updating trail: $error')),
         );
+        setState(() => _isLoading = false);
       },
     );
   }
@@ -187,8 +215,9 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        appBar: AppBar(title: Text('Edit ${widget.trailName}')),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -312,17 +341,33 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
                                 height: 100,
                                 width: 100,
                                 fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  // Handle image loading errors
+                                  return Container(
+                                    height: 100,
+                                    width: 100,
+                                    color: Colors.grey[300],
+                                    child: const Icon(Icons.broken_image),
+                                  );
+                                },
                               ),
                               Positioned(
                                 right: 0,
                                 top: 0,
-                                child: IconButton(
-                                  icon: const Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () {
+                                child: GestureDetector(
+                                  onTap: () {
                                     setState(() {
                                       _images.removeAt(index);
                                     });
                                   },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(2),
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(Icons.close, color: Colors.red, size: 20),
+                                  ),
                                 ),
                               ),
                             ],
@@ -339,10 +384,16 @@ class _TrailEditScreenState extends State<TrailEditScreen> {
                 ),
 
                 const SizedBox(height: 20.0),
-                ElevatedButton(
-                  onPressed: _submitForm,
-                  child: const Text('Save Changes'),
-                ),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _submitForm,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    child: const Text('Save Changes'),
+                  ),
+                )
               ],
             ),
           ),

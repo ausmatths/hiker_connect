@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'dart:core';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
 
 import '../../models/trail_data.dart';
 import '../../services/databaseservice.dart';
@@ -19,7 +21,7 @@ class EventFormScreen extends StatefulWidget {
 
 class _EventFormScreenState extends State<EventFormScreen> {
   final _formKey = GlobalKey<FormState>();
-  final dbService = DatabaseService();
+  late DatabaseService dbService;
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _noticeController = TextEditingController();
@@ -30,11 +32,23 @@ class _EventFormScreenState extends State<EventFormScreen> {
   final List<File> _eventImages = [];
   int _selectedHours = 0;
   int _selectedMinutes = 0;
+  bool _isLoading = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Get DatabaseService from provider
+    dbService = Provider.of<DatabaseService>(context, listen: false);
+  }
 
   Future<void> _pickImage() async {
     AsyncContextHandler.safeAsyncOperation(
       context,
           () async {
+        setState(() {
+          _isLoading = true;
+        });
+
         final pickedFile = await ImagePicker().pickImage(
           source: ImageSource.gallery,
           maxWidth: 1200,
@@ -49,11 +63,19 @@ class _EventFormScreenState extends State<EventFormScreen> {
         }
         return Future.value();
       },
+      onSuccess: () {
+        setState(() {
+          _isLoading = false;
+        });
+      },
       onError: (error) {
         AppLogger.error('Error picking image: ${error.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error selecting image: $error')),
         );
+        setState(() {
+          _isLoading = false;
+        });
         return Future.value();
       },
     );
@@ -81,8 +103,16 @@ class _EventFormScreenState extends State<EventFormScreen> {
           return Future.value();
         }
 
+        setState(() {
+          _isLoading = true;
+        });
+
+        // Generate unique ID based on timestamp and current user ID
+        final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
+        final int uniqueId = DateTime.now().millisecondsSinceEpoch;
+
         final newEvent = TrailData(
-          trailId: 0,
+          trailId: uniqueId,
           trailName: _nameController.text,
           trailDescription: _descriptionController.text,
           trailDifficulty: _difficulty,
@@ -94,21 +124,29 @@ class _EventFormScreenState extends State<EventFormScreen> {
           trailDuration: Duration(hours: _selectedHours, minutes: _selectedMinutes),
         );
 
-        // Use DatabaseService to insert the event
+        // Use DatabaseService to insert the event - both locally and to cloud
         await dbService.insertTrails(newEvent);
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Event saved successfully')),
+          const SnackBar(content: Text('Trail saved successfully to local and cloud storage')),
         );
 
         Navigator.pop(context, newEvent);
         return Future.value();
+      },
+      onSuccess: () {
+        setState(() {
+          _isLoading = false;
+        });
       },
       onError: (error) {
         AppLogger.error('Error submitting trail: ${error.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error saving trail: $error')),
         );
+        setState(() {
+          _isLoading = false;
+        });
         return Future.value();
       },
     );
@@ -147,7 +185,9 @@ class _EventFormScreenState extends State<EventFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Create Trail')),
-      body: SingleChildScrollView(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -279,25 +319,53 @@ class _EventFormScreenState extends State<EventFormScreen> {
                 children: _eventImages
                     .map((image) => Padding(
                   padding: const EdgeInsets.all(4.0),
-                  child: Image.file(image, height: 100, width: 100),
+                  child: Stack(
+                    children: [
+                      Image.file(image, height: 100, width: 100),
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: GestureDetector(
+                          onTap: () {
+                            setState(() {
+                              _eventImages.remove(image);
+                            });
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(2),
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.close, color: Colors.red, size: 20),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ))
                     .toList(),
               ),
-              TextButton(
+              TextButton.icon(
                 onPressed: _pickImage,
-                child: const Text('Upload Image'),
+                icon: const Icon(Icons.add_photo_alternate),
+                label: const Text('Upload Image'),
               ),
               const SizedBox(height: 20.0),
-              ElevatedButton(
-                onPressed: _submitForm,
-                child: const Text('Save Trail'),
-              ),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _submitForm,
+                  child: const Text('Save Trail'),
+                ),
+              )
             ],
           ),
         ),
       ),
     );
   }
+
   @override
   void dispose() {
     // Dispose all text editing controllers

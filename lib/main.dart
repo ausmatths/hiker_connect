@@ -9,11 +9,11 @@ import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:hiker_connect/models/trail_data.dart';
 import 'package:hiker_connect/models/user_model.dart';
 import 'package:hiker_connect/models/event_data.dart';
-import 'package:hiker_connect/models/duration_adapter.dart'; // Add this import
+import 'package:hiker_connect/models/duration_adapter.dart';
 import 'package:hiker_connect/services/databaseservice.dart';
 import 'dart:developer' as developer;
 import 'dart:io';
-import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, TargetPlatform;
+import 'package:flutter/foundation.dart' show defaultTargetPlatform, kIsWeb, kDebugMode, TargetPlatform;
 
 // Import screens and services
 import 'package:hiker_connect/services/firebase_auth.dart';
@@ -125,15 +125,17 @@ Future<void> main() async {
     await Hive.close();
 
     // For development only - clear Hive data to avoid adapter conflicts
-    // THIS WILL DELETE SAVED DATA - only use in development
-    try {
-      final directory = Directory(hivePath);
-      if (await directory.exists()) {
-        await directory.delete(recursive: true);
-        developer.log('Cleared Hive data directory', name: 'App Setup');
+    // THIS WILL DELETE SAVED DATA - only use in development mode
+    if (kDebugMode) {
+      try {
+        final directory = Directory(hivePath);
+        if (await directory.exists()) {
+          await directory.delete(recursive: true);
+          developer.log('Cleared Hive data directory', name: 'App Setup');
+        }
+      } catch (e) {
+        developer.log('Failed to clear Hive directory: $e', name: 'App Setup');
       }
-    } catch (e) {
-      developer.log('Failed to clear Hive directory: $e', name: 'App Setup');
     }
 
     // Initialize Hive with a fresh directory
@@ -155,7 +157,7 @@ Future<void> main() async {
     Hive.registerAdapter(UserModelAdapter());  // TypeId 3
     developer.log('UserModelAdapter registered with typeId 3', name: 'App Setup');
 
-    // Make sure your EventDataAdapter is modified to use typeId 4
+    // Register EventDataAdapter with proper error handling
     try {
       Hive.registerAdapter(EventDataAdapter()); // Should be TypeId 4
       developer.log('EventDataAdapter registered successfully', name: 'App Setup');
@@ -177,16 +179,7 @@ Future<void> main() async {
     await dbService.init();
     developer.log('Database service initialized successfully', name: 'App Setup');
 
-    FlutterError.onError = (FlutterErrorDetails details) {
-      developer.log(
-        'Unhandled Flutter Framework Error',
-        name: 'GlobalErrorHandler',
-        error: details.exception,
-        stackTrace: details.stack,
-      );
-      FlutterError.presentError(details);
-    };
-
+    // Initialize Firebase
     developer.log('Initializing Firebase', name: 'App Setup');
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -214,17 +207,27 @@ Future<void> main() async {
       developer.log('App Check activated for Android', name: 'App Setup');
     }
 
-    developer.log(
-      'Firebase Initialization Details',
-      name: 'App Setup',
-      error: {
-        'Firebase Core Version': 'Initialized Successfully',
-        'Platform': defaultTargetPlatform.toString(),
-        'Firebase Auth Version': FirebaseAuth.instance.toString(),
-        'Firestore Instance': FirebaseFirestore.instance.toString(),
-        'App Check': 'Initialized Successfully',
-      },
-    );
+    // Load any previously saved trail data
+    if (!kDebugMode) {
+      try {
+        // Fetch trails from Firestore to sync with local database
+        await dbService.getTrailsFromFirestore();
+        developer.log('Synced trails from cloud to local storage', name: 'App Setup');
+      } catch (e) {
+        developer.log('Error pre-loading trail data: $e', name: 'App Setup');
+      }
+    }
+
+    // Set up error handling
+    FlutterError.onError = (FlutterErrorDetails details) {
+      developer.log(
+        'Unhandled Flutter Framework Error',
+        name: 'GlobalErrorHandler',
+        error: details.exception,
+        stackTrace: details.stack,
+      );
+      FlutterError.presentError(details);
+    };
 
     final authService = AuthService();
 
@@ -245,6 +248,10 @@ Future<void> main() async {
               );
               return null;
             },
+          ),
+          // Add DatabaseService provider for easy access
+          Provider<DatabaseService>.value(
+            value: dbService,
           ),
         ],
         child: const App(),

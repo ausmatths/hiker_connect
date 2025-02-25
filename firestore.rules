@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Common functions for reuse
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Trail collection rules
+    match /trails/{trailId} {
+      // Allow any signed-in user to read trails
+      allow read: if isSignedIn();
+
+      // Allow creation if user is signed in and sets themselves as creator
+      allow create: if isSignedIn() &&
+                     request.resource.data.createdBy == request.auth.uid;
+
+      // Allow updates only by the trail creator
+      allow update: if isSignedIn() &&
+                     resource.data.createdBy == request.auth.uid;
+
+      // Allow deletion only by the trail creator
+      allow delete: if isSignedIn() &&
+                     resource.data.createdBy == request.auth.uid;
+    }
+
+    // User profiles (if you add them later)
+    match /users/{userId} {
+      // Users can read any profile
+      allow read: if isSignedIn();
+
+      // Users can only write to their own profile
+      allow write: if isSignedIn() && isOwner(userId);
+    }
+  }
+}
