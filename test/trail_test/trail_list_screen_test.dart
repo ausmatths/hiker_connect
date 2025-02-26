@@ -135,7 +135,7 @@ void main() {
       expect(find.text('Join'), findsOneWidget);
     });
 
-    testWidgets('shows snackbar message when joining a trail', (WidgetTester tester) async {
+    testWidgets('changes button state when joining a trail', (WidgetTester tester) async {
       final trail = TrailData(
         trailId: 1,
         trailName: 'Trail 1',
@@ -155,13 +155,24 @@ void main() {
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
 
+      // Verify the Trail 1 is displayed and has a Join button
+      expect(find.text('Trail 1'), findsOneWidget);
+      expect(find.text('Join'), findsOneWidget);
+
       // Tap the Join button
       await tester.tap(find.text('Join'));
-      // Need to pump right after the tap
-      await tester.pump();
 
-      // Check for the snackbar
-      expect(find.text('You have joined the trail!'), findsOneWidget);
+      // Process the tap and wait for UI to update
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 50));
+
+      // Verify the button changed to "Unjoin"
+      expect(find.text('Unjoin'), findsOneWidget,
+          reason: "Button should change from 'Join' to 'Unjoin' after tapping");
+
+      // Verify the original button is no longer visible
+      expect(find.text('Join'), findsNothing,
+          reason: "Original 'Join' button should no longer be visible");
     });
 
     testWidgets('FAB is present in the UI', (WidgetTester tester) async {
