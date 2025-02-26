@@ -94,7 +94,8 @@ void main() {
   });
 
   group('TrailListScreen Interaction Tests', () {
-    testWidgets('allows joining and unjoining a trail', (WidgetTester tester) async {
+    testWidgets(
+        'allows joining and unjoining a trail', (WidgetTester tester) async {
       final trail = TrailData(
         trailId: 1,
         trailName: 'Trail 1',
@@ -109,7 +110,8 @@ void main() {
       );
 
       when(mockDatabaseService.getTrails()).thenAnswer((_) async => [trail]);
-      when(mockDatabaseService.getTrailsFromFirestore()).thenAnswer((_) async => []);
+      when(mockDatabaseService.getTrailsFromFirestore()).thenAnswer((
+          _) async => []);
 
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
@@ -126,6 +128,7 @@ void main() {
 
       // Verify the button state changed to Unjoin
       expect(find.text('Unjoin'), findsOneWidget);
+      expect(find.text('Join'), findsNothing); // Check that Join is GONE
 
       // Tap the Unjoin button
       await tester.tap(find.text('Unjoin'));
@@ -133,9 +136,11 @@ void main() {
 
       // Verify it changed back to Join
       expect(find.text('Join'), findsOneWidget);
+      expect(find.text('Unjoin'), findsNothing); // Check that Unjoin is GONE
     });
 
-    testWidgets('changes button state when joining a trail', (WidgetTester tester) async {
+    testWidgets('changes button state when joining a trail', (
+        WidgetTester tester) async {
       final trail = TrailData(
         trailId: 1,
         trailName: 'Trail 1',
@@ -150,7 +155,8 @@ void main() {
       );
 
       when(mockDatabaseService.getTrails()).thenAnswer((_) async => [trail]);
-      when(mockDatabaseService.getTrailsFromFirestore()).thenAnswer((_) async => []);
+      when(mockDatabaseService.getTrailsFromFirestore()).thenAnswer((
+          _) async => []);
 
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
@@ -177,24 +183,37 @@ void main() {
 
     testWidgets('FAB is present in the UI', (WidgetTester tester) async {
       when(mockDatabaseService.getTrails()).thenAnswer((_) async => []);
-      when(mockDatabaseService.getTrailsFromFirestore()).thenAnswer((_) async => []);
+      when(mockDatabaseService.getTrailsFromFirestore()).thenAnswer((
+          _) async => []);
 
       await tester.pumpWidget(createWidgetUnderTest());
       await tester.pumpAndSettle();
 
-      // Find the FAB
-      final fabFinder = find.byType(FloatingActionButton);
-      expect(fabFinder, findsOneWidget, reason: "FloatingActionButton should be visible");
+      // Check for the Add FAB using heroTag
+      expect(find.byType(FloatingActionButton), findsNWidgets(2),
+          reason: "There should be two FABs");
 
-      // Verify FAB has the correct icon
-      expect(find.descendant(
-        of: fabFinder,
-        matching: find.byIcon(Icons.add),
-      ), findsOneWidget, reason: "FAB should have an add icon");
+      expect(find.byWidgetPredicate(
+            (widget) =>
+        widget is FloatingActionButton && widget.heroTag == 'addBtn',
+      ), findsOneWidget, reason: "Add FAB should be present");
+
+      // Verify that the Add FAB has the correct icon
+      expect(
+        find.descendant(
+          of: find.byWidgetPredicate(
+                (widget) =>
+            widget is FloatingActionButton && widget.heroTag == 'addBtn',
+          ),
+          matching: find.byIcon(Icons.add),
+        ),
+        findsOneWidget,
+        reason: "Add FAB should have an add icon",
+      );
     });
   });
 
-  group('Trail Details Edge Cases', () {
+    group('Trail Details Edge Cases', () {
     testWidgets('displays standard trail details correctly', (WidgetTester tester) async {
       final trail = TrailData(
         trailId: 1,
@@ -505,7 +524,9 @@ void main() {
       print('Time to scroll through trails: $scrollTime ms');
 
       // Verify we can see different trails after scrolling
-      expect(find.textContaining('Trail '), findsWidgets);
+      // Assert that we see *different* trail items (e.g., higher index ones)
+      // This assumes your trail names include the index
+      expect(find.textContaining('Trail 5'), findsWidgets); // Example
     });
 
     testWidgets('handles trail list updates efficiently', (WidgetTester tester) async {
@@ -890,7 +911,8 @@ void main() {
         final loadingIndicatorTime = stopwatch.elapsedMilliseconds;
         expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
-        // Verify loading indicator stays visible during slow network
+  // Verify loading indicator stays visible during slow network
+
         await tester.pump(const Duration(milliseconds: 500));
         expect(find.byType(CircularProgressIndicator), findsOneWidget);
 
