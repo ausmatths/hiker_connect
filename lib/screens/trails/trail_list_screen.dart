@@ -311,6 +311,8 @@ class TrailListScreenState extends State<TrailListScreen> {
         child: const Icon(Icons.add),
         tooltip: 'Create New Trail',
       ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+       // Center the FAB
     );
   }
 }
