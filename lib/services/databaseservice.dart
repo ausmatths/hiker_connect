@@ -163,6 +163,22 @@ class DatabaseService {
 
       final trails = snapshot.docs.map((doc) {
         final data = doc.data();
+
+        // Fix for the trailImages field - this is the key issue
+        if (data.containsKey('trailImages')) {
+          var imagesData = data['trailImages'];
+          if (imagesData is String) {
+            // Convert single string to a list of one string
+            data['trailImages'] = [imagesData];
+          } else if (imagesData == null) {
+            // Provide default empty list if missing
+            data['trailImages'] = [];
+          }
+        } else {
+          // If the field doesn't exist, add an empty list
+          data['trailImages'] = [];
+        }
+
         // Convert Firestore data to TrailData
         return TrailData.fromMap(data);
       }).toList();

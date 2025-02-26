@@ -1,10 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hiker_connect/screens/trails/eventform_screen.dart';
+import 'package:hiker_connect/services/databaseservice.dart';
+import 'package:provider/provider.dart';
+import 'package:mockito/mockito.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+// Create mock classes
+class MockDatabaseService extends Mock implements DatabaseService {}
+class MockFirebaseFirestore extends Mock implements FirebaseFirestore {}
+class MockFirebaseAuth extends Mock implements FirebaseAuth {}
 
 void main() {
   testWidgets('EventFormScreen should validate inputs and submit', (WidgetTester tester) async {
-    await tester.pumpWidget(const MaterialApp(home: EventFormScreen()));
+    // Create mock instances
+    final mockDatabaseService = MockDatabaseService();
+    final mockFirestore = MockFirebaseFirestore();
+    final mockAuth = MockFirebaseAuth();
+
+    // Build the EventFormScreen with all required providers
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          Provider<DatabaseService>.value(value: mockDatabaseService),
+          Provider<FirebaseFirestore>.value(value: mockFirestore),
+          Provider<FirebaseAuth>.value(value: mockAuth),
+        ],
+        child: const MaterialApp(home: EventFormScreen()),
+      ),
+    );
 
     expect(find.byType(TextFormField), findsNWidgets(5));
     expect(find.byType(DropdownButtonFormField<String>), findsOneWidget);
