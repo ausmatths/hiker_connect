@@ -33,6 +33,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
   int _selectedHours = 0;
   int _selectedMinutes = 0;
   bool _isLoading = false;
+  String _selectedType = 'Trail';
 
   @override
   void didChangeDependencies() {
@@ -107,7 +108,6 @@ class _EventFormScreenState extends State<EventFormScreen> {
           _isLoading = true;
         });
 
-        // Generate unique ID based on timestamp and current user ID
         final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
         final int uniqueId = DateTime.now().millisecondsSinceEpoch;
 
@@ -184,7 +184,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Create Trail')),
+      appBar: AppBar(title: const Text('Create Trail/Event')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -194,22 +194,45 @@ class _EventFormScreenState extends State<EventFormScreen> {
           key: _formKey,
           child: Column(
             children: [
-              TextFormField(
-                controller: _nameController,
+              DropdownButtonFormField<String>(
+                value: _selectedType,
+                items: ['Trail', 'Event']
+                    .map((type) => DropdownMenuItem(
+                  value: type,
+                  child: Text(type),
+                ))
+                    .toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedType = value!;
+                  });
+                },
                 decoration: const InputDecoration(
-                  labelText: 'Trail Name',
+                  labelText: 'Type',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value == null || value.isEmpty ? 'Please enter Trail name' : null,
+              ),
+              const SizedBox(height: 16.0),
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(
+                  labelText: _selectedType == 'Trail' ? 'Trail Name' : 'Event Name',
+                  border: const OutlineInputBorder(),
+                ),
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please enter ${_selectedType == 'Trail' ? 'Trail' : 'Event'} name'
+                    : null,
               ),
               const SizedBox(height: 16.0),
               TextFormField(
                 controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Trail Description',
+                decoration: InputDecoration(
+                  labelText: _selectedType == 'Trail' ? 'Trail Description' : 'Event Description',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value == null || value.isEmpty ? 'Please enter Trail description' : null,
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please enter ${_selectedType == 'Trail' ? 'Trail' : 'Event'} description'
+                    : null,
               ),
               const SizedBox(height: 16.0),
               TextFormField(
@@ -218,7 +241,9 @@ class _EventFormScreenState extends State<EventFormScreen> {
                   labelText: 'Location',
                   border: OutlineInputBorder(),
                 ),
-                validator: (value) => value == null || value.isEmpty ? 'Please enter the Trail location' : null,
+                validator: (value) => value == null || value.isEmpty
+                    ? 'Please enter ${_selectedType == 'Trail' ? 'Trail' : 'Event'} Location'
+                    : null,
               ),
               const SizedBox(height: 16.0),
               DropdownButtonFormField<String>(
@@ -255,7 +280,6 @@ class _EventFormScreenState extends State<EventFormScreen> {
               ),
               const SizedBox(height: 16.0),
 
-              // Date Picker with Future Date Restriction
               GestureDetector(
                 onTap: _selectDate,
                 child: Container(
@@ -268,10 +292,13 @@ class _EventFormScreenState extends State<EventFormScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        _eventDate == null
-                            ? 'Select Trail Date'
-                            : 'Trail Date: ${DateFormat('yyyy-MM-dd').format(_eventDate!)}',
-                        style: const TextStyle(fontSize: 16.0),
+                        _eventDate ==null
+                            ? 'Select ${_selectedType == 'Trail' ? 'Trail' : 'Event'} Date'
+                            : '${_selectedType == 'Trail' ? 'Trail Date:' : 'Event Date:'}  ${DateFormat('yyyy-MM-dd').format(_eventDate!)}',
+                        // _eventDate == null
+                        //     ? 'Select Trail Date'
+                        //     : 'Trail Date: ${DateFormat('yyyy-MM-dd').format(_eventDate!)}',
+                        // style: const TextStyle(fontSize: 16.0),
                       ),
                       const Icon(Icons.calendar_today),
                     ],
@@ -356,7 +383,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _submitForm,
-                  child: const Text('Save Trail'),
+                  child: Text(_selectedType == 'Trail' ? 'Save Trail' : 'Save Event'),
                 ),
               )
             ],
