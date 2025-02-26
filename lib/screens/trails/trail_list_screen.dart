@@ -740,7 +740,7 @@ class TrailListScreenState extends State<TrailListScreen> {
           FloatingActionButton(
             heroTag: 'joinBtn',
             onPressed: _showJoinDialog,
-            backgroundColor: Colors.green,
+            backgroundColor: Colors.blue,
             child: const Icon(Icons.group_add),
             tooltip: 'Join a Trail with URL',
           ),
