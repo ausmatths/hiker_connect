@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:hiker_connect/models/trail_data.dart';
 import 'package:device_calendar/device_calendar.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
+import 'package:share_plus/share_plus.dart';
 import '../../services/databaseservice.dart';
 import 'event_edit_screen.dart';
 import 'eventform_screen.dart' as create_screen;
@@ -123,6 +125,157 @@ class TrailListScreenState extends State<TrailListScreen> {
     }
   }
 
+  // Method to generate a unique URL for each trail
+  String _generateTrailUrl(TrailData event) {
+    // Generate a unique URL for the trail using trailId
+    return 'https://hikerconnect.app/trail/${event.trailId}';
+  }
+
+  // Method to show the share dialog for a trail
+  void _shareTrail(TrailData event) {
+    final trailUrl = _generateTrailUrl(event);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Share Trail'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Share this unique URL with friends:'),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[200],
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        trailUrl,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.copy),
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: trailUrl));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('URL copied to clipboard')),
+                        );
+                      },
+                      tooltip: 'Copy URL',
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                Share.share(
+                  'Join me on this trail! ${event.trailName}\n${event.trailDescription}\nLocation: ${event.trailLocation}\nDate: ${event.trailDate.toString().split(' ')[0]}\n\n$trailUrl',
+                );
+              },
+              child: const Text('Share'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Method to show join dialog with URL field
+  void _showJoinDialog() {
+    final TextEditingController urlController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Join Trail'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Enter the trail URL to join:'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: urlController,
+                decoration: const InputDecoration(
+                  hintText: 'https://hikerconnect.app/trail/1234',
+                  labelText: 'Trail URL',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                final url = urlController.text.trim();
+                if (url.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a valid URL')),
+                  );
+                  return;
+                }
+
+                // Extract trail ID from URL
+                final urlPattern = RegExp(r'trail/(\d+)');
+                final match = urlPattern.firstMatch(url);
+
+                if (match != null) {
+                  final trailId = int.tryParse(match.group(1) ?? '');
+                  if (trailId != null) {
+                    // Find the trail by ID
+                    final trail = events.firstWhere(
+                          (event) => event.trailId == trailId,
+                      //orElse: () => TrailData,
+                    );
+
+                    if (trail.trailId != 0) {  // Not the empty trail
+                      Navigator.of(context).pop();
+                      _toggleJoinEvent(trail);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Trail not found. Please check the URL and try again.')),
+                      );
+                    }
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Invalid trail URL format')),
+                    );
+                  }
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Invalid trail URL format')),
+                  );
+                }
+              },
+              child: const Text('Join'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   void _toggleJoinEvent(TrailData event) {
     if (joinedEvents.contains(event)) {
       _unjoinEvent(event);
@@ -135,7 +288,7 @@ class TrailListScreenState extends State<TrailListScreen> {
     setState(() {
       joinedEvents.remove(event);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('You have unjoined the trail.')),
+        SnackBar(content: Text('You have unjoined the trail "${event.trailName}".')),
       );
     });
   }
@@ -143,8 +296,13 @@ class TrailListScreenState extends State<TrailListScreen> {
   void _joinEvent(TrailData event) {
     setState(() {
       joinedEvents.add(event);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('You have joined the trail "${event.trailName}"!')),
+      );
     });
+  }
 
+  void _showCalendarSelectionDialog(TrailData event) {
     // We'll refresh the calendar list just before showing the dialog to ensure we have the latest
     _getAvailableCalendars().then((_) {
       if (_availableCalendars == null || _availableCalendars!.isEmpty) {
@@ -171,11 +329,8 @@ class TrailListScreenState extends State<TrailListScreen> {
                 TextButton(
                   onPressed: () {
                     Navigator.of(context).pop();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('You have joined the trail without calendar sync.')),
-                    );
                   },
-                  child: const Text('Continue Without Calendar'),
+                  child: const Text('Cancel'),
                 ),
                 TextButton(
                   onPressed: () {
@@ -191,78 +346,47 @@ class TrailListScreenState extends State<TrailListScreen> {
         return;
       }
 
-      // Show calendar sync dialog
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: const Text('Sync with Calendar'),
-            content: const Text('Would you like this trail to be synced with your calendar?'),
+            title: const Text('Select Calendar'),
+            content: SizedBox(
+              width: double.maxFinite,
+              height: 300,
+              child: ListView.builder(
+                itemCount: _availableCalendars!.length,
+                itemBuilder: (context, index) {
+                  final calendar = _availableCalendars![index];
+                  final isGoogleCalendar = calendar.accountType?.toLowerCase().contains('google') ?? false;
+                  final icon = isGoogleCalendar
+                      ? const Icon(Icons.calendar_month, color: Colors.blue)
+                      : const Icon(Icons.calendar_today);
+
+                  return ListTile(
+                    leading: icon,
+                    title: Text(calendar.name ?? 'Unknown Calendar'),
+                    subtitle: Text(calendar.accountName ?? 'Unknown Account'),
+                    onTap: () {
+                      Navigator.of(context).pop();
+                      _addEventToCalendar(event, calendar);
+                    },
+                  );
+                },
+              ),
+            ),
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.of(context).pop(); // Close dialog
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('You have joined the trail!')),
-                  );
+                  Navigator.of(context).pop();
                 },
-                child: const Text('No'),
-              ),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // Close dialog
-                  _showCalendarSelectionDialog(event);
-                },
-                child: const Text('Yes'),
+                child: const Text('Cancel'),
               ),
             ],
           );
         },
       );
     });
-  }
-
-  void _showCalendarSelectionDialog(TrailData event) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Select Calendar'),
-          content: SizedBox(
-            width: double.maxFinite,
-            height: 300,
-            child: ListView.builder(
-              itemCount: _availableCalendars!.length,
-              itemBuilder: (context, index) {
-                final calendar = _availableCalendars![index];
-                final isGoogleCalendar = calendar.accountType?.toLowerCase().contains('google') ?? false;
-                final icon = isGoogleCalendar
-                    ? const Icon(Icons.calendar_month, color: Colors.blue)
-                    : const Icon(Icons.calendar_today);
-
-                return ListTile(
-                  leading: icon,
-                  title: Text(calendar.name ?? 'Unknown Calendar'),
-                  subtitle: Text(calendar.accountName ?? 'Unknown Account'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _addEventToCalendar(event, calendar);
-                  },
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   Future<void> _addEventToCalendar(TrailData event, Calendar calendar) async {
@@ -330,10 +454,6 @@ class TrailListScreenState extends State<TrailListScreen> {
         SnackBar(content: Text('Calendar error: ${e.toString()}')),
       );
     }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('You have joined the trail! Note: Calendar sync may take a few minutes to appear.')),
-    );
   }
 
   void _navigateToEventForm() {
@@ -495,10 +615,22 @@ class TrailListScreenState extends State<TrailListScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Event Name
-                    Text(
-                      event.trailName.isNotEmpty ? event.trailName : "Untitled Trail",
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    // Event Name with share button
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            event.trailName.isNotEmpty ? event.trailName : "Untitled Trail",
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.share, color: Colors.blue),
+                          onPressed: () => _shareTrail(event),
+                          tooltip: 'Share Trail',
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 5),
 
@@ -510,7 +642,8 @@ class TrailListScreenState extends State<TrailListScreen> {
                     // Event Details
                     Text('Location: ${event.trailLocation}', style: const TextStyle(fontSize: 14)),
                     const SizedBox(height: 5),
-                    Text('Difficulty: ${event.trailDifficulty}',
+                    Text(
+                      'Difficulty: ${event.trailDifficulty}',
                       style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
@@ -518,8 +651,7 @@ class TrailListScreenState extends State<TrailListScreen> {
                               ? Colors.green
                               : event.trailDifficulty == 'Hard'
                               ? Colors.red
-                              : Colors.orange
-                      ),
+                              : Colors.orange),
                     ),
                     const SizedBox(height: 5),
                     Text('Notice: ${event.trailNotice}', style: const TextStyle(fontSize: 14)),
@@ -586,6 +718,20 @@ class TrailListScreenState extends State<TrailListScreen> {
                             ),
                           ),
                         ),
+
+                        // Add to Calendar Button
+                        Flexible(
+                          child: ElevatedButton.icon(
+                            onPressed: () => _showCalendarSelectionDialog(event),
+                            icon: const Icon(Icons.calendar_today),
+                            label: const Text('Add to Calendar'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue[50],
+                              foregroundColor: Colors.blue,
+                            ),
+                          ),
+                        ),
+
                         // Edit Button
                         IconButton(
                           icon: const Icon(Icons.edit, color: Colors.blue),
@@ -601,12 +747,29 @@ class TrailListScreenState extends State<TrailListScreen> {
           },
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _navigateToEventForm,
-        child: const Icon(Icons.add),
-        tooltip: 'Create New Trail',
+      // Two floating action buttons: Add and Join
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          // Join button
+          FloatingActionButton(
+            heroTag: 'joinBtn',
+            onPressed: _showJoinDialog,
+            backgroundColor: Colors.green,
+            child: const Icon(Icons.group_add),
+            tooltip: 'Join a Trail with URL',
+          ),
+          const SizedBox(height: 16),
+          // Add button
+          FloatingActionButton(
+            heroTag: 'addBtn',
+            onPressed: _navigateToEventForm,
+            child: const Icon(Icons.add),
+            tooltip: 'Create New Trail',
+          ),
+        ],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat, // Center the FAB
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 }
