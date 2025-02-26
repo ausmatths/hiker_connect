@@ -128,7 +128,7 @@ void main() {
 
       // Verify the button state changed to Unjoin
       expect(find.text('Unjoin'), findsOneWidget);
-      expect(find.text('Join'), findsNothing); // Check that Join is GONE
+      expect(find.text('Join'), findsNothing);
 
       // Tap the Unjoin button
       await tester.tap(find.text('Unjoin'));
