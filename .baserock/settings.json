@@ -1,6 +1,6 @@
 {
-  "testDirectory": "src/test/java/",
-  "testDirectoryOverrideStatus": false,
+  "testDirectory": "/Users/ausmatths/FlutterProjects/hiker_connect/test",
+  "testDirectoryOverrideStatus": true,
   "unitTestLibrary": "JUNIT5",
   "mockingLibrary": "MOCKITO",
   "assertionLibrary": "HAMCREST",

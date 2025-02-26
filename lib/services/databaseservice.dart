@@ -18,6 +18,19 @@ class DatabaseService {
 
   DatabaseService._internal();
 
+
+  Future<Box<TrailData>> getTrailBox() async {
+    return _trailBox ?? await Hive.openBox<TrailData>('trailBox');
+  }
+
+  Future<Box<UserModel>> getUserBox() async {
+    return _userBox ?? await Hive.openBox<UserModel>('userBox');
+  }
+
+  Future<Box<EventData>> getEventBox() async {
+    return _eventBox ?? await Hive.openBox<EventData>('eventBox');
+  }
+
   Future<void> init() async {
     try {
       // Just open the boxes
@@ -34,7 +47,7 @@ class DatabaseService {
 
   Future<int> insertTrails(TrailData trail) async {
     try {
-      final box = _trailBox ?? await Hive.openBox<TrailData>('trailBox');
+      final box = await getTrailBox();
       final resultKey = await box.add(trail);
 
       // Ensure data is actually written to disk

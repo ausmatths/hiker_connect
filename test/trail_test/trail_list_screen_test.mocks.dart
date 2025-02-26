@@ -3,10 +3,13 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i3;
+import 'dart:async' as _i4;
 
-import 'package:hiker_connect/models/trail_data.dart' as _i4;
-import 'package:hiker_connect/services/databaseservice.dart' as _i2;
+import 'package:hiker_connect/models/event_data.dart' as _i7;
+import 'package:hiker_connect/models/trail_data.dart' as _i5;
+import 'package:hiker_connect/models/user_model.dart' as _i6;
+import 'package:hiker_connect/services/databaseservice.dart' as _i3;
+import 'package:hive/hive.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
 
 // ignore_for_file: type=lint
@@ -23,46 +26,104 @@ import 'package:mockito/mockito.dart' as _i1;
 // ignore_for_file: camel_case_types
 // ignore_for_file: subtype_of_sealed_class
 
+class _FakeBox_0<E> extends _i1.SmartFake implements _i2.Box<E> {
+  _FakeBox_0(
+    Object parent,
+    Invocation parentInvocation,
+  ) : super(
+          parent,
+          parentInvocation,
+        );
+}
+
 /// A class which mocks [DatabaseService].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockDatabaseService extends _i1.Mock implements _i2.DatabaseService {
+class MockDatabaseService extends _i1.Mock implements _i3.DatabaseService {
   MockDatabaseService() {
     _i1.throwOnMissingStub(this);
   }
 
   @override
-  _i3.Future<void> init() => (super.noSuchMethod(
+  _i4.Future<_i2.Box<_i5.TrailData>> getTrailBox() => (super.noSuchMethod(
+        Invocation.method(
+          #getTrailBox,
+          [],
+        ),
+        returnValue:
+            _i4.Future<_i2.Box<_i5.TrailData>>.value(_FakeBox_0<_i5.TrailData>(
+          this,
+          Invocation.method(
+            #getTrailBox,
+            [],
+          ),
+        )),
+      ) as _i4.Future<_i2.Box<_i5.TrailData>>);
+
+  @override
+  _i4.Future<_i2.Box<_i6.UserModel>> getUserBox() => (super.noSuchMethod(
+        Invocation.method(
+          #getUserBox,
+          [],
+        ),
+        returnValue:
+            _i4.Future<_i2.Box<_i6.UserModel>>.value(_FakeBox_0<_i6.UserModel>(
+          this,
+          Invocation.method(
+            #getUserBox,
+            [],
+          ),
+        )),
+      ) as _i4.Future<_i2.Box<_i6.UserModel>>);
+
+  @override
+  _i4.Future<_i2.Box<_i7.EventData>> getEventBox() => (super.noSuchMethod(
+        Invocation.method(
+          #getEventBox,
+          [],
+        ),
+        returnValue:
+            _i4.Future<_i2.Box<_i7.EventData>>.value(_FakeBox_0<_i7.EventData>(
+          this,
+          Invocation.method(
+            #getEventBox,
+            [],
+          ),
+        )),
+      ) as _i4.Future<_i2.Box<_i7.EventData>>);
+
+  @override
+  _i4.Future<void> init() => (super.noSuchMethod(
         Invocation.method(
           #init,
           [],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<int> insertTrails(_i4.TrailData? trail) => (super.noSuchMethod(
+  _i4.Future<int> insertTrails(_i5.TrailData? trail) => (super.noSuchMethod(
         Invocation.method(
           #insertTrails,
           [trail],
         ),
-        returnValue: _i3.Future<int>.value(0),
-      ) as _i3.Future<int>);
+        returnValue: _i4.Future<int>.value(0),
+      ) as _i4.Future<int>);
 
   @override
-  _i3.Future<List<_i4.TrailData>> getTrails() => (super.noSuchMethod(
+  _i4.Future<List<_i5.TrailData>> getTrails() => (super.noSuchMethod(
         Invocation.method(
           #getTrails,
           [],
         ),
-        returnValue: _i3.Future<List<_i4.TrailData>>.value(<_i4.TrailData>[]),
-      ) as _i3.Future<List<_i4.TrailData>>);
+        returnValue: _i4.Future<List<_i5.TrailData>>.value(<_i5.TrailData>[]),
+      ) as _i4.Future<List<_i5.TrailData>>);
 
   @override
-  _i3.Future<void> updateTrail(
+  _i4.Future<void> updateTrail(
     String? trailName,
-    _i4.TrailData? trail,
+    _i5.TrailData? trail,
   ) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -72,48 +133,48 @@ class MockDatabaseService extends _i1.Mock implements _i2.DatabaseService {
             trail,
           ],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<_i4.TrailData?> getTrailByName(String? name) =>
+  _i4.Future<_i5.TrailData?> getTrailByName(String? name) =>
       (super.noSuchMethod(
         Invocation.method(
           #getTrailByName,
           [name],
         ),
-        returnValue: _i3.Future<_i4.TrailData?>.value(),
-      ) as _i3.Future<_i4.TrailData?>);
+        returnValue: _i4.Future<_i5.TrailData?>.value(),
+      ) as _i4.Future<_i5.TrailData?>);
 
   @override
-  _i3.Future<void> syncTrailToFirestore(_i4.TrailData? trail) =>
+  _i4.Future<void> syncTrailToFirestore(_i5.TrailData? trail) =>
       (super.noSuchMethod(
         Invocation.method(
           #syncTrailToFirestore,
           [trail],
         ),
-        returnValue: _i3.Future<void>.value(),
-        returnValueForMissingStub: _i3.Future<void>.value(),
-      ) as _i3.Future<void>);
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 
   @override
-  _i3.Future<List<_i4.TrailData>> getTrailsFromFirestore() =>
+  _i4.Future<List<_i5.TrailData>> getTrailsFromFirestore() =>
       (super.noSuchMethod(
         Invocation.method(
           #getTrailsFromFirestore,
           [],
         ),
-        returnValue: _i3.Future<List<_i4.TrailData>>.value(<_i4.TrailData>[]),
-      ) as _i3.Future<List<_i4.TrailData>>);
+        returnValue: _i4.Future<List<_i5.TrailData>>.value(<_i5.TrailData>[]),
+      ) as _i4.Future<List<_i5.TrailData>>);
 
   @override
-  _i3.Future<_i4.TrailData?> getTrailByNameFromFirestore(String? name) =>
+  _i4.Future<_i5.TrailData?> getTrailByNameFromFirestore(String? name) =>
       (super.noSuchMethod(
         Invocation.method(
           #getTrailByNameFromFirestore,
           [name],
         ),
-        returnValue: _i3.Future<_i4.TrailData?>.value(),
-      ) as _i3.Future<_i4.TrailData?>);
+        returnValue: _i4.Future<_i5.TrailData?>.value(),
+      ) as _i4.Future<_i5.TrailData?>);
 }
