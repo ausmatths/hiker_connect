@@ -604,143 +604,128 @@ class TrailListScreenState extends State<TrailListScreen> {
           itemBuilder: (context, index) {
             final event = events[index];
             bool isJoined = joinedEvents.contains(event);
-            return Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              elevation: 3,
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Event Name with share button
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            event.trailName.isNotEmpty ? event.trailName : "Untitled Trail",
-                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+
+            // Wrap the Card with GestureDetector to make it tappable
+            return GestureDetector(
+              onTap: () {
+                // Navigate to the EventEditScreen when the card is tapped
+                _navigateToEventEdit(event);
+              },
+              child: Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 3,
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Event Name with share button
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              event.trailName.isNotEmpty ? event.trailName : "Untitled Trail",
+                              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                            ),
                           ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.share, color: Colors.blue),
-                          onPressed: () => _shareTrail(event),
-                          tooltip: 'Share Trail',
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 5),
-
-                    // Event Description
-                    if (event.trailDescription.isNotEmpty)
-                      Text(event.trailDescription, style: const TextStyle(fontSize: 16)),
-                    const SizedBox(height: 5),
-
-                    // Event Details
-                    Text('Location: ${event.trailLocation}', style: const TextStyle(fontSize: 14)),
-                    const SizedBox(height: 5),
-                    Text(
-                      'Difficulty: ${event.trailDifficulty}',
-                      style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: event.trailDifficulty == 'Easy'
-                              ? Colors.green
-                              : event.trailDifficulty == 'Hard'
-                              ? Colors.red
-                              : Colors.orange),
-                    ),
-                    const SizedBox(height: 5),
-                    Text('Notice: ${event.trailNotice}', style: const TextStyle(fontSize: 14)),
-                    const SizedBox(height: 5),
-                    Text('Date: ${event.trailDate.toString().split(' ')[0]}', style: const TextStyle(fontSize: 14)),
-                    const SizedBox(height: 5),
-                    Text('Participants: ${event.trailParticipantNumber}', style: const TextStyle(fontSize: 14)),
-                    const SizedBox(height: 5),
-                    Text('Duration: ${event.trailDuration.inHours}h ${event.trailDuration.inMinutes % 60}m', style: const TextStyle(fontSize: 14)),
-                    const SizedBox(height: 5),
-
-                    if (event.trailImages.isNotEmpty)
-                      SizedBox(
-                        height: 100,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          children: event.trailImages.map((imagePath) {
-                            return Padding(
-                              padding: const EdgeInsets.all(4.0),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.file(
-                                  File(imagePath),
-                                  height: 80,
-                                  width: 80,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      height: 80,
-                                      width: 80,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey[200],
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Icon(
-                                        Icons.broken_image,
-                                        color: Colors.grey,
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
+                          IconButton(
+                            icon: const Icon(Icons.share, color: Colors.blue),
+                            onPressed: () => _shareTrail(event),
+                            tooltip: 'Share Trail',
+                          ),
+                        ],
                       ),
+                      const SizedBox(height: 5),
 
-                    const SizedBox(height: 10),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        // Join/Unjoin Button
-                        Flexible(
-                          child: ElevatedButton.icon(
-                            onPressed: () => _toggleJoinEvent(event),
-                            icon: Icon(
-                              isJoined ? Icons.remove_circle : Icons.hiking,
-                              color: isJoined ? Colors.red : Colors.green,
-                            ),
-                            label: Text(isJoined ? 'Unjoin' : 'Join'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isJoined ? Colors.red[50] : Colors.green[50],
-                              foregroundColor: isJoined ? Colors.red : Colors.green,
-                            ),
+                      // Event Description
+                      if (event.trailDescription.isNotEmpty)
+                        Text(event.trailDescription, style: const TextStyle(fontSize: 16)),
+                      const SizedBox(height: 5),
+
+                      // Event Details
+                      Text('Location: ${event.trailLocation}', style: const TextStyle(fontSize: 14)),
+                      const SizedBox(height: 5),
+                      Text(
+                        'Difficulty: ${event.trailDifficulty}',
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: event.trailDifficulty == 'Easy'
+                                ? Colors.green
+                                : event.trailDifficulty == 'Hard'
+                                ? Colors.red
+                                : Colors.orange),
+                      ),
+                      const SizedBox(height: 5),
+                      Text('Notice: ${event.trailNotice}', style: const TextStyle(fontSize: 14)),
+                      const SizedBox(height: 5),
+                      Text('Date: ${event.trailDate.toString().split(' ')[0]}', style: const TextStyle(fontSize: 14)),
+                      const SizedBox(height: 5),
+                      Text('Participants: ${event.trailParticipantNumber}', style: const TextStyle(fontSize: 14)),
+                      const SizedBox(height: 5),
+                      Text('Duration: ${event.trailDuration.inHours}h ${event.trailDuration.inMinutes % 60}m', style: const TextStyle(fontSize: 14)),
+                      const SizedBox(height: 5),
+
+                      if (event.trailImages.isNotEmpty)
+                        SizedBox(
+                          height: 100,
+                          child: ListView(
+                            scrollDirection: Axis.horizontal,
+                            children: event.trailImages.map((imagePath) {
+                              return Padding(
+                                padding: const EdgeInsets.all(4.0),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(8),
+                                  child: Image.file(
+                                    File(imagePath),
+                                    height: 80,
+                                    width: 80,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Container(
+                                        height: 80,
+                                        width: 80,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[200],
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: const Icon(
+                                          Icons.broken_image,
+                                          color: Colors.grey,
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                ),
+                              );
+                            }).toList(),
                           ),
                         ),
 
-                        // Add to Calendar Button
-                        Flexible(
-                          child: ElevatedButton.icon(
-                            onPressed: () => _showCalendarSelectionDialog(event),
-                            icon: const Icon(Icons.calendar_today),
-                            label: const Text('Add to Calendar'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue[50],
-                              foregroundColor: Colors.blue,
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          // Add to Calendar Button
+                          Flexible(
+                            child: ElevatedButton.icon(
+                              onPressed: () => _showCalendarSelectionDialog(event),
+                              icon: const Icon(Icons.calendar_today),
+                              label: const Text('Add to Calendar'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue[50],
+                                foregroundColor: Colors.blue,
+                              ),
                             ),
                           ),
-                        ),
-
-                        // Edit Button
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () => _navigateToEventEdit(event),
-                          tooltip: 'Edit Trail',
-                        ),
-                      ],
-                    )
-                  ],
+                        ],
+                      )
+                    ],
+                  ),
                 ),
               ),
             );
@@ -755,7 +740,7 @@ class TrailListScreenState extends State<TrailListScreen> {
           FloatingActionButton(
             heroTag: 'joinBtn',
             onPressed: _showJoinDialog,
-            backgroundColor: Colors.green,
+            backgroundColor: Colors.blue,
             child: const Icon(Icons.group_add),
             tooltip: 'Join a Trail with URL',
           ),
