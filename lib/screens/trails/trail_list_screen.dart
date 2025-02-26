@@ -704,7 +704,7 @@ class TrailListScreenState extends State<TrailListScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         // Join/Unjoin Button
-                        Flexible(
+                        /*Flexible(
                           child: ElevatedButton.icon(
                             onPressed: () => _toggleJoinEvent(event),
                             icon: Icon(
@@ -717,7 +717,7 @@ class TrailListScreenState extends State<TrailListScreen> {
                               foregroundColor: isJoined ? Colors.red : Colors.green,
                             ),
                           ),
-                        ),
+                        ),*/
 
                         // Add to Calendar Button
                         Flexible(
