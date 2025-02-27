@@ -162,12 +162,12 @@ Future<void> main() async {
     developer.log('UserModelAdapter registered with typeId 3', name: 'App Setup');
 
     // Register EventDataAdapter with proper error handling
-    try {
-      Hive.registerAdapter(EventDataAdapter()); // Should be TypeId 4
-      developer.log('EventDataAdapter registered successfully', name: 'App Setup');
-    } catch (e) {
-      developer.log('Failed to register EventDataAdapter: $e', name: 'App Setup');
-    }
+    // try {
+    //   Hive.registerAdapter(EventDataAdapter()); // Should be TypeId 4
+    //   developer.log('EventDataAdapter registered successfully', name: 'App Setup');
+    // } catch (e) {
+    //   developer.log('Failed to register EventDataAdapter: $e', name: 'App Setup');
+    // }
 
     // Register DurationAdapter for Duration serialization
     try {

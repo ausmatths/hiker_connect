@@ -9,8 +9,8 @@ import 'package:hiker_connect/utils/logger.dart';
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
   static Box<TrailData>? _trailBox;
-  static Box<UserModel>? _userBox;
-  static Box<EventData>? _eventBox;
+  //static Box<UserModel>? _userBox;
+  //static Box<EventData>? _eventBox;
 
   factory DatabaseService() {
     return _instance;
@@ -23,20 +23,20 @@ class DatabaseService {
     return _trailBox ?? await Hive.openBox<TrailData>('trailBox');
   }
 
-  Future<Box<UserModel>> getUserBox() async {
-    return _userBox ?? await Hive.openBox<UserModel>('userBox');
-  }
+  // Future<Box<UserModel>> getUserBox() async {
+  //   return _userBox ?? await Hive.openBox<UserModel>('userBox');
+  // }
 
-  Future<Box<EventData>> getEventBox() async {
-    return _eventBox ?? await Hive.openBox<EventData>('eventBox');
-  }
+  // Future<Box<EventData>> getEventBox() async {
+  //   return _eventBox ?? await Hive.openBox<EventData>('eventBox');
+  // }
 
   Future<void> init() async {
     try {
       // Just open the boxes
       _trailBox = await Hive.openBox<TrailData>('trailBox');
-      _userBox = await Hive.openBox<UserModel>('userBox');
-      _eventBox = await Hive.openBox<EventData>('eventBox');
+      //_userBox = await Hive.openBox<UserModel>('userBox');
+     // _eventBox = await Hive.openBox<EventData>('eventBox');
 
       AppLogger.info('Hive boxes initialized successfully');
     } catch (e) {
