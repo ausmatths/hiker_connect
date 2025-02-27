@@ -2,8 +2,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:hiker_connect/models/trail_data.dart';
 import 'package:hiker_connect/services/databaseservice.dart';
 import 'package:mockito/mockito.dart';
+import 'package:mockito/annotations.dart';
 
-// Import the generated mocks file
+// Generate mocks for the DatabaseService class
+@GenerateMocks([DatabaseService])
+// Import the generated mock file
 import 'databaseservice_test.mocks.dart';
 
 void main() {
@@ -39,6 +42,7 @@ void main() {
       expect(result, 0);
       verify(mockDatabaseService.insertTrails(trail)).called(1);
     });
+
 
     test('getTrails returns trails from the database', () async {
       final trailsList = [
