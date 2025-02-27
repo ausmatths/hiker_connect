@@ -109,7 +109,7 @@ class App extends StatelessWidget {
         '/signup': (context) => const SignUpScreen(),
         '/home': (context) => const HomeScreen(),
         '/profile': (context) => const ProfileScreen(),
-        '/events': (context) => const EventsListScreen(),
+        //'/events': (context) => const EventsListScreen(),
         '/trails': (context) => const TrailListScreen(),
         '/forgot-password': (context) => const ForgotPasswordScreen(),
       },
