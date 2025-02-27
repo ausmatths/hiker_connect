@@ -76,21 +76,21 @@ class MockDatabaseService extends _i1.Mock implements _i3.DatabaseService {
         )),
       ) as _i4.Future<_i2.Box<_i6.UserModel>>);
 
-  @override
-  _i4.Future<_i2.Box<_i7.EventData>> getEventBox() => (super.noSuchMethod(
-        Invocation.method(
-          #getEventBox,
-          [],
-        ),
-        returnValue:
-            _i4.Future<_i2.Box<_i7.EventData>>.value(_FakeBox_0<_i7.EventData>(
-          this,
-          Invocation.method(
-            #getEventBox,
-            [],
-          ),
-        )),
-      ) as _i4.Future<_i2.Box<_i7.EventData>>);
+  // @override
+  // _i4.Future<_i2.Box<_i7.EventData>> getEventBox() => (super.noSuchMethod(
+  //       Invocation.method(
+  //         #getEventBox,
+  //         [],
+  //       ),
+  //       returnValue:
+  //           _i4.Future<_i2.Box<_i7.EventData>>.value(_FakeBox_0<_i7.EventData>(
+  //         this,
+  //         Invocation.method(
+  //           #getEventBox,
+  //           [],
+  //         ),
+  //       )),
+  //     ) as _i4.Future<_i2.Box<_i7.EventData>>);
 
   @override
   _i4.Future<void> init() => (super.noSuchMethod(

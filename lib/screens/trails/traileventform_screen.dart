@@ -6,8 +6,6 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:core';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
-
-import '../../models/event_data.dart';
 import '../../models/trail_data.dart';
 import '../../services/databaseservice.dart';
 import 'package:hiker_connect/utils/async_context_handler.dart';
