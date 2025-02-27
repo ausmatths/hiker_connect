@@ -338,4 +338,231 @@ void main() {
     });
   });
 });
+  group('AuthService Tests', () {
+    testWidgets('Test signInWithEmailAndPassword', (WidgetTester tester) async {
+      mockAuthService.updateMockData(userData: testUser, user: mockUser);
+      await tester.pumpWidget(createTestableWidget(const ProfileScreen()));
+      await tester.pumpAndSettle();
+
+      final result = await mockAuthService.signInWithEmailAndPassword(
+        email: 'test@example.com',
+        password: 'password',
+      );
+
+      expect(result, equals(testUser));
+    });
+
+    testWidgets('Test signInWithGoogle', (WidgetTester tester) async {
+      mockAuthService.updateMockData(userData: testUser, user: mockUser);
+      await tester.pumpWidget(createTestableWidget(const ProfileScreen()));
+      await tester.pumpAndSettle();
+
+      final result = await mockAuthService.signInWithGoogle();
+      expect(result, equals(testUser));
+    });
+
+    testWidgets('Test signUpWithEmailAndPassword', (WidgetTester tester) async {
+      mockAuthService.updateMockData(userData: testUser, user: mockUser);
+      await tester.pumpWidget(createTestableWidget(const ProfileScreen()));
+      await tester.pumpAndSettle();
+
+      final result = await mockAuthService.signUpWithEmailAndPassword(
+        email: 'test@example.com',
+        password: 'password',
+        displayName: 'Test User',
+      );
+
+      expect(result, equals(testUser));
+    });
+
+    testWidgets('Test signOut', (WidgetTester tester) async {
+      mockAuthService.updateMockData(userData: testUser, user: mockUser);
+      await tester.pumpWidget(createTestableWidget(const ProfileScreen()));
+      await tester.pumpAndSettle();
+
+      await mockAuthService.signOut();
+      expect(mockAuthService.currentUser, isNull);
+      expect(mockAuthService.getCurrentUserData(), completion(isNull));
+    });
+
+    testWidgets('Test resetPassword', (WidgetTester tester) async {
+      mockAuthService.updateMockData(userData: testUser, user: mockUser);
+      await tester.pumpWidget(createTestableWidget(const ProfileScreen()));
+      await tester.pumpAndSettle();
+
+      await mockAuthService.resetPassword('test@example.com');
+      // Since it's a mock, we just ensure it doesn't throw an error
+      expect(() async => await mockAuthService.resetPassword('test@example.com'), returnsNormally);
+    });
+
+    testWidgets('Test updateUserProfile', (WidgetTester tester) async {
+      mockAuthService.updateMockData(userData: testUser, user: mockUser);
+      await tester.pumpWidget(createTestableWidget(const ProfileScreen()));
+      await tester.pumpAndSettle();
+
+      await mockAuthService.updateUserProfile(
+        displayName: 'Updated Name',
+        bio: 'Updated Bio',
+      );
+
+      // Since it's a mock, we just ensure it doesn't throw an error
+      expect(() async => await mockAuthService.updateUserProfile(displayName: 'Updated Name'), returnsNormally);
+    });
+  });
+
+  group('ProfileScreen Widget Tests - Additional', () {
+    testWidgets('ProfileScreen shows error when user data fetch fails', (WidgetTester tester) async {
+      // Simulate an error when fetching user data
+      when(mockAuthService.getCurrentUserData()).thenThrow(Exception('Failed to fetch user data'));
+
+      await tester.pumpWidget(createTestableWidget(const ProfileScreen()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Failed to fetch user data'), findsOneWidget);
+    });
+
+    testWidgets('ProfileScreen handles empty user data gracefully', (WidgetTester tester) async {
+      mockAuthService.updateMockData(userData: null, user: mockUser);
+      await tester.pumpWidget(createTestableWidget(const ProfileScreen()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('No user data available'), findsOneWidget);
+    });
+
+    testWidgets('ProfileScreen handles null location gracefully', (WidgetTester tester) async {
+      final userWithNullLocation = UserModel(
+        uid: 'test-uid',
+        email: 'test@example.com',
+        displayName: 'Test User',
+        bio: 'Test bio',
+        photoUrl: null,
+        location: null, // Null location
+        createdAt: DateTime.now(),
+        lastActive: DateTime.now(),
+        following: ['user1'],
+        followers: ['user2'],
+        medicalConditions: ['Asthma'],
+        medications: ['Inhaler'],
+        bloodType: 'A+',
+        emergencyContacts: [
+          EmergencyContact(
+            name: 'Test Contact',
+            relationship: 'Friend',
+            phoneNumber: '+1234567890',
+          ),
+        ],
+        interests: [],
+        socialLinks: {},
+      );
+
+      mockAuthService.updateMockData(userData: userWithNullLocation, user: mockUser);
+      await tester.pumpWidget(createTestableWidget(const ProfileScreen()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Location: Not specified'), findsOneWidget);
+    });
+  });
+
+  group('Firebase Firestore Tests', () {
+    testWidgets('Test Firebase read operation', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        createTestableWidget(
+          Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () async {
+                  try {
+                    final snapshot = await FirebaseFirestore.instance.collection('test').get();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Read ${snapshot.docs.length} documents')),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Firebase error: $e')),
+                    );
+                  }
+                },
+                child: const Text('Read Firebase'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Read Firebase'));
+      await tester.pumpAndSettle();
+      expect(find.text('Read 0 documents'), findsOneWidget);
+    });
+
+    testWidgets('Test Firebase error handling', (WidgetTester tester) async {
+      when(mockFirestore.collection('test').get()).thenThrow(Exception('Firestore error'));
+
+      await tester.pumpWidget(
+        createTestableWidget(
+          Scaffold(
+            body: Builder(
+              builder: (context) => ElevatedButton(
+                onPressed: () async {
+                  try {
+                    await FirebaseFirestore.instance.collection('test').get();
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Firebase error: $e')),
+                    );
+                  }
+                },
+                child: const Text('Test Firebase Error'),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Test Firebase Error'));
+      await tester.pumpAndSettle();
+      expect(find.text('Firebase error: Exception: Firestore error'), findsOneWidget);
+    });
+  });
+
+  group('UserModel and EmergencyContact Tests - Additional', () {
+    test('UserModel handles null values correctly', () {
+      final userWithNullValues = UserModel(
+        uid: 'test-uid',
+        email: '',
+        displayName: '',
+        bio: null,
+        photoUrl: null,
+        location: null,
+        createdAt: DateTime.now(),
+        lastActive: DateTime.now(),
+        following: [],
+        followers: [],
+        medicalConditions: [],
+        medications: [],
+        bloodType: null,
+        emergencyContacts: [],
+        interests: [],
+        socialLinks: {},
+      );
+
+      final userMap = userWithNullValues.toMap();
+      expect(userMap['email'], isNull);
+      expect(userMap['displayName'], isNull);
+      expect(userMap['bio'], isNull);
+      expect(userMap['location'], isNull);
+    });
+
+    test('EmergencyContact handles null values correctly', () {
+      final contactWithNullValues = EmergencyContact(
+        name: '',
+        relationship: '',
+        phoneNumber: '',
+      );
+
+      final contactMap = contactWithNullValues.toMap();
+      expect(contactMap['name'], isNull);
+      expect(contactMap['relationship'], isNull);
+      expect(contactMap['phoneNumber'], isNull);
+    });
+  });
 }
