@@ -225,12 +225,11 @@ class TrailListScreenState extends State<TrailListScreen> {
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Enter the trail URL to join:'),
+              const Text('Paste the trail URL here to join. Find the URL in the share button of the trail'),
               const SizedBox(height: 16),
               TextField(
                 controller: urlController,
                 decoration: const InputDecoration(
-                  hintText: 'https://hikerconnect.app/trail/1234',
                   labelText: 'Trail URL',
                   border: OutlineInputBorder(),
                 ),
