@@ -27,13 +27,14 @@ class TrailDataAdapter extends TypeAdapter<TrailData> {
       trailLocation: fields[7] as String,
       trailParticipantNumber: fields[8] as int,
       trailDuration: fields[9] as Duration,
+      trailType: fields[10] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, TrailData obj) {
     writer
-      ..writeByte(10)
+      ..writeByte(11)
       ..writeByte(0)
       ..write(obj.trailId)
       ..writeByte(1)
@@ -53,7 +54,9 @@ class TrailDataAdapter extends TypeAdapter<TrailData> {
       ..writeByte(8)
       ..write(obj.trailParticipantNumber)
       ..writeByte(9)
-      ..write(obj.trailDuration);
+      ..write(obj.trailDuration)
+      ..writeByte(10)
+      ..write(obj.trailType);
   }
 
   @override

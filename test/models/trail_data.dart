@@ -20,6 +20,7 @@ void main() {
         trailLocation: 'Rocky Mountains',
         trailParticipantNumber: 10,
         trailDuration: Duration(minutes: 120),
+        trailType: 'Trail'
       );
 
       expect(trailData.trailId, 1);
@@ -47,6 +48,7 @@ void main() {
           trailLocation: 'Rocky Mountains',
           trailParticipantNumber: 10,
           trailDuration: Duration(minutes: 120),
+          trailType: 'Trail'
         );
 
         final map = trailData.toMap();
@@ -75,6 +77,7 @@ void main() {
           trailLocation: 'Location',
           trailParticipantNumber: 5,
           trailDuration: Duration(minutes: 60),
+          trailType: 'Trail'
         );
 
         final map = trailData.toMap();
@@ -229,6 +232,7 @@ void main() {
         trailLocation: 'Location',
         trailParticipantNumber: 1,
         trailDuration: Duration(minutes: 30),
+        trailType: 'Trail'
       );
 
       expect(trailData, isA<TrailData>());
@@ -248,6 +252,7 @@ void main() {
           trailLocation: 'Location',
           trailParticipantNumber: 5,
           trailDuration: Duration(minutes: 60),
+            trailType: 'Trail'
         );
 
         final data2 = TrailData(
@@ -261,6 +266,7 @@ void main() {
           trailLocation: 'Location',
           trailParticipantNumber: 5,
           trailDuration: Duration(minutes: 60),
+          trailType: 'Trail'
         );
 
         expect(data1.trailId, data2.trailId);
@@ -288,6 +294,8 @@ void main() {
         trailLocation: 'Rocky Mountains',
         trailParticipantNumber: 10,
         trailDuration: Duration(minutes: 120),
+        trailType: 'Trail'
+
       );
 
       final map = originalData.toMap();

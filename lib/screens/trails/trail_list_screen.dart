@@ -9,7 +9,7 @@ import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:share_plus/share_plus.dart';
 import '../../services/databaseservice.dart';
 import 'event_edit_screen.dart';
-import 'eventform_screen.dart' as create_screen;
+import 'traileventform_screen.dart' as create_screen;
 import 'package:provider/provider.dart';
 
 class TrailListScreen extends StatefulWidget {
@@ -755,6 +755,8 @@ class TrailListScreenState extends State<TrailListScreen> {
                             Text('Participants: ${event.trailParticipantNumber}', style: const TextStyle(fontSize: 14)),
                             const SizedBox(height: 5),
                             Text('Duration: ${event.trailDuration.inHours}h ${event.trailDuration.inMinutes % 60}m', style: const TextStyle(fontSize: 14)),
+                            const SizedBox(height: 5),
+                            Text('Trail Type: ${event.trailType}', style: const TextStyle(fontSize: 14)),
                             const SizedBox(height: 5),
 
                             if (event.trailImages.isNotEmpty)

@@ -7,6 +7,7 @@ import 'dart:core';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 
+import '../../models/event_data.dart';
 import '../../models/trail_data.dart';
 import '../../services/databaseservice.dart';
 import 'package:hiker_connect/utils/async_context_handler.dart';
@@ -111,34 +112,60 @@ class _EventFormScreenState extends State<EventFormScreen> {
         final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? 'anonymous';
         final int uniqueId = DateTime.now().millisecondsSinceEpoch;
 
-        final newEvent = TrailData(
-          trailId: uniqueId,
-          trailName: _nameController.text,
-          trailDescription: _descriptionController.text,
-          trailDifficulty: _difficulty,
-          trailNotice: _noticeController.text,
-          trailImages: _eventImages.map((image) => image.path).toList(),
-          trailDate: _eventDate ?? DateTime.now(),
-          trailLocation: _locationController.text,
-          trailParticipantNumber: int.tryParse(_participantsController.text) ?? 0,
-          trailDuration: Duration(hours: _selectedHours, minutes: _selectedMinutes),
-        );
+        if (_selectedType == 'Trail') {
+          // Create TrailData
+          final newTrail = TrailData(
+            trailId: uniqueId,
+            trailName: _nameController.text,
+            trailDescription: _descriptionController.text,
+            trailDifficulty: _difficulty,
+            trailNotice: _noticeController.text,
+            trailImages: _eventImages.map((image) => image.path).toList(),
+            trailDate: _eventDate ?? DateTime.now(),
+            trailLocation: _locationController.text,
+            trailParticipantNumber: int.tryParse(_participantsController.text) ?? 0,
+            trailDuration: Duration(hours: _selectedHours, minutes: _selectedMinutes),
+            trailType: 'Trail', // Not using it for routing, just for TrailData
+          );
 
-        // Use DatabaseService to insert the event - both locally and to cloud
-        await dbService.insertTrails(newEvent);
+          await dbService.insertTrails(newTrail);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Trail saved successfully to local and cloud storage')),
-        );
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Trail saved successfully')),
+          );
 
-        Navigator.pop(context, newEvent);
+          Navigator.pushReplacementNamed(context, '/trails');
+        } else {
+          // Create EventData
+          final newEvent = TrailData(
+            trailId: uniqueId,
+            trailName: _nameController.text,
+            trailDescription: _descriptionController.text,
+            trailDifficulty: _difficulty,
+            trailNotice: _noticeController.text,
+            trailImages: _eventImages.map((image) => image.path).toList(),
+            trailDate: _eventDate ?? DateTime.now(),
+            trailLocation: _locationController.text,
+            trailParticipantNumber: int.tryParse(_participantsController.text) ?? 0,
+            trailDuration: Duration(hours: _selectedHours, minutes: _selectedMinutes),
+            trailType: 'Event',
+          );
+
+          await dbService.insertTrails(newEvent);
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Event saved successfully')),
+          );
+
+          Navigator.pushReplacementNamed(context, '/events');
+        }
         return Future.value();
-      },
+        },
       onSuccess: () {
-        setState(() {
-          _isLoading = false;
-        });
-      },
+          setState(() {
+            _isLoading = false;
+          });
+        },
       onError: (error) {
         AppLogger.error('Error submitting trail: ${error.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -169,6 +196,12 @@ class _EventFormScreenState extends State<EventFormScreen> {
             _eventDate = picked;
           });
         }
+        // if (_selectedType == 'Event') {
+        //   Navigator.pushReplacementNamed(context, '/events');
+        // } else {
+        //   Navigator.pushReplacementNamed(context, '/trails');
+        // }
+
         return Future.value();
       },
       onError: (error) {
@@ -211,6 +244,8 @@ class _EventFormScreenState extends State<EventFormScreen> {
                   labelText: 'Type',
                   border: OutlineInputBorder(),
                 ),
+                validator: (value) =>
+                value == null ? 'Please select a type (Trail or Event)' : null,
               ),
               const SizedBox(height: 16.0),
               TextFormField(

@@ -23,6 +23,8 @@ class TrailData {
   final int trailParticipantNumber;
   @HiveField(9)
   final Duration trailDuration;
+  @HiveField(10)
+  final String trailType;
 
   TrailData({
     required this.trailId,
@@ -35,6 +37,7 @@ class TrailData {
     required this.trailLocation,
     required this.trailParticipantNumber,
     required this.trailDuration,
+    required this.trailType,
   });
 
   Map<String, dynamic> toMap() {
@@ -49,6 +52,7 @@ class TrailData {
       'trailLocation': trailLocation,
       'trailParticipantNumber': trailParticipantNumber,
       'trailDuration': trailDuration.inMinutes,
+      'trailType': trailType,
     };
   }
 
@@ -65,6 +69,7 @@ class TrailData {
       trailLocation: map['trailLocation'] ?? '',
       trailParticipantNumber: map['trailParticipantNumber'] ?? 0,
       trailDuration: Duration(minutes: map['trailDuration'] ?? 0),
+      trailType: map['trailType'] ?? '',
     );
   }
 }
