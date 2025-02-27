@@ -81,6 +81,7 @@ void main() {
         trailParticipantNumber: 10,
         trailDuration: const Duration(hours: 2),
         trailImages: [],
+        trailType: 'Trail'
       );
 
       when(mockDatabaseService.getTrails()).thenAnswer((_) async => [trail]);
@@ -107,6 +108,7 @@ void main() {
         trailParticipantNumber: 10,
         trailDuration: const Duration(hours: 2),
         trailImages: [],
+        trailType: 'Trail'
       );
 
       when(mockDatabaseService.getTrails()).thenAnswer((_) async => [trail]);
@@ -152,6 +154,7 @@ void main() {
         trailParticipantNumber: 10,
         trailDuration: const Duration(hours: 2),
         trailImages: [],
+          trailType: 'Trail'
       );
 
       when(mockDatabaseService.getTrails()).thenAnswer((_) async => [trail]);
@@ -226,6 +229,7 @@ void main() {
         trailParticipantNumber: 5,
         trailDuration: const Duration(hours: 3, minutes: 30),
         trailImages: [],
+          trailType: 'Trail'
       );
 
       when(mockDatabaseService.getTrails()).thenAnswer((_) async => [trail]);
@@ -256,6 +260,7 @@ void main() {
         trailParticipantNumber: 5,
         trailDuration: const Duration(hours: 2),
         trailImages: [],
+          trailType: 'Trail'
       );
 
       when(mockDatabaseService.getTrails()).thenAnswer((_) async => [trail]);
@@ -281,6 +286,7 @@ void main() {
         trailParticipantNumber: 5,
         trailDuration: const Duration(hours: 1),
         trailImages: [],
+          trailType: 'Trail'
       );
 
       when(mockDatabaseService.getTrails()).thenAnswer((_) async => [trail]);
@@ -306,6 +312,7 @@ void main() {
         trailParticipantNumber: 5,
         trailDuration: const Duration(hours: 0, minutes: 0),  // Zero duration
         trailImages: [],
+          trailType: 'Trail'
       );
 
       when(mockDatabaseService.getTrails()).thenAnswer((_) async => [trail]);
@@ -330,6 +337,7 @@ void main() {
         trailParticipantNumber: 5,
         trailDuration: const Duration(minutes: 45),  // Only minutes, no hours
         trailImages: [],
+          trailType: 'Trail'
       );
 
       when(mockDatabaseService.getTrails()).thenAnswer((_) async => [trail]);
@@ -355,6 +363,7 @@ void main() {
         trailParticipantNumber: 5,
         trailDuration: const Duration(hours: 1),
         trailImages: [],
+          trailType: 'Trail'
       );
 
       when(mockDatabaseService.getTrails()).thenAnswer((_) async => [easyTrail]);
@@ -381,6 +390,7 @@ void main() {
         trailParticipantNumber: 5,
         trailDuration: const Duration(hours: 2),
         trailImages: [],
+          trailType: 'Trail'
       );
 
       when(mockDatabaseService.getTrails()).thenAnswer((_) async => [mediumTrail]);
@@ -405,6 +415,7 @@ void main() {
         trailParticipantNumber: 5,
         trailDuration: const Duration(hours: 3),
         trailImages: [],
+          trailType: 'Trail'
       );
 
       when(mockDatabaseService.getTrails()).thenAnswer((_) async => [hardTrail]);
@@ -429,6 +440,7 @@ void main() {
         trailParticipantNumber: 999999,  // Very large number
         trailDuration: const Duration(hours: 2),
         trailImages: [],
+          trailType: 'Trail'
       );
 
       when(mockDatabaseService.getTrails()).thenAnswer((_) async => [trail]);
@@ -453,6 +465,7 @@ void main() {
         trailParticipantNumber: 5,
         trailDuration: const Duration(hours: 2),
         trailImages: [],
+          trailType: 'Trail'
       );
 
       when(mockDatabaseService.getTrails()).thenAnswer((_) async => [trail]);
@@ -482,6 +495,7 @@ void main() {
           trailParticipantNumber: 5 + index,
           trailDuration: Duration(hours: 1 + (index % 5), minutes: (index * 5) % 60),
           trailImages: [],
+                trailType: 'Trail'
         ),
       );
 
@@ -544,6 +558,7 @@ void main() {
           trailParticipantNumber: 5,
           trailDuration: const Duration(hours: 1),
           trailImages: [],
+                trailType: 'Trail'
         ),
       );
 
@@ -561,6 +576,7 @@ void main() {
           trailParticipantNumber: 10,
           trailDuration: const Duration(hours: 2),
           trailImages: [],
+                trailType: 'Trail'
         ),
       );
 
@@ -612,6 +628,7 @@ void main() {
         trailParticipantNumber: 5,
         trailDuration: const Duration(hours: 1),
         trailImages: [],
+          trailType: 'Trail'
       );
 
       when(mockDatabaseService.getTrails()).thenAnswer((_) async => [trail]);
@@ -662,6 +679,7 @@ void main() {
             trailParticipantNumber: 5,
             trailDuration: const Duration(hours: 1),
             trailImages: [],
+                  trailType: 'Trail'
           ),
         );
 
@@ -679,6 +697,7 @@ void main() {
             trailParticipantNumber: 10,
             trailDuration: const Duration(hours: 2),
             trailImages: [],
+                  trailType: 'Trail'
           ),
         );
 
@@ -760,6 +779,7 @@ void main() {
             trailParticipantNumber: 5,
             trailDuration: const Duration(hours: 1),
             trailImages: [],
+                  trailType: 'Trail'
           ),
         );
 
@@ -776,6 +796,7 @@ void main() {
             trailParticipantNumber: 10,
             trailDuration: const Duration(hours: 2),
             trailImages: [],
+                  trailType: 'Trail'
           ),
         );
 
@@ -792,6 +813,7 @@ void main() {
             trailParticipantNumber: 15,
             trailDuration: const Duration(hours: 3),
             trailImages: [],
+                  trailType: 'Trail'
           ),
         );
 
@@ -864,6 +886,7 @@ void main() {
             trailParticipantNumber: 5,
             trailDuration: const Duration(hours: 1),
             trailImages: [],
+                  trailType: 'Trail'
           ),
         );
 
@@ -880,6 +903,7 @@ void main() {
             trailParticipantNumber: 10,
             trailDuration: const Duration(hours: 2),
             trailImages: [],
+                  trailType: 'Trail'
           ),
         );
 
@@ -943,6 +967,7 @@ void main() {
             trailParticipantNumber: 5,
             trailDuration: const Duration(hours: 1),
             trailImages: [],
+                  trailType: 'Trail'
           ),
         );
 
@@ -1001,6 +1026,7 @@ void main() {
             trailParticipantNumber: 5,
             trailDuration: const Duration(hours: 1),
             trailImages: [],
+                  trailType: 'Trail'
           ),
         );
 
@@ -1018,6 +1044,7 @@ void main() {
             trailParticipantNumber: 10,
             trailDuration: const Duration(hours: 2),
             trailImages: [],
+                  trailType: 'Trail'
           ),
         );
 
