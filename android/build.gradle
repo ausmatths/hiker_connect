@@ -17,6 +17,15 @@ allprojects {
         google()
         mavenCentral()
     }
+
+    // Add this to fix namespace issues with plugins
+    afterEvaluate {
+        if (project.hasProperty('android')) {
+            if (project.name == 'permission_handler_android' && !project.android.hasProperty('namespace')) {
+                project.android.namespace = "com.baseflow.permissionhandler"
+            }
+        }
+    }
 }
 
 rootProject.buildDir = "../build"

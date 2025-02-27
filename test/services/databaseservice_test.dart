@@ -30,6 +30,7 @@ void main() {
         trailParticipantNumber: 5,
         trailDuration: const Duration(hours: 1),
         trailImages: [],
+        trailType: 'Hiking',
       );
 
       // Set up mock behavior
@@ -57,6 +58,7 @@ void main() {
           trailParticipantNumber: 5,
           trailDuration: const Duration(hours: 1),
           trailImages: [],
+          trailType: 'Trail',
         ),
         TrailData(
           trailId: 2,
@@ -69,6 +71,7 @@ void main() {
           trailParticipantNumber: 10,
           trailDuration: const Duration(hours: 2),
           trailImages: [],
+          trailType: 'Trail',
         ),
       ];
 
@@ -96,6 +99,7 @@ void main() {
         trailParticipantNumber: 10,
         trailDuration: const Duration(hours: 2),
         trailImages: [],
+        trailType: 'Trail',
       );
 
       // Set up basic mock behavior
@@ -120,6 +124,7 @@ void main() {
         trailParticipantNumber: 5,
         trailDuration: const Duration(hours: 1),
         trailImages: [],
+        trailType: 'Trail',
       );
 
       // Set up mocks
@@ -159,6 +164,7 @@ void main() {
           trailParticipantNumber: 5,
           trailDuration: const Duration(hours: 1),
           trailImages: [],
+          trailType: 'Trail',
         ),
       ];
 
@@ -190,6 +196,7 @@ void main() {
           trailParticipantNumber: 5,
           trailDuration: const Duration(hours: 1),
           trailImages: [],
+          trailType: 'Trail',
         );
 
         // Mock throwing an exception
@@ -227,6 +234,7 @@ void main() {
           trailParticipantNumber: 5,
           trailDuration: const Duration(hours: 1),
           trailImages: [],
+          trailType: 'Trail',
         );
 
         // Mock throwing an exception
@@ -264,6 +272,7 @@ void main() {
           trailParticipantNumber: 0,  // Zero participants
           trailDuration: const Duration(seconds: 0),  // Zero duration
           trailImages: [],  // Empty images array instead of null
+          trailType: '',  // Empty trail type
         );
 
         // Set up the mock to return a valid key (even with invalid data)
@@ -293,6 +302,7 @@ void main() {
           trailParticipantNumber: 5,
           trailDuration: const Duration(hours: 1),
           trailImages: [],
+          trailType: 'Trail',
         );
 
         // Verify the authentication error is handled correctly

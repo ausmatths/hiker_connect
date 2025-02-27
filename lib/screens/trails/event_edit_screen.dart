@@ -123,6 +123,7 @@ class _EventEditScreenState extends State<EventEditScreen> {
         trailLocation: _locationController.text,
         trailParticipantNumber: int.tryParse(_participantsController.text) ?? 0,
         trailDuration: Duration(hours: _selectedHours, minutes: _selectedMinutes),
+        trailType: widget.event.trailType, // Make sure this line is present
       );
 
       widget.onUpdate(updatedEvent);

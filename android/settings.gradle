@@ -27,7 +27,16 @@ plugins {
 
 include ":app"
 
+// Add this block to fix permission_handler_android namespace issue
 gradle.beforeProject { project ->
+    if (project.name == "permission_handler_android") {
+        project.apply plugin: 'com.android.library'
+        project.android {
+            namespace "com.baseflow.permissionhandler"
+        }
+    }
+
+    // Keep your existing configuration as well
     project.extensions.findByName("android")?.with { android ->
         android.buildFeatures.buildConfig = true
     }

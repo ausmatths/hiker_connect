@@ -29,6 +29,9 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Add this line for better compatibility with older plugins
+        multiDexEnabled true
     }
 
     // Add this block

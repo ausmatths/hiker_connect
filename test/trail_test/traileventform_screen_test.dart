@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:hiker_connect/screens/trails/eventform_screen.dart';
+import 'package:hiker_connect/screens/trails/traileventform_screen.dart';
 import 'package:hiker_connect/services/databaseservice.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mockito/annotations.dart';

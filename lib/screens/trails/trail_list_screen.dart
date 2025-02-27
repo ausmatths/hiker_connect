@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hiker_connect/models/trail_data.dart';
 import 'package:device_calendar/device_calendar.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:share_plus/share_plus.dart';
@@ -59,76 +58,65 @@ class TrailListScreenState extends State<TrailListScreen> {
   }
 
   Future<void> _checkAndRequestCalendarPermissions() async {
-    var status = await Permission.calendar.status;
-    if (!status.isGranted) {
-      status = await Permission.calendar.request();
-      print('Calendar permission request result: ${status.isGranted}');
+    final permissionsResult = await _calendarPlugin.hasPermissions();
+    print('Initial calendar permission status: ${permissionsResult.data}');
+
+    if (permissionsResult.data == null || permissionsResult.data == false) {
+      final requestResult = await _calendarPlugin.requestPermissions();
+      print('Calendar permission request result: ${requestResult.data}');
     } else {
       print('Calendar permission already granted');
     }
 
-    // On Android 10+ (API 29+), we also need to check for READ_CALENDAR permission separately
-    if (Platform.isAndroid) {
-      var readStatus = await Permission.calendarReadOnly.status;
-      print('Calendar read permission status: ${readStatus.isGranted}');
-
-      if (!readStatus.isGranted) {
-        readStatus = await Permission.calendarReadOnly.request();
-        print('Calendar read permission request result: ${readStatus.isGranted}');
-      }
-    }
+    // Check permissions again to verify
+    final finalPermissionsResult = await _calendarPlugin.hasPermissions();
+    print('Final calendar permission status: ${finalPermissionsResult.data}');
   }
 
   Future<void> _getAvailableCalendars() async {
     try {
-      // First check if we have permissions
-      var permissionStatus = await Permission.calendar.status;
+      // Check if we have permissions using device_calendar's methods
+      final permissionsResult = await _calendarPlugin.hasPermissions();
+      print('Initial calendar permission status: ${permissionsResult.data}');
 
-      if (Platform.isAndroid) {
-        var readStatus = await Permission.calendarReadOnly.status;
-        print('Current permissions - Calendar: ${permissionStatus.isGranted}, Read Calendar: ${readStatus.isGranted}');
+      if (permissionsResult.data == null || permissionsResult.data == false) {
+        // Request permissions if needed
+        final requestResult = await _calendarPlugin.requestPermissions();
+        print('Calendar permission request result: ${requestResult.data}');
 
-        if (!permissionStatus.isGranted || !readStatus.isGranted) {
-          // Force permission prompt again if not granted
-          await _checkAndRequestCalendarPermissions();
-          permissionStatus = await Permission.calendar.status;
-        }
-      } else {
-        print('Current calendar permission: ${permissionStatus.isGranted}');
-        if (!permissionStatus.isGranted) {
-          // Force permission prompt again if not granted
-          await _checkAndRequestCalendarPermissions();
-          permissionStatus = await Permission.calendar.status;
+        if (requestResult.data == null || requestResult.data == false) {
+          print('Calendar permission denied after request');
+          setState(() {
+            _availableCalendars = [];
+          });
+          return;
         }
       }
 
-      if (permissionStatus.isGranted) {
-        print('Retrieving calendars...');
-        final calendarsResult = await _calendarPlugin.retrieveCalendars();
-        print('Calendar retrieval result: ${calendarsResult.isSuccess}');
+      // Permissions should be granted now, try to retrieve calendars
+      print('Retrieving calendars...');
+      final calendarsResult = await _calendarPlugin.retrieveCalendars();
+      print('Calendar retrieval result: ${calendarsResult.isSuccess}');
 
-        if (calendarsResult.isSuccess && calendarsResult.data != null && calendarsResult.data!.isNotEmpty) {
-          setState(() {
-            _availableCalendars = calendarsResult.data;
-          });
+      if (calendarsResult.isSuccess && calendarsResult.data != null && calendarsResult.data!.isNotEmpty) {
+        setState(() {
+          _availableCalendars = calendarsResult.data;
+        });
 
-          // Debug available calendars
-          for (var calendar in _availableCalendars!) {
-            print('Calendar found: ${calendar.id}, ${calendar.name}, Account: ${calendar.accountName}, Type: ${calendar.accountType}');
-          }
-          return;
-        } else {
-          print('Failed to get calendars or no calendars available: ${calendarsResult.errors}');
+        // Debug available calendars
+        for (var calendar in _availableCalendars!) {
+          print('Calendar found: ${calendar.id}, ${calendar.name}, Account: ${calendar.accountName}, Type: ${calendar.accountType}');
+        }
+        return;
+      } else {
+        print('Failed to get calendars or no calendars available: ${calendarsResult.errors}');
 
-          // Enhanced error information
-          if (calendarsResult.errors != null && calendarsResult.errors!.isNotEmpty) {
-            for (var error in calendarsResult.errors!) {
-              print('Calendar retrieval error: ${error.errorMessage}');
-            }
+        // Enhanced error information
+        if (calendarsResult.errors != null && calendarsResult.errors!.isNotEmpty) {
+          for (var error in calendarsResult.errors!) {
+            print('Calendar retrieval error: ${error.errorMessage}');
           }
         }
-      } else {
-        print('Calendar permission still not granted after request');
       }
 
       // If no calendars loaded, set to empty list instead of null
