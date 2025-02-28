@@ -31,13 +31,13 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntryLo">0.0&nbsp;%</td>
-            <td class="headerCovTableEntry">43</td>
-            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntryLo">65.2&nbsp;%</td>
+            <td class="headerCovTableEntry">46</td>
+            <td class="headerCovTableEntry">30</td>
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2025-02-26 08:41:56</td>
+            <td class="headerValue">2025-02-27 17:40:18</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">-</td>
@@ -89,45 +89,48 @@
 <span id="L27"><span class="lineNum">      27</span> <span class="tlaUNC">           0 :       trailLocation: fields[7] as String,</span></span>
 <span id="L28"><span class="lineNum">      28</span> <span class="tlaUNC">           0 :       trailParticipantNumber: fields[8] as int,</span></span>
 <span id="L29"><span class="lineNum">      29</span> <span class="tlaUNC">           0 :       trailDuration: fields[9] as Duration,</span></span>
-<span id="L30"><span class="lineNum">      30</span>              :     );</span>
-<span id="L31"><span class="lineNum">      31</span>              :   }</span>
-<span id="L32"><span class="lineNum">      32</span>              : </span>
-<span id="L33"><span class="lineNum">      33</span> <span class="tlaUNC">           0 :   @override</span></span>
-<span id="L34"><span class="lineNum">      34</span>              :   void write(BinaryWriter writer, TrailData obj) {</span>
-<span id="L35"><span class="lineNum">      35</span>              :     writer</span>
-<span id="L36"><span class="lineNum">      36</span> <span class="tlaUNC">           0 :       ..writeByte(10)</span></span>
-<span id="L37"><span class="lineNum">      37</span> <span class="tlaUNC">           0 :       ..writeByte(0)</span></span>
-<span id="L38"><span class="lineNum">      38</span> <span class="tlaUNC">           0 :       ..write(obj.trailId)</span></span>
-<span id="L39"><span class="lineNum">      39</span> <span class="tlaUNC">           0 :       ..writeByte(1)</span></span>
-<span id="L40"><span class="lineNum">      40</span> <span class="tlaUNC">           0 :       ..write(obj.trailName)</span></span>
-<span id="L41"><span class="lineNum">      41</span> <span class="tlaUNC">           0 :       ..writeByte(2)</span></span>
-<span id="L42"><span class="lineNum">      42</span> <span class="tlaUNC">           0 :       ..write(obj.trailDescription)</span></span>
-<span id="L43"><span class="lineNum">      43</span> <span class="tlaUNC">           0 :       ..writeByte(3)</span></span>
-<span id="L44"><span class="lineNum">      44</span> <span class="tlaUNC">           0 :       ..write(obj.trailDifficulty)</span></span>
-<span id="L45"><span class="lineNum">      45</span> <span class="tlaUNC">           0 :       ..writeByte(4)</span></span>
-<span id="L46"><span class="lineNum">      46</span> <span class="tlaUNC">           0 :       ..write(obj.trailNotice)</span></span>
-<span id="L47"><span class="lineNum">      47</span> <span class="tlaUNC">           0 :       ..writeByte(5)</span></span>
-<span id="L48"><span class="lineNum">      48</span> <span class="tlaUNC">           0 :       ..write(obj.trailImages)</span></span>
-<span id="L49"><span class="lineNum">      49</span> <span class="tlaUNC">           0 :       ..writeByte(6)</span></span>
-<span id="L50"><span class="lineNum">      50</span> <span class="tlaUNC">           0 :       ..write(obj.trailDate)</span></span>
-<span id="L51"><span class="lineNum">      51</span> <span class="tlaUNC">           0 :       ..writeByte(7)</span></span>
-<span id="L52"><span class="lineNum">      52</span> <span class="tlaUNC">           0 :       ..write(obj.trailLocation)</span></span>
-<span id="L53"><span class="lineNum">      53</span> <span class="tlaUNC">           0 :       ..writeByte(8)</span></span>
-<span id="L54"><span class="lineNum">      54</span> <span class="tlaUNC">           0 :       ..write(obj.trailParticipantNumber)</span></span>
-<span id="L55"><span class="lineNum">      55</span> <span class="tlaUNC">           0 :       ..writeByte(9)</span></span>
-<span id="L56"><span class="lineNum">      56</span> <span class="tlaUNC">           0 :       ..write(obj.trailDuration);</span></span>
-<span id="L57"><span class="lineNum">      57</span>              :   }</span>
-<span id="L58"><span class="lineNum">      58</span>              : </span>
-<span id="L59"><span class="lineNum">      59</span> <span class="tlaUNC">           0 :   @override</span></span>
-<span id="L60"><span class="lineNum">      60</span> <span class="tlaUNC">           0 :   int get hashCode =&gt; typeId.hashCode;</span></span>
+<span id="L30"><span class="lineNum">      30</span> <span class="tlaUNC">           0 :       trailType: fields[10] as String,</span></span>
+<span id="L31"><span class="lineNum">      31</span>              :     );</span>
+<span id="L32"><span class="lineNum">      32</span>              :   }</span>
+<span id="L33"><span class="lineNum">      33</span>              : </span>
+<span id="L34"><span class="lineNum">      34</span> <span class="tlaGNC">           1 :   @override</span></span>
+<span id="L35"><span class="lineNum">      35</span>              :   void write(BinaryWriter writer, TrailData obj) {</span>
+<span id="L36"><span class="lineNum">      36</span>              :     writer</span>
+<span id="L37"><span class="lineNum">      37</span> <span class="tlaGNC">           1 :       ..writeByte(11)</span></span>
+<span id="L38"><span class="lineNum">      38</span> <span class="tlaGNC">           1 :       ..writeByte(0)</span></span>
+<span id="L39"><span class="lineNum">      39</span> <span class="tlaGNC">           2 :       ..write(obj.trailId)</span></span>
+<span id="L40"><span class="lineNum">      40</span> <span class="tlaGNC">           1 :       ..writeByte(1)</span></span>
+<span id="L41"><span class="lineNum">      41</span> <span class="tlaGNC">           2 :       ..write(obj.trailName)</span></span>
+<span id="L42"><span class="lineNum">      42</span> <span class="tlaGNC">           1 :       ..writeByte(2)</span></span>
+<span id="L43"><span class="lineNum">      43</span> <span class="tlaGNC">           2 :       ..write(obj.trailDescription)</span></span>
+<span id="L44"><span class="lineNum">      44</span> <span class="tlaGNC">           1 :       ..writeByte(3)</span></span>
+<span id="L45"><span class="lineNum">      45</span> <span class="tlaGNC">           2 :       ..write(obj.trailDifficulty)</span></span>
+<span id="L46"><span class="lineNum">      46</span> <span class="tlaGNC">           1 :       ..writeByte(4)</span></span>
+<span id="L47"><span class="lineNum">      47</span> <span class="tlaGNC">           2 :       ..write(obj.trailNotice)</span></span>
+<span id="L48"><span class="lineNum">      48</span> <span class="tlaGNC">           1 :       ..writeByte(5)</span></span>
+<span id="L49"><span class="lineNum">      49</span> <span class="tlaGNC">           2 :       ..write(obj.trailImages)</span></span>
+<span id="L50"><span class="lineNum">      50</span> <span class="tlaGNC">           1 :       ..writeByte(6)</span></span>
+<span id="L51"><span class="lineNum">      51</span> <span class="tlaGNC">           2 :       ..write(obj.trailDate)</span></span>
+<span id="L52"><span class="lineNum">      52</span> <span class="tlaGNC">           1 :       ..writeByte(7)</span></span>
+<span id="L53"><span class="lineNum">      53</span> <span class="tlaGNC">           2 :       ..write(obj.trailLocation)</span></span>
+<span id="L54"><span class="lineNum">      54</span> <span class="tlaGNC">           1 :       ..writeByte(8)</span></span>
+<span id="L55"><span class="lineNum">      55</span> <span class="tlaGNC">           2 :       ..write(obj.trailParticipantNumber)</span></span>
+<span id="L56"><span class="lineNum">      56</span> <span class="tlaGNC">           1 :       ..writeByte(9)</span></span>
+<span id="L57"><span class="lineNum">      57</span> <span class="tlaGNC">           2 :       ..write(obj.trailDuration)</span></span>
+<span id="L58"><span class="lineNum">      58</span> <span class="tlaGNC">           1 :       ..writeByte(10)</span></span>
+<span id="L59"><span class="lineNum">      59</span> <span class="tlaGNC">           2 :       ..write(obj.trailType);</span></span>
+<span id="L60"><span class="lineNum">      60</span>              :   }</span>
 <span id="L61"><span class="lineNum">      61</span>              : </span>
-<span id="L62"><span class="lineNum">      62</span> <span class="tlaUNC">           0 :   @override</span></span>
-<span id="L63"><span class="lineNum">      63</span>              :   bool operator ==(Object other) =&gt;</span>
-<span id="L64"><span class="lineNum">      64</span>              :       identical(this, other) ||</span>
-<span id="L65"><span class="lineNum">      65</span> <span class="tlaUNC">           0 :       other is TrailDataAdapter &amp;&amp;</span></span>
-<span id="L66"><span class="lineNum">      66</span> <span class="tlaUNC">           0 :           runtimeType == other.runtimeType &amp;&amp;</span></span>
-<span id="L67"><span class="lineNum">      67</span> <span class="tlaUNC">           0 :           typeId == other.typeId;</span></span>
-<span id="L68"><span class="lineNum">      68</span>              : }</span>
+<span id="L62"><span class="lineNum">      62</span> <span class="tlaGNC">           1 :   @override</span></span>
+<span id="L63"><span class="lineNum">      63</span> <span class="tlaGNC">           2 :   int get hashCode =&gt; typeId.hashCode;</span></span>
+<span id="L64"><span class="lineNum">      64</span>              : </span>
+<span id="L65"><span class="lineNum">      65</span> <span class="tlaGNC">           1 :   @override</span></span>
+<span id="L66"><span class="lineNum">      66</span>              :   bool operator ==(Object other) =&gt;</span>
+<span id="L67"><span class="lineNum">      67</span>              :       identical(this, other) ||</span>
+<span id="L68"><span class="lineNum">      68</span> <span class="tlaGNC">           1 :       other is TrailDataAdapter &amp;&amp;</span></span>
+<span id="L69"><span class="lineNum">      69</span> <span class="tlaGNC">           3 :           runtimeType == other.runtimeType &amp;&amp;</span></span>
+<span id="L70"><span class="lineNum">      70</span> <span class="tlaGNC">           3 :           typeId == other.typeId;</span></span>
+<span id="L71"><span class="lineNum">      71</span>              : }</span>
         </pre>
               </td>
             </tr>

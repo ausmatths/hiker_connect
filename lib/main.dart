@@ -1,8 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:hiker_connect/screens/trails/events_list_screen.dart';
 import 'package:hiker_connect/screens/trails/trail_list_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -10,7 +9,6 @@ import 'package:hive/hive.dart';
 import 'package:path_provider/path_provider.dart' as path_provider;
 import 'package:hiker_connect/models/trail_data.dart';
 import 'package:hiker_connect/models/user_model.dart';
-import 'package:hiker_connect/models/event_data.dart';
 import 'package:hiker_connect/models/duration_adapter.dart';
 import 'package:hiker_connect/services/databaseservice.dart';
 import 'dart:developer' as developer;

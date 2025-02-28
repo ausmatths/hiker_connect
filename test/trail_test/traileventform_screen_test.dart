@@ -9,22 +9,26 @@ import 'package:mockito/mockito.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import '../screens/profile/profile_screen_test.mocks.dart';
+import 'traileventform_screen_test.mocks.dart';
 
-// Create mock classes
-class MockDatabaseService extends Mock implements DatabaseService {}
-class MockFirebaseFirestore extends Mock implements FirebaseFirestore {}
-class MockFirebaseAuth extends Mock implements FirebaseAuth {}
-@GenerateMocks([DatabaseService, FirebaseAuth, User, ImagePicker])
+@GenerateMocks([
+  DatabaseService,
+  FirebaseAuth,
+  User,
+  ImagePicker,
+  FirebaseFirestore
+])
 void main() {
   late MockDatabaseService mockDbService;
   late MockFirebaseAuth mockFirebaseAuth;
   late MockUser mockUser;
+  late MockFirebaseFirestore mockFirestore;
 
   setUp(() {
     mockDbService = MockDatabaseService();
     mockFirebaseAuth = MockFirebaseAuth();
     mockUser = MockUser();
+    mockFirestore = MockFirebaseFirestore();
 
     // Setup Firebase Auth mock
     when(mockFirebaseAuth.currentUser).thenReturn(mockUser);

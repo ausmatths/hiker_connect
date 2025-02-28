@@ -1,8 +1,7 @@
+// test/models/user_model_test.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hiker_connect/models/user_model.dart';
-import 'package:test/test.dart';
-import 'package:hive/hive.dart';
- // Adjust the import path as needed
+import 'package:flutter_test/flutter_test.dart'; // Use flutter_test instead of test
 
 void main() {
   group('UserModel Tests', () {
@@ -25,7 +24,7 @@ void main() {
         'followers': ['user3', 'user4'],
         'phoneNumber': '1234567890',
         'location': {
-          'geoPoint': GeoPoint(37.7749, -122.4194),
+          'geoPoint': const GeoPoint(37.7749, -122.4194),
           'address': 'San Francisco, CA',
         },
         'emergencyContacts': [
@@ -60,82 +59,82 @@ void main() {
     test('toMap should return correct map', () {
       final map = userModel.toMap();
 
-      expect(map['uid'], equals('123'));
-      expect(map['email'], equals('test@example.com'));
-      expect(map['displayName'], equals('Test User'));
-      expect(map['photoUrl'], equals('https://example.com/photo.jpg'));
-      expect(map['bio'], equals('This is a bio'));
-      expect(map['interests'], equals(['coding', 'reading']));
-      expect(map['createdAt'], equals(Timestamp.fromDate(DateTime(2023, 1, 1))));
-      expect(map['lastActive'], equals(Timestamp.fromDate(DateTime(2023, 10, 1))));
-      expect(map['isEmailVerified'], equals(true));
-      expect(map['following'], equals(['user1', 'user2']));
-      expect(map['followers'], equals(['user3', 'user4']));
-      expect(map['phoneNumber'], equals('1234567890'));
-      expect(map['location'], equals({
-        'geoPoint': GeoPoint(37.7749, -122.4194),
+      expect(map['uid'], '123');
+      expect(map['email'], 'test@example.com');
+      expect(map['displayName'], 'Test User');
+      expect(map['photoUrl'], 'https://example.com/photo.jpg');
+      expect(map['bio'], 'This is a bio');
+      expect(map['interests'], ['coding', 'reading']);
+      expect(map['createdAt'], Timestamp.fromDate(DateTime(2023, 1, 1)));
+      expect(map['lastActive'], Timestamp.fromDate(DateTime(2023, 10, 1)));
+      expect(map['isEmailVerified'], true);
+      expect(map['following'], ['user1', 'user2']);
+      expect(map['followers'], ['user3', 'user4']);
+      expect(map['phoneNumber'], '1234567890');
+      expect(map['location'], {
+        'geoPoint': const GeoPoint(37.7749, -122.4194),
         'address': 'San Francisco, CA',
-      }));
-      expect(map['emergencyContacts'], equals([
+      });
+      expect(map['emergencyContacts'], [
         {
           'name': 'John Doe',
           'relationship': 'Friend',
           'phoneNumber': '0987654321',
         }
-      ]));
-      expect(map['bloodType'], equals('O+'));
-      expect(map['medicalConditions'], equals(['Asthma']));
-      expect(map['medications'], equals(['Inhaler']));
-      expect(map['insuranceInfo'], equals('Some Insurance Info'));
-      expect(map['allergies'], equals('Pollen'));
-      expect(map['dateOfBirth'], equals(Timestamp.fromDate(DateTime(1990, 1, 1))));
-      expect(map['gender'], equals('Male'));
-      expect(map['height'], equals(180.0));
-      expect(map['weight'], equals(75.0));
-      expect(map['preferredLanguage'], equals('English'));
-      expect(map['socialLinks'], equals({
+      ]);
+      expect(map['bloodType'], 'O+');
+      expect(map['medicalConditions'], ['Asthma']);
+      expect(map['medications'], ['Inhaler']);
+      expect(map['insuranceInfo'], 'Some Insurance Info');
+      expect(map['allergies'], 'Pollen');
+      expect(map['dateOfBirth'], Timestamp.fromDate(DateTime(1990, 1, 1)));
+      expect(map['gender'], 'Male');
+      expect(map['height'], 180.0);
+      expect(map['weight'], 75.0);
+      expect(map['preferredLanguage'], 'English');
+      expect(map['socialLinks'], {
         'twitter': 'https://twitter.com/test',
         'linkedin': 'https://linkedin.com/in/test',
-      }));
+      });
     });
 
     test('fromFirestore should create correct UserModel instance', () {
-      expect(userModel.uid, equals('123'));
-      expect(userModel.email, equals('test@example.com'));
-      expect(userModel.displayName, equals('Test User'));
-      expect(userModel.photoUrl, equals('https://example.com/photo.jpg'));
-      expect(userModel.bio, equals('This is a bio'));
-      expect(userModel.interests, equals(['coding', 'reading']));
-      expect(userModel.createdAt, equals(DateTime(2023, 1, 1)));
-      expect(userModel.lastActive, equals(DateTime(2023, 10, 1)));
-      expect(userModel.isEmailVerified, equals(true));
-      expect(userModel.following, equals(['user1', 'user2']));
-      expect(userModel.followers, equals(['user3', 'user4']));
-      expect(userModel.phoneNumber, equals('1234567890'));
-      expect(userModel.location?.geoPoint, equals(GeoPoint(37.7749, -122.4194)));
-      expect(userModel.location?.address, equals('San Francisco, CA'));
-      expect(userModel.emergencyContacts?.first.name, equals('John Doe'));
-      expect(userModel.emergencyContacts?.first.relationship, equals('Friend'));
-      expect(userModel.emergencyContacts?.first.phoneNumber, equals('0987654321'));
-      expect(userModel.bloodType, equals('O+'));
-      expect(userModel.medicalConditions, equals(['Asthma']));
-      expect(userModel.medications, equals(['Inhaler']));
-      expect(userModel.insuranceInfo, equals('Some Insurance Info'));
-      expect(userModel.allergies, equals('Pollen'));
-      expect(userModel.dateOfBirth, equals(DateTime(1990, 1, 1)));
-      expect(userModel.gender, equals('Male'));
-      expect(userModel.height, equals(180.0));
-      expect(userModel.weight, equals(75.0));
-      expect(userModel.preferredLanguage, equals('English'));
-      expect(userModel.socialLinks?['twitter'], equals('https://twitter.com/test'));
-      expect(userModel.socialLinks?['linkedin'], equals('https://linkedin.com/in/test'));
+      expect(userModel.uid, '123');
+      expect(userModel.email, 'test@example.com');
+      expect(userModel.displayName, 'Test User');
+      expect(userModel.photoUrl, 'https://example.com/photo.jpg');
+      expect(userModel.bio, 'This is a bio');
+      expect(userModel.interests, ['coding', 'reading']);
+      expect(userModel.createdAt, DateTime(2023, 1, 1));
+      expect(userModel.lastActive, DateTime(2023, 10, 1));
+      expect(userModel.isEmailVerified, true);
+      expect(userModel.following, ['user1', 'user2']);
+      expect(userModel.followers, ['user3', 'user4']);
+      expect(userModel.phoneNumber, '1234567890');
+      expect(userModel.location?.geoPoint?.latitude, 37.7749);
+      expect(userModel.location?.geoPoint?.longitude, -122.4194);
+      expect(userModel.location?.address, 'San Francisco, CA');
+      expect(userModel.emergencyContacts?.first.name, 'John Doe');
+      expect(userModel.emergencyContacts?.first.relationship, 'Friend');
+      expect(userModel.emergencyContacts?.first.phoneNumber, '0987654321');
+      expect(userModel.bloodType, 'O+');
+      expect(userModel.medicalConditions, ['Asthma']);
+      expect(userModel.medications, ['Inhaler']);
+      expect(userModel.insuranceInfo, 'Some Insurance Info');
+      expect(userModel.allergies, 'Pollen');
+      expect(userModel.dateOfBirth, DateTime(1990, 1, 1));
+      expect(userModel.gender, 'Male');
+      expect(userModel.height, 180.0);
+      expect(userModel.weight, 75.0);
+      expect(userModel.preferredLanguage, 'English');
+      expect(userModel.socialLinks?['twitter'], 'https://twitter.com/test');
+      expect(userModel.socialLinks?['linkedin'], 'https://linkedin.com/in/test');
     });
-
   });
 }
 
 // Fake DocumentSnapshot for testing
-class FakeDocumentSnapshot extends DocumentSnapshot<Map<String, dynamic>> {
+class FakeDocumentSnapshot implements DocumentSnapshot<Map<String, dynamic>> {
   final Map<String, dynamic> _data;
   final String _id;
 
@@ -150,36 +149,16 @@ class FakeDocumentSnapshot extends DocumentSnapshot<Map<String, dynamic>> {
   @override
   Map<String, dynamic> data() => _data;
 
-  /*@override
-  dynamic get(String field) => _data[field];*/
-
-  /*@override
-  dynamic operator [](String field) => _data[field];*/
+  // Implement required methods from the interface
+  @override
+  get(Object field) => _data[field.toString()];
 
   @override
-  get(Object field) {
-    // TODO: implement get
-    throw UnimplementedError();
-  }
-
-  @override
-  // TODO: implement metadata
   SnapshotMetadata get metadata => throw UnimplementedError();
 
   @override
-  // TODO: implement reference
-  DocumentReference<Map<String, dynamic>> get reference =>
-      throw UnimplementedError();
+  DocumentReference<Map<String, dynamic>> get reference => throw UnimplementedError();
 
   @override
-  operator [](Object field) {
-    // TODO: implement []
-    throw UnimplementedError();
-  }
-  }
-// ignore: unnecessary_overrides
-//SnapshotMetadata get metadata => super.metadata;
-
-/*@override
-  // ignore: unnecessary_overrides
-  DocumentReference<Map<String, dynamic>> get reference => super.reference;*/
+  operator [](Object field) => _data[field.toString()];
+}

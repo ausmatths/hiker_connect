@@ -5,9 +5,7 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i4;
 
-// import 'package:hiker_connect/models/event_data.dart' as _i7;
 import 'package:hiker_connect/models/trail_data.dart' as _i5;
-// import 'package:hiker_connect/models/user_model.dart' as _i6;
 import 'package:hiker_connect/services/databaseservice.dart' as _i3;
 import 'package:hive/hive.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
@@ -59,38 +57,6 @@ class MockDatabaseService extends _i1.Mock implements _i3.DatabaseService {
           ),
         )),
       ) as _i4.Future<_i2.Box<_i5.TrailData>>);
-
-  // @override
-  // _i4.Future<_i2.Box<_i6.UserModel>> getUserBox() => (super.noSuchMethod(
-  //       Invocation.method(
-  //         #getUserBox,
-  //         [],
-  //       ),
-  //       returnValue:
-  //           _i4.Future<_i2.Box<_i6.UserModel>>.value(_FakeBox_0<_i6.UserModel>(
-  //         this,
-  //         Invocation.method(
-  //           #getUserBox,
-  //           [],
-  //         ),
-  //       )),
-  //     ) as _i4.Future<_i2.Box<_i6.UserModel>>);
-
-  // @override
-  // _i4.Future<_i2.Box<_i7.EventData>> getEventBox() => (super.noSuchMethod(
-  //       Invocation.method(
-  //         #getEventBox,
-  //         [],
-  //       ),
-  //       returnValue:
-  //           _i4.Future<_i2.Box<_i7.EventData>>.value(_FakeBox_0<_i7.EventData>(
-  //         this,
-  //         Invocation.method(
-  //           #getEventBox,
-  //           [],
-  //         ),
-  //       )),
-  //     ) as _i4.Future<_i2.Box<_i7.EventData>>);
 
   @override
   _i4.Future<void> init() => (super.noSuchMethod(

@@ -31,13 +31,13 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntryLo">4.0&nbsp;%</td>
-            <td class="headerCovTableEntry">25</td>
-            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntryHi">100.0&nbsp;%</td>
+            <td class="headerCovTableEntry">27</td>
+            <td class="headerCovTableEntry">27</td>
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2025-02-26 08:41:56</td>
+            <td class="headerValue">2025-02-27 17:40:18</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">-</td>
@@ -85,51 +85,56 @@
 <span id="L23"><span class="lineNum">      23</span>              :   final int trailParticipantNumber;</span>
 <span id="L24"><span class="lineNum">      24</span>              :   @HiveField(9)</span>
 <span id="L25"><span class="lineNum">      25</span>              :   final Duration trailDuration;</span>
-<span id="L26"><span class="lineNum">      26</span>              : </span>
-<span id="L27"><span class="lineNum">      27</span> <span class="tlaGNC">           3 :   TrailData({</span></span>
-<span id="L28"><span class="lineNum">      28</span>              :     required this.trailId,</span>
-<span id="L29"><span class="lineNum">      29</span>              :     required this.trailName,</span>
-<span id="L30"><span class="lineNum">      30</span>              :     required this.trailDescription,</span>
-<span id="L31"><span class="lineNum">      31</span>              :     required this.trailDifficulty,</span>
-<span id="L32"><span class="lineNum">      32</span>              :     required this.trailNotice,</span>
-<span id="L33"><span class="lineNum">      33</span>              :     required this.trailImages,</span>
-<span id="L34"><span class="lineNum">      34</span>              :     required this.trailDate,</span>
-<span id="L35"><span class="lineNum">      35</span>              :     required this.trailLocation,</span>
-<span id="L36"><span class="lineNum">      36</span>              :     required this.trailParticipantNumber,</span>
-<span id="L37"><span class="lineNum">      37</span>              :     required this.trailDuration,</span>
-<span id="L38"><span class="lineNum">      38</span>              :   });</span>
-<span id="L39"><span class="lineNum">      39</span>              : </span>
-<span id="L40"><span class="lineNum">      40</span> <span class="tlaUNC">           0 :   Map&lt;String, dynamic&gt; toMap() {</span></span>
-<span id="L41"><span class="lineNum">      41</span> <span class="tlaUNC">           0 :     return {</span></span>
-<span id="L42"><span class="lineNum">      42</span> <span class="tlaUNC">           0 :       'trailId': trailId,</span></span>
-<span id="L43"><span class="lineNum">      43</span> <span class="tlaUNC">           0 :       'trailName': trailName,</span></span>
-<span id="L44"><span class="lineNum">      44</span> <span class="tlaUNC">           0 :       'description': trailDescription,</span></span>
-<span id="L45"><span class="lineNum">      45</span> <span class="tlaUNC">           0 :       'trailDifficulty': trailDifficulty,</span></span>
-<span id="L46"><span class="lineNum">      46</span> <span class="tlaUNC">           0 :       'trailNotice': trailNotice,</span></span>
-<span id="L47"><span class="lineNum">      47</span> <span class="tlaUNC">           0 :       'trailImages': trailImages.join(','),</span></span>
-<span id="L48"><span class="lineNum">      48</span> <span class="tlaUNC">           0 :       'trailDate': trailDate.toIso8601String(),</span></span>
-<span id="L49"><span class="lineNum">      49</span> <span class="tlaUNC">           0 :       'trailLocation': trailLocation,</span></span>
-<span id="L50"><span class="lineNum">      50</span> <span class="tlaUNC">           0 :       'trailParticipantNumber': trailParticipantNumber,</span></span>
-<span id="L51"><span class="lineNum">      51</span> <span class="tlaUNC">           0 :       'trailDuration': trailDuration.inMinutes,</span></span>
-<span id="L52"><span class="lineNum">      52</span>              :     };</span>
-<span id="L53"><span class="lineNum">      53</span>              :   }</span>
-<span id="L54"><span class="lineNum">      54</span>              : </span>
-<span id="L55"><span class="lineNum">      55</span>              :   // Create from Map for retrieval</span>
-<span id="L56"><span class="lineNum">      56</span> <span class="tlaUNC">           0 :   factory TrailData.fromMap(Map&lt;String, dynamic&gt; map) {</span></span>
-<span id="L57"><span class="lineNum">      57</span> <span class="tlaUNC">           0 :     return TrailData(</span></span>
-<span id="L58"><span class="lineNum">      58</span> <span class="tlaUNC">           0 :       trailId: map['trailId'] ?? 0,</span></span>
-<span id="L59"><span class="lineNum">      59</span> <span class="tlaUNC">           0 :       trailName: map['trailName'] ?? '',</span></span>
-<span id="L60"><span class="lineNum">      60</span> <span class="tlaUNC">           0 :       trailDescription: map['trailDescription'] ?? '',</span></span>
-<span id="L61"><span class="lineNum">      61</span> <span class="tlaUNC">           0 :       trailDifficulty: map['trailDifficulty'] ?? '',</span></span>
-<span id="L62"><span class="lineNum">      62</span> <span class="tlaUNC">           0 :       trailNotice: map['trailNotice'] ?? '',</span></span>
-<span id="L63"><span class="lineNum">      63</span> <span class="tlaUNC">           0 :       trailImages: List&lt;String&gt;.from(map['trailImages'] ?? []),</span></span>
-<span id="L64"><span class="lineNum">      64</span> <span class="tlaUNC">           0 :       trailDate: DateTime.parse(map['trailDate']),</span></span>
-<span id="L65"><span class="lineNum">      65</span> <span class="tlaUNC">           0 :       trailLocation: map['trailLocation'] ?? '',</span></span>
-<span id="L66"><span class="lineNum">      66</span> <span class="tlaUNC">           0 :       trailParticipantNumber: map['trailParticipantNumber'] ?? 0,</span></span>
-<span id="L67"><span class="lineNum">      67</span> <span class="tlaUNC">           0 :       trailDuration: Duration(minutes: map['trailDuration'] ?? 0),</span></span>
-<span id="L68"><span class="lineNum">      68</span>              :     );</span>
-<span id="L69"><span class="lineNum">      69</span>              :   }</span>
-<span id="L70"><span class="lineNum">      70</span>              : }</span>
+<span id="L26"><span class="lineNum">      26</span>              :   @HiveField(10)</span>
+<span id="L27"><span class="lineNum">      27</span>              :   final String trailType;</span>
+<span id="L28"><span class="lineNum">      28</span>              : </span>
+<span id="L29"><span class="lineNum">      29</span> <span class="tlaGNC">           5 :   TrailData({</span></span>
+<span id="L30"><span class="lineNum">      30</span>              :     required this.trailId,</span>
+<span id="L31"><span class="lineNum">      31</span>              :     required this.trailName,</span>
+<span id="L32"><span class="lineNum">      32</span>              :     required this.trailDescription,</span>
+<span id="L33"><span class="lineNum">      33</span>              :     required this.trailDifficulty,</span>
+<span id="L34"><span class="lineNum">      34</span>              :     required this.trailNotice,</span>
+<span id="L35"><span class="lineNum">      35</span>              :     required this.trailImages,</span>
+<span id="L36"><span class="lineNum">      36</span>              :     required this.trailDate,</span>
+<span id="L37"><span class="lineNum">      37</span>              :     required this.trailLocation,</span>
+<span id="L38"><span class="lineNum">      38</span>              :     required this.trailParticipantNumber,</span>
+<span id="L39"><span class="lineNum">      39</span>              :     required this.trailDuration,</span>
+<span id="L40"><span class="lineNum">      40</span>              :     required this.trailType,</span>
+<span id="L41"><span class="lineNum">      41</span>              :   });</span>
+<span id="L42"><span class="lineNum">      42</span>              : </span>
+<span id="L43"><span class="lineNum">      43</span> <span class="tlaGNC">           1 :   Map&lt;String, dynamic&gt; toMap() {</span></span>
+<span id="L44"><span class="lineNum">      44</span> <span class="tlaGNC">           1 :     return {</span></span>
+<span id="L45"><span class="lineNum">      45</span> <span class="tlaGNC">           1 :       'trailId': trailId,</span></span>
+<span id="L46"><span class="lineNum">      46</span> <span class="tlaGNC">           1 :       'trailName': trailName,</span></span>
+<span id="L47"><span class="lineNum">      47</span> <span class="tlaGNC">           1 :       'description': trailDescription,</span></span>
+<span id="L48"><span class="lineNum">      48</span> <span class="tlaGNC">           1 :       'trailDifficulty': trailDifficulty,</span></span>
+<span id="L49"><span class="lineNum">      49</span> <span class="tlaGNC">           1 :       'trailNotice': trailNotice,</span></span>
+<span id="L50"><span class="lineNum">      50</span> <span class="tlaGNC">           2 :       'trailImages': trailImages.join(','),</span></span>
+<span id="L51"><span class="lineNum">      51</span> <span class="tlaGNC">           2 :       'trailDate': trailDate.toIso8601String(),</span></span>
+<span id="L52"><span class="lineNum">      52</span> <span class="tlaGNC">           1 :       'trailLocation': trailLocation,</span></span>
+<span id="L53"><span class="lineNum">      53</span> <span class="tlaGNC">           1 :       'trailParticipantNumber': trailParticipantNumber,</span></span>
+<span id="L54"><span class="lineNum">      54</span> <span class="tlaGNC">           2 :       'trailDuration': trailDuration.inMinutes,</span></span>
+<span id="L55"><span class="lineNum">      55</span> <span class="tlaGNC">           1 :       'trailType': trailType,</span></span>
+<span id="L56"><span class="lineNum">      56</span>              :     };</span>
+<span id="L57"><span class="lineNum">      57</span>              :   }</span>
+<span id="L58"><span class="lineNum">      58</span>              : </span>
+<span id="L59"><span class="lineNum">      59</span>              :   // Create from Map for retrieval</span>
+<span id="L60"><span class="lineNum">      60</span> <span class="tlaGNC">           1 :   factory TrailData.fromMap(Map&lt;String, dynamic&gt; map) {</span></span>
+<span id="L61"><span class="lineNum">      61</span> <span class="tlaGNC">           1 :     return TrailData(</span></span>
+<span id="L62"><span class="lineNum">      62</span> <span class="tlaGNC">           1 :       trailId: map['trailId'] ?? 0,</span></span>
+<span id="L63"><span class="lineNum">      63</span> <span class="tlaGNC">           1 :       trailName: map['trailName'] ?? '',</span></span>
+<span id="L64"><span class="lineNum">      64</span> <span class="tlaGNC">           1 :       trailDescription: map['trailDescription'] ?? '',</span></span>
+<span id="L65"><span class="lineNum">      65</span> <span class="tlaGNC">           1 :       trailDifficulty: map['trailDifficulty'] ?? '',</span></span>
+<span id="L66"><span class="lineNum">      66</span> <span class="tlaGNC">           1 :       trailNotice: map['trailNotice'] ?? '',</span></span>
+<span id="L67"><span class="lineNum">      67</span> <span class="tlaGNC">           3 :       trailImages: List&lt;String&gt;.from(map['trailImages'] ?? []),</span></span>
+<span id="L68"><span class="lineNum">      68</span> <span class="tlaGNC">           2 :       trailDate: DateTime.parse(map['trailDate']),</span></span>
+<span id="L69"><span class="lineNum">      69</span> <span class="tlaGNC">           1 :       trailLocation: map['trailLocation'] ?? '',</span></span>
+<span id="L70"><span class="lineNum">      70</span> <span class="tlaGNC">           1 :       trailParticipantNumber: map['trailParticipantNumber'] ?? 0,</span></span>
+<span id="L71"><span class="lineNum">      71</span> <span class="tlaGNC">           2 :       trailDuration: Duration(minutes: map['trailDuration'] ?? 0),</span></span>
+<span id="L72"><span class="lineNum">      72</span> <span class="tlaGNC">           1 :       trailType: map['trailType'] ?? '',</span></span>
+<span id="L73"><span class="lineNum">      73</span>              :     );</span>
+<span id="L74"><span class="lineNum">      74</span>              :   }</span>
+<span id="L75"><span class="lineNum">      75</span>              : }</span>
         </pre>
               </td>
             </tr>

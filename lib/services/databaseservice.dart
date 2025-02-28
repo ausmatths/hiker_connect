@@ -2,8 +2,6 @@ import 'package:hive/hive.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:hiker_connect/models/trail_data.dart';
-import 'package:hiker_connect/models/user_model.dart';
-import 'package:hiker_connect/models/event_data.dart';
 import 'package:hiker_connect/utils/logger.dart';
 
 class DatabaseService {
