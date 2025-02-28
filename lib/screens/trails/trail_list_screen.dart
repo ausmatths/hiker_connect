@@ -492,12 +492,55 @@ class TrailListScreenState extends State<TrailListScreen> {
               }
             });
           },
-          onDelete: () {
-            setState(() {
-              events.remove(event);
-              _applyFilter(); // Apply filter to update filteredEvents
-            });
-            Navigator.pop(context);
+          onDelete: () async {
+            final shouldDelete = await showDialog<bool>(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('Delete Trail'),
+                content: const Text('Are you sure you want to delete this trail? This cannot be undone.'),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(false),
+                    child: const Text('Cancel'),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.of(context).pop(true),
+                    child: const Text('Delete', style: TextStyle(color: Colors.red)),
+                  ),
+                ],
+              ),
+            ) ?? false;
+
+            if (shouldDelete) {
+              try {
+                // Show loading indicator
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Deleting trail...')),
+                );
+
+                // Delete from both databases
+                await dbService.deleteTrail(event.trailId);
+
+                // Update UI state
+                setState(() {
+                  events.remove(event);
+                  _applyFilter(); // Apply filter to update filteredEvents
+                });
+
+                // Show success message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Trail deleted successfully')),
+                );
+
+                // Navigate back
+                Navigator.pop(context);
+              } catch (e) {
+                // Show error message
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error deleting trail: ${e.toString()}')),
+                );
+              }
+            }
           },
         ),
       ),

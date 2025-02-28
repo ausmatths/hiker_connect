@@ -1,10 +1,9 @@
-// test/screens/profile/edit_profile_screen_test.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hiker_connect/models/user_model.dart';
 import 'package:hiker_connect/services/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:mockito/mockito.dart';
 import 'package:mockito/annotations.dart';
 import 'package:provider/provider.dart';
 

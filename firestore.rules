@@ -17,15 +17,15 @@ service cloud.firestore {
 
       // Allow creation if user is signed in and sets themselves as creator
       allow create: if isSignedIn() &&
-                     request.resource.data.createdBy == request.auth.uid;
+          request.resource.data.createdBy == request.auth.uid;
 
       // Allow updates only by the trail creator
       allow update: if isSignedIn() &&
-                     resource.data.createdBy == request.auth.uid;
+          resource.data.createdBy == request.auth.uid;
 
       // Allow deletion only by the trail creator
       allow delete: if isSignedIn() &&
-                     resource.data.createdBy == request.auth.uid;
+          resource.data.createdBy == request.auth.uid;
     }
 
     // User profiles (if you add them later)

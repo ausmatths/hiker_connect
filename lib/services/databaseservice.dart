@@ -235,4 +235,50 @@ class DatabaseService {
       return null;
     }
   }
+
+  Future<void> deleteTrail(int trailId) async {
+    try {
+      // 1. Delete from local Hive first
+      final box = _trailBox ?? await Hive.openBox<TrailData>('trailBox');
+
+      // Find the key for this trailId
+      int? keyToDelete;
+      for (var i = 0; i < box.length; i++) {
+        final existingTrail = box.getAt(i);
+        if (existingTrail != null && existingTrail.trailId == trailId) {
+          keyToDelete = box.keyAt(i);
+          break;
+        }
+      }
+
+      if (keyToDelete != null) {
+        // Delete from Hive
+        await box.delete(keyToDelete);
+        await box.flush(); // Ensure data is written to disk
+        AppLogger.info('Trail deleted successfully from local storage: ID $trailId');
+      } else {
+        AppLogger.warning('No trail found to delete with ID: $trailId');
+      }
+
+      // 2. Delete from Firestore
+      await deleteTrailFromFirestore(trailId);
+
+    } catch (e) {
+      AppLogger.error('Failed to delete trail: $trailId - ${e.toString()}');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteTrailFromFirestore(int trailId) async {
+    try {
+      final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+      // Delete from Firestore
+      await firestore.collection('trails').doc(trailId.toString()).delete();
+      AppLogger.info('Trail deleted from Firestore: ID $trailId');
+    } catch (e) {
+      AppLogger.error('Failed to delete trail from Firestore: ${e.toString()}');
+      // Don't rethrow here to prevent local operations from failing
+    }
+  }
 }
