@@ -9,15 +9,15 @@ class EventsListScreen extends StatefulWidget {
   const EventsListScreen({super.key});
 
   @override
-  TrailListScreenState createState() => TrailListScreenState();
+  EventsListScreenState createState() => EventsListScreenState();
 }
 
-class TrailListScreenState extends State<EventsListScreen> {
+class EventsListScreenState extends State<EventsListScreen> {
   List<TrailData> events = [];
   final Set<TrailData> joinedEvents = {};
   bool _isLoading = true;
   String _errorMessage = '';
-  String _selectedTrailType = 'All'; // Variable to filter events
+  String _selectedEventType = 'All'; // Variable to filter events
   late DatabaseService dbService;
 
   @override
@@ -34,85 +34,94 @@ class TrailListScreenState extends State<EventsListScreen> {
     });
 
     try {
-      List<TrailData> localTrails = await dbService.getTrails();
+      // First get all trails from local storage
+      List<TrailData> allTrails = await dbService.getTrails();
+      print("EVENTS SCREEN: Retrieved ${allTrails.length} total items from Hive");
 
-      // Filter based on selected trailType
-      // if (_selectedTrailType != 'All') {
-      //   localTrails = localTrails.where((event) => event.trailType == _selectedTrailType).toList();
-      // }
+      // Filter to only include items with trailType = 'Event'
+      List<TrailData> eventTrails = allTrails.where((trail) =>
+      trail.trailType == 'Event'
+      ).toList();
+
+      print("EVENTS SCREEN: After filtering, found ${eventTrails.length} Event items");
 
       setState(() {
-        events = localTrails;
-        _isLoading = localTrails.isEmpty;
+        events = eventTrails;
+        _isLoading = false;
       });
 
+      // Then fetch from Firestore
       List<TrailData> cloudTrails = await dbService.getTrailsFromFirestore();
+      print("EVENTS SCREEN: Retrieved ${cloudTrails.length} total items from Firestore");
 
       if (cloudTrails.isNotEmpty) {
+        // Merge local and cloud trails
+        final Map<int, TrailData> trailMap = {};
+
+        // Add local event trails to map
+        for (var trail in eventTrails) {
+          trailMap[trail.trailId] = trail;
+        }
+
+        // Add or override with cloud trails, but only events
+        int eventCount = 0;
+        for (var trail in cloudTrails) {
+          if (trail.trailType == 'Event') {
+            trailMap[trail.trailId] = trail;
+            eventCount++;
+          }
+        }
+        print("EVENTS SCREEN: Found $eventCount Event items in Firestore");
+
         setState(() {
-          // Merge local and cloud trails
-          final Map<int, TrailData> trailMap = {};
-
-          // Add local trails to map
-          for (var trail in localTrails) {
-            trailMap[trail.trailId] = trail;
-          }
-
-          // Add or override with cloud trails
-          for (var trail in cloudTrails) {
-            trailMap[trail.trailId] = trail;
-          }
-
-          // Filter again based on selected trailType
-          // events = trailMap.values
-          //     .where((trail) => _selectedTrailType == 'All' || trail.trailType == _selectedTrailType)
-          //     .toList();
-          // _isLoading = false;
+          events = trailMap.values.toList();
+          _isLoading = false;
         });
-      } else if (localTrails.isEmpty) {
+      } else if (eventTrails.isEmpty) {
         setState(() {
           _isLoading = false;
-          _errorMessage = 'No trails found';
+          _errorMessage = 'No events found';
         });
       }
     } catch (e) {
+      print("EVENTS SCREEN ERROR: $e");
       setState(() {
         _isLoading = false;
-        _errorMessage = 'Error loading trails: $e';
+        _errorMessage = 'Error loading events: $e';
       });
     }
   }
 
-  // Method to handle changing the selected trailType
-  void _onTrailTypeChanged(String? newType) {
+  // Method to handle changing the selected event type
+  void _onEventTypeChanged(String? newType) {
     setState(() {
-      _selectedTrailType = newType ?? 'All';
+      _selectedEventType = newType ?? 'All';
     });
-    _loadEvents(); // Reload events based on the new trail type
+    _loadEvents(); // Reload events based on the new type
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Trails'),
+        title: const Text('Events'),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadEvents,
-            tooltip: 'Refresh trails',
+            tooltip: 'Refresh events',
           ),
         ],
       ),
       body: Column(
         children: [
-          // Trail Type Filter Dropdown
+          // Event Type Filter Dropdown (optional)
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: DropdownButton<String>(
-              value: _selectedTrailType,
-              onChanged: _onTrailTypeChanged,
-              items: <String>['All', 'Mountain', 'Forest', 'Coastal']
+              value: _selectedEventType,
+              onChanged: _onEventTypeChanged,
+              items: <String>['All', 'Concert', 'Meetup', 'Workshop']
                   .map<DropdownMenuItem<String>>((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
@@ -146,7 +155,7 @@ class TrailListScreenState extends State<EventsListScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Text(
-                    'No trails yet',
+                    'No events yet',
                     style: TextStyle(fontSize: 18),
                   ),
                   const SizedBox(height: 16),
@@ -165,7 +174,7 @@ class TrailListScreenState extends State<EventsListScreen> {
                         }
                       });
                     },
-                    child: const Text('Create a Trail'),
+                    child: const Text('Create an Event'),
                   ),
                 ],
               ),
@@ -189,7 +198,7 @@ class TrailListScreenState extends State<EventsListScreen> {
                       children: [
                         // Event Name
                         Text(
-                          event.trailName.isNotEmpty ? event.trailName : "Untitled Trail",
+                          event.trailName.isNotEmpty ? event.trailName : "Untitled Event",
                           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(height: 5),
@@ -201,6 +210,8 @@ class TrailListScreenState extends State<EventsListScreen> {
 
                         // Event Details
                         Text('Location: ${event.trailLocation}', style: const TextStyle(fontSize: 14)),
+                        const SizedBox(height: 5),
+                        Text('Type: ${event.trailType}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 5),
                         Text('Difficulty: ${event.trailDifficulty}', style: const TextStyle(fontSize: 14)),
                         const SizedBox(height: 5),
@@ -222,7 +233,7 @@ class TrailListScreenState extends State<EventsListScreen> {
                               child: ElevatedButton.icon(
                                 onPressed: () => _toggleJoinEvent(event),
                                 icon: Icon(
-                                  isJoined ? Icons.remove_circle : Icons.hiking,
+                                  isJoined ? Icons.remove_circle : Icons.event_available,
                                   color: isJoined ? Colors.red : Colors.green,
                                 ),
                                 label: Text(isJoined ? 'Unjoin' : 'Join'),
@@ -236,7 +247,7 @@ class TrailListScreenState extends State<EventsListScreen> {
                             IconButton(
                               icon: const Icon(Icons.edit, color: Colors.blue),
                               onPressed: () => _navigateToEventEdit(event),
-                              tooltip: 'Edit Trail',
+                              tooltip: 'Edit Event',
                             ),
                           ],
                         )
@@ -248,6 +259,18 @@ class TrailListScreenState extends State<EventsListScreen> {
             ),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const create_screen.EventFormScreen(),
+            ),
+          ).then((_) => _loadEvents());
+        },
+        child: const Icon(Icons.add),
+        tooltip: 'Add New Event',
       ),
     );
   }
@@ -281,8 +304,8 @@ class TrailListScreenState extends State<EventsListScreen> {
             final shouldDelete = await showDialog<bool>(
               context: context,
               builder: (context) => AlertDialog(
-                title: const Text('Delete Trail'),
-                content: const Text('Are you sure you want to delete this trail? This cannot be undone.'),
+                title: const Text('Delete Event'),
+                content: const Text('Are you sure you want to delete this event? This cannot be undone.'),
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.of(context).pop(false),
@@ -300,7 +323,7 @@ class TrailListScreenState extends State<EventsListScreen> {
               try {
                 // Show loading indicator
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Deleting trail...')),
+                  const SnackBar(content: Text('Deleting event...')),
                 );
 
                 // Delete from both databases
@@ -313,7 +336,7 @@ class TrailListScreenState extends State<EventsListScreen> {
 
                 // Show success message
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Trail deleted successfully')),
+                  const SnackBar(content: Text('Event deleted successfully')),
                 );
 
                 // Navigate back
@@ -321,7 +344,7 @@ class TrailListScreenState extends State<EventsListScreen> {
               } catch (e) {
                 // Show error message
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error deleting trail: ${e.toString()}')),
+                  SnackBar(content: Text('Error deleting event: ${e.toString()}')),
                 );
               }
             }

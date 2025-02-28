@@ -123,15 +123,19 @@ class _EventFormScreenState extends State<EventFormScreen> {
             trailLocation: _locationController.text,
             trailParticipantNumber: int.tryParse(_participantsController.text) ?? 0,
             trailDuration: Duration(hours: _selectedHours, minutes: _selectedMinutes),
-            trailType: 'Trail', // Not using it for routing, just for TrailData
+            trailType: 'Trail', // Make sure this is exactly 'Trail'
           );
 
+          // Add debug log
+          print("CREATING NEW TRAIL: ${newTrail.trailName} with type ${newTrail.trailType}");
           await dbService.insertTrails(newTrail);
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Trail saved successfully')),
           );
 
+          // Debug log for navigation
+          print("NAVIGATING TO: /trails");
           Navigator.pushReplacementNamed(context, '/trails');
         } else {
           // Create EventData
@@ -146,24 +150,28 @@ class _EventFormScreenState extends State<EventFormScreen> {
             trailLocation: _locationController.text,
             trailParticipantNumber: int.tryParse(_participantsController.text) ?? 0,
             trailDuration: Duration(hours: _selectedHours, minutes: _selectedMinutes),
-            trailType: 'Event',
+            trailType: 'Event', // Make sure this is exactly 'Event'
           );
 
+          // Add debug log
+          print("CREATING NEW EVENT: ${newEvent.trailName} with type ${newEvent.trailType}");
           await dbService.insertTrails(newEvent);
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Event saved successfully')),
           );
 
+          // Debug log for navigation
+          print("NAVIGATING TO: /events");
           Navigator.pushReplacementNamed(context, '/events');
         }
         return Future.value();
-        },
+      },
       onSuccess: () {
-          setState(() {
-            _isLoading = false;
-          });
-        },
+        setState(() {
+          _isLoading = false;
+        });
+      },
       onError: (error) {
         AppLogger.error('Error submitting trail: ${error.toString()}');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -236,6 +244,7 @@ class _EventFormScreenState extends State<EventFormScreen> {
                 onChanged: (value) {
                   setState(() {
                     _selectedType = value!;
+                    print("TYPE SELECTED: $_selectedType");
                   });
                 },
                 decoration: const InputDecoration(
@@ -328,10 +337,6 @@ class _EventFormScreenState extends State<EventFormScreen> {
                         _eventDate ==null
                             ? 'Select ${_selectedType == 'Trail' ? 'Trail' : 'Event'} Date'
                             : '${_selectedType == 'Trail' ? 'Trail Date:' : 'Event Date:'}  ${DateFormat('yyyy-MM-dd').format(_eventDate!)}',
-                        // _eventDate == null
-                        //     ? 'Select Trail Date'
-                        //     : 'Trail Date: ${DateFormat('yyyy-MM-dd').format(_eventDate!)}',
-                        // style: const TextStyle(fontSize: 16.0),
                       ),
                       const Icon(Icons.calendar_today),
                     ],

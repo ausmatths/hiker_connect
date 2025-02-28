@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hiker_connect/screens/profile/profile_screen.dart';
 import 'package:hiker_connect/screens/trails/trail_list_screen.dart';
+import 'package:hiker_connect/screens/trails/events_list_screen.dart';  // Add this import
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -15,7 +16,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _screens = [
     const Center(child: Text('Feed Coming Soon')),
     const TrailListScreen(),
-    const Center(child: Text('Events Coming Soon')),
+    const EventsListScreen(),
     const ProfileScreen(),
   ];
 
