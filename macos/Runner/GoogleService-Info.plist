@@ -6,6 +6,8 @@
 	<string>967683373829-uiu2p09vi3j6er3cobi7r354fbm5pird.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
 	<string>com.googleusercontent.apps.967683373829-uiu2p09vi3j6er3cobi7r354fbm5pird</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>967683373829-4k5ut5k12o375qc2da2pr47jj9dufk64.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
 	<string>AIzaSyC4nCLpr4TR7qZXUzTdGURhc4pHeVh7tPQ</string>
 	<key>GCM_SENDER_ID</key>
@@ -30,5 +32,7 @@
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
 	<string>1:967683373829:ios:c3e05838af84240820956c</string>
+	<key>DATABASE_URL</key>
+	<string>https://hiker-connect-default-rtdb.firebaseio.com</string>
 </dict>
 </plist>

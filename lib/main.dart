@@ -1,7 +1,8 @@
-
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:hiker_connect/screens/trails/trail_list_screen.dart';
 import 'package:hiker_connect/screens/trails/events_list_screen.dart';
 import 'package:provider/provider.dart';
@@ -25,6 +26,28 @@ import 'package:hiker_connect/screens/profile/profile_screen.dart';
 import 'package:hiker_connect/screens/home_screen.dart';
 import 'firebase_options.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+
+// Configure Firebase to use emulators when in debug mode
+Future<void> configureEmulators() async {
+  if (kDebugMode) {
+    developer.log('Configuring Firebase emulators...', name: 'App Setup');
+    const String host = '127.0.0.1';
+
+    // Configure Firestore emulator - using port 7070
+    FirebaseFirestore.instance.useFirestoreEmulator(host, 7070);
+    developer.log('Connected to Firestore emulator at $host:7070', name: 'App Setup');
+
+    // Configure Auth emulator
+    await FirebaseAuth.instance.useAuthEmulator(host, 9099);
+    developer.log('Connected to Auth emulator at $host:9099', name: 'App Setup');
+
+    // Configure Storage emulator
+    FirebaseStorage.instance.useStorageEmulator(host, 9195);
+    developer.log('Connected to Storage emulator at $host:9195', name: 'App Setup');
+
+    developer.log('Firebase emulators configured successfully', name: 'App Setup');
+  }
+}
 
 class ErrorApp extends StatelessWidget {
   final Object error;
@@ -189,25 +212,32 @@ Future<void> main() async {
     );
     developer.log('Firebase Core initialized', name: 'App Setup');
 
-    // App Check initialization
-    if (defaultTargetPlatform == TargetPlatform.iOS) {
-      developer.log('Initializing App Check for iOS', name: 'App Setup');
-      await FirebaseAppCheck.instance.activate(
-        appleProvider: AppleProvider.debug,
-      );
-      developer.log('App Check activated for iOS', name: 'App Setup');
-    } else if (kIsWeb) {
-      developer.log('Initializing App Check for Web', name: 'App Setup');
-      await FirebaseAppCheck.instance.activate(
-        webProvider: ReCaptchaV3Provider('6LfoXNUqAAAAACnOEV3yeMG5a7du0spOyuYp2l0J'),
-      );
-      developer.log('App Check activated for Web', name: 'App Setup');
-    } else if (defaultTargetPlatform == TargetPlatform.android) {
-      developer.log('Initializing App Check for Android', name: 'App Setup');
-      await FirebaseAppCheck.instance.activate(
-        androidProvider: AndroidProvider.debug,
-      );
-      developer.log('App Check activated for Android', name: 'App Setup');
+    // Configure Firebase emulators in debug mode
+    await configureEmulators();
+
+    // App Check initialization - skip if in debug mode with emulators
+    if (!kDebugMode) {
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        developer.log('Initializing App Check for iOS', name: 'App Setup');
+        await FirebaseAppCheck.instance.activate(
+          appleProvider: AppleProvider.debug,
+        );
+        developer.log('App Check activated for iOS', name: 'App Setup');
+      } else if (kIsWeb) {
+        developer.log('Initializing App Check for Web', name: 'App Setup');
+        await FirebaseAppCheck.instance.activate(
+          webProvider: ReCaptchaV3Provider('6LfoXNUqAAAAACnOEV3yeMG5a7du0spOyuYp2l0J'),
+        );
+        developer.log('App Check activated for Web', name: 'App Setup');
+      } else if (defaultTargetPlatform == TargetPlatform.android) {
+        developer.log('Initializing App Check for Android', name: 'App Setup');
+        await FirebaseAppCheck.instance.activate(
+          androidProvider: AndroidProvider.debug,
+        );
+        developer.log('App Check activated for Android', name: 'App Setup');
+      }
+    } else {
+      developer.log('Skipping App Check activation in debug mode with emulators', name: 'App Setup');
     }
 
     // Load any previously saved trail data

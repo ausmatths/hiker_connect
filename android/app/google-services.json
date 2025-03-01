@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "967683373829",
+    "firebase_url": "https://hiker-connect-default-rtdb.firebaseio.com",
     "project_id": "hiker-connect",
     "storage_bucket": "hiker-connect.firebasestorage.app"
   },
@@ -13,6 +14,14 @@
         }
       },
       "oauth_client": [
+        {
+          "client_id": "967683373829-576k20omp8p7tjq5t3oht8mk1ihf37bj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.hiker_connect",
+            "certificate_hash": "8c6bf6729779ae3dafe6c87b64886609c198ebb4"
+          }
+        },
         {
           "client_id": "967683373829-kjq1shb1aavq4jr2rgibg5ddtdk5bvrm.apps.googleusercontent.com",
           "client_type": 3
@@ -49,6 +58,14 @@
         }
       },
       "oauth_client": [
+        {
+          "client_id": "967683373829-4k5ut5k12o375qc2da2pr47jj9dufk64.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hikerconnect.app",
+            "certificate_hash": "8c6bf6729779ae3dafe6c87b64886609c198ebb4"
+          }
+        },
         {
           "client_id": "967683373829-kjq1shb1aavq4jr2rgibg5ddtdk5bvrm.apps.googleusercontent.com",
           "client_type": 3

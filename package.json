@@ -1,5 +1,7 @@
 {
-  "devDependencies": {
-    "jest-junit": "^16.0.0"
+  "name": "hiker-connect",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "echo \"No dev command configured\" && exit 0"
   }
 }

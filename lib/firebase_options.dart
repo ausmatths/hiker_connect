@@ -46,6 +46,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '967683373829',
     projectId: 'hiker-connect',
     authDomain: 'hiker-connect.firebaseapp.com',
+    databaseURL: 'https://hiker-connect-default-rtdb.firebaseio.com',
     storageBucket: 'hiker-connect.firebasestorage.app',
     measurementId: 'G-H4ZVJBQWW1',
   );
@@ -55,6 +56,7 @@ class DefaultFirebaseOptions {
     appId: '1:967683373829:android:1973708e7f1815f920956c',
     messagingSenderId: '967683373829',
     projectId: 'hiker-connect',
+    databaseURL: 'https://hiker-connect-default-rtdb.firebaseio.com',
     storageBucket: 'hiker-connect.firebasestorage.app',
   );
 
@@ -63,7 +65,9 @@ class DefaultFirebaseOptions {
     appId: '1:967683373829:ios:6c3b56c7d7bc735e20956c',
     messagingSenderId: '967683373829',
     projectId: 'hiker-connect',
+    databaseURL: 'https://hiker-connect-default-rtdb.firebaseio.com',
     storageBucket: 'hiker-connect.firebasestorage.app',
+    androidClientId: '967683373829-4k5ut5k12o375qc2da2pr47jj9dufk64.apps.googleusercontent.com',
     iosClientId: '967683373829-etonh967dnlo7mrmtha7qvbl78u9a3s9.apps.googleusercontent.com',
     iosBundleId: 'com.ausmatths.hikerConnect',
   );
@@ -73,7 +77,9 @@ class DefaultFirebaseOptions {
     appId: '1:967683373829:ios:c3e05838af84240820956c',
     messagingSenderId: '967683373829',
     projectId: 'hiker-connect',
+    databaseURL: 'https://hiker-connect-default-rtdb.firebaseio.com',
     storageBucket: 'hiker-connect.firebasestorage.app',
+    androidClientId: '967683373829-4k5ut5k12o375qc2da2pr47jj9dufk64.apps.googleusercontent.com',
     iosClientId: '967683373829-uiu2p09vi3j6er3cobi7r354fbm5pird.apps.googleusercontent.com',
     iosBundleId: 'com.example.hikerConnect',
   );
@@ -84,6 +90,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '967683373829',
     projectId: 'hiker-connect',
     authDomain: 'hiker-connect.firebaseapp.com',
+    databaseURL: 'https://hiker-connect-default-rtdb.firebaseio.com',
     storageBucket: 'hiker-connect.firebasestorage.app',
     measurementId: 'G-85ZZM444KG',
   );
