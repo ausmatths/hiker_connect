@@ -31,13 +31,13 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntryLo">61.3&nbsp;%</td>
-            <td class="headerCovTableEntry">204</td>
+            <td class="headerCovTableEntryLo">59.8&nbsp;%</td>
+            <td class="headerCovTableEntry">209</td>
             <td class="headerCovTableEntry">125</td>
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2025-02-27 17:40:18</td>
+            <td class="headerValue">2025-02-27 23:33:29</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">-</td>
@@ -185,320 +185,325 @@
 <span id="L123"><span class="lineNum">     123</span> <span class="tlaUNC">           0 :             trailLocation: _locationController.text,</span></span>
 <span id="L124"><span class="lineNum">     124</span> <span class="tlaUNC">           0 :             trailParticipantNumber: int.tryParse(_participantsController.text) ?? 0,</span></span>
 <span id="L125"><span class="lineNum">     125</span> <span class="tlaUNC">           0 :             trailDuration: Duration(hours: _selectedHours, minutes: _selectedMinutes),</span></span>
-<span id="L126"><span class="lineNum">     126</span>              :             trailType: 'Trail', // Not using it for routing, just for TrailData</span>
+<span id="L126"><span class="lineNum">     126</span>              :             trailType: 'Trail', // Make sure this is exactly 'Trail'</span>
 <span id="L127"><span class="lineNum">     127</span>              :           );</span>
 <span id="L128"><span class="lineNum">     128</span>              : </span>
-<span id="L129"><span class="lineNum">     129</span> <span class="tlaUNC">           0 :           await dbService.insertTrails(newTrail);</span></span>
-<span id="L130"><span class="lineNum">     130</span>              : </span>
-<span id="L131"><span class="lineNum">     131</span> <span class="tlaUNC">           0 :           ScaffoldMessenger.of(context).showSnackBar(</span></span>
-<span id="L132"><span class="lineNum">     132</span>              :             const SnackBar(content: Text('Trail saved successfully')),</span>
-<span id="L133"><span class="lineNum">     133</span>              :           );</span>
-<span id="L134"><span class="lineNum">     134</span>              : </span>
-<span id="L135"><span class="lineNum">     135</span> <span class="tlaUNC">           0 :           Navigator.pushReplacementNamed(context, '/trails');</span></span>
-<span id="L136"><span class="lineNum">     136</span>              :         } else {</span>
-<span id="L137"><span class="lineNum">     137</span>              :           // Create EventData</span>
-<span id="L138"><span class="lineNum">     138</span> <span class="tlaUNC">           0 :           final newEvent = TrailData(</span></span>
-<span id="L139"><span class="lineNum">     139</span>              :             trailId: uniqueId,</span>
-<span id="L140"><span class="lineNum">     140</span> <span class="tlaUNC">           0 :             trailName: _nameController.text,</span></span>
-<span id="L141"><span class="lineNum">     141</span> <span class="tlaUNC">           0 :             trailDescription: _descriptionController.text,</span></span>
-<span id="L142"><span class="lineNum">     142</span> <span class="tlaUNC">           0 :             trailDifficulty: _difficulty,</span></span>
-<span id="L143"><span class="lineNum">     143</span> <span class="tlaUNC">           0 :             trailNotice: _noticeController.text,</span></span>
-<span id="L144"><span class="lineNum">     144</span> <span class="tlaUNC">           0 :             trailImages: _eventImages.map((image) =&gt; image.path).toList(),</span></span>
-<span id="L145"><span class="lineNum">     145</span> <span class="tlaUNC">           0 :             trailDate: _eventDate ?? DateTime.now(),</span></span>
-<span id="L146"><span class="lineNum">     146</span> <span class="tlaUNC">           0 :             trailLocation: _locationController.text,</span></span>
-<span id="L147"><span class="lineNum">     147</span> <span class="tlaUNC">           0 :             trailParticipantNumber: int.tryParse(_participantsController.text) ?? 0,</span></span>
-<span id="L148"><span class="lineNum">     148</span> <span class="tlaUNC">           0 :             trailDuration: Duration(hours: _selectedHours, minutes: _selectedMinutes),</span></span>
-<span id="L149"><span class="lineNum">     149</span>              :             trailType: 'Event',</span>
-<span id="L150"><span class="lineNum">     150</span>              :           );</span>
-<span id="L151"><span class="lineNum">     151</span>              : </span>
-<span id="L152"><span class="lineNum">     152</span> <span class="tlaUNC">           0 :           await dbService.insertTrails(newEvent);</span></span>
-<span id="L153"><span class="lineNum">     153</span>              : </span>
-<span id="L154"><span class="lineNum">     154</span> <span class="tlaUNC">           0 :           ScaffoldMessenger.of(context).showSnackBar(</span></span>
-<span id="L155"><span class="lineNum">     155</span>              :             const SnackBar(content: Text('Event saved successfully')),</span>
-<span id="L156"><span class="lineNum">     156</span>              :           );</span>
-<span id="L157"><span class="lineNum">     157</span>              : </span>
-<span id="L158"><span class="lineNum">     158</span> <span class="tlaUNC">           0 :           Navigator.pushReplacementNamed(context, '/events');</span></span>
-<span id="L159"><span class="lineNum">     159</span>              :         }</span>
-<span id="L160"><span class="lineNum">     160</span> <span class="tlaUNC">           0 :         return Future.value();</span></span>
-<span id="L161"><span class="lineNum">     161</span>              :         },</span>
-<span id="L162"><span class="lineNum">     162</span> <span class="tlaGNC">           1 :       onSuccess: () {</span></span>
-<span id="L163"><span class="lineNum">     163</span> <span class="tlaGNC">           2 :           setState(() {</span></span>
-<span id="L164"><span class="lineNum">     164</span> <span class="tlaGNC">           1 :             _isLoading = false;</span></span>
-<span id="L165"><span class="lineNum">     165</span>              :           });</span>
-<span id="L166"><span class="lineNum">     166</span>              :         },</span>
-<span id="L167"><span class="lineNum">     167</span> <span class="tlaUNC">           0 :       onError: (error) {</span></span>
-<span id="L168"><span class="lineNum">     168</span> <span class="tlaUNC">           0 :         AppLogger.error('Error submitting trail: ${error.toString()}');</span></span>
-<span id="L169"><span class="lineNum">     169</span> <span class="tlaUNC">           0 :         ScaffoldMessenger.of(context).showSnackBar(</span></span>
-<span id="L170"><span class="lineNum">     170</span> <span class="tlaUNC">           0 :           SnackBar(content: Text('Error saving trail: $error')),</span></span>
-<span id="L171"><span class="lineNum">     171</span>              :         );</span>
-<span id="L172"><span class="lineNum">     172</span> <span class="tlaUNC">           0 :         setState(() {</span></span>
-<span id="L173"><span class="lineNum">     173</span> <span class="tlaUNC">           0 :           _isLoading = false;</span></span>
-<span id="L174"><span class="lineNum">     174</span>              :         });</span>
-<span id="L175"><span class="lineNum">     175</span> <span class="tlaUNC">           0 :         return Future.value();</span></span>
-<span id="L176"><span class="lineNum">     176</span>              :       },</span>
-<span id="L177"><span class="lineNum">     177</span>              :     );</span>
-<span id="L178"><span class="lineNum">     178</span>              :   }</span>
-<span id="L179"><span class="lineNum">     179</span>              : </span>
-<span id="L180"><span class="lineNum">     180</span> <span class="tlaGNC">           1 :   Future&lt;void&gt; _selectDate() async {</span></span>
-<span id="L181"><span class="lineNum">     181</span> <span class="tlaGNC">           1 :     AsyncContextHandler.safeAsyncOperation(</span></span>
-<span id="L182"><span class="lineNum">     182</span> <span class="tlaGNC">           1 :       context,</span></span>
-<span id="L183"><span class="lineNum">     183</span> <span class="tlaGNC">           1 :           () async {</span></span>
-<span id="L184"><span class="lineNum">     184</span> <span class="tlaGNC">           1 :         final DateTime today = DateTime.now();</span></span>
-<span id="L185"><span class="lineNum">     185</span> <span class="tlaGNC">           1 :         final DateTime? picked = await showDatePicker(</span></span>
-<span id="L186"><span class="lineNum">     186</span> <span class="tlaGNC">           1 :           context: context,</span></span>
-<span id="L187"><span class="lineNum">     187</span> <span class="tlaGNC">           1 :           initialDate: today.add(const Duration(days: 1)), // Default to tomorrow</span></span>
-<span id="L188"><span class="lineNum">     188</span> <span class="tlaGNC">           1 :           firstDate: today.add(const Duration(days: 1)), // Restrict past dates</span></span>
-<span id="L189"><span class="lineNum">     189</span> <span class="tlaGNC">           1 :           lastDate: DateTime(2101),</span></span>
-<span id="L190"><span class="lineNum">     190</span>              :         );</span>
-<span id="L191"><span class="lineNum">     191</span>              : </span>
-<span id="L192"><span class="lineNum">     192</span> <span class="tlaGNC">           2 :         if (picked != null &amp;&amp; picked != _eventDate) {</span></span>
-<span id="L193"><span class="lineNum">     193</span> <span class="tlaGNC">           2 :           setState(() {</span></span>
-<span id="L194"><span class="lineNum">     194</span> <span class="tlaGNC">           1 :             _eventDate = picked;</span></span>
-<span id="L195"><span class="lineNum">     195</span>              :           });</span>
-<span id="L196"><span class="lineNum">     196</span>              :         }</span>
-<span id="L197"><span class="lineNum">     197</span>              :         // if (_selectedType == 'Event') {</span>
-<span id="L198"><span class="lineNum">     198</span>              :         //   Navigator.pushReplacementNamed(context, '/events');</span>
-<span id="L199"><span class="lineNum">     199</span>              :         // } else {</span>
-<span id="L200"><span class="lineNum">     200</span>              :         //   Navigator.pushReplacementNamed(context, '/trails');</span>
-<span id="L201"><span class="lineNum">     201</span>              :         // }</span>
-<span id="L202"><span class="lineNum">     202</span>              : </span>
-<span id="L203"><span class="lineNum">     203</span> <span class="tlaGNC">           1 :         return Future.value();</span></span>
-<span id="L204"><span class="lineNum">     204</span>              :       },</span>
-<span id="L205"><span class="lineNum">     205</span> <span class="tlaUNC">           0 :       onError: (error) {</span></span>
-<span id="L206"><span class="lineNum">     206</span> <span class="tlaUNC">           0 :         AppLogger.error('Error selecting date: ${error.toString()}');</span></span>
-<span id="L207"><span class="lineNum">     207</span> <span class="tlaUNC">           0 :         ScaffoldMessenger.of(context).showSnackBar(</span></span>
-<span id="L208"><span class="lineNum">     208</span> <span class="tlaUNC">           0 :           SnackBar(content: Text('Error selecting date: $error')),</span></span>
-<span id="L209"><span class="lineNum">     209</span>              :         );</span>
-<span id="L210"><span class="lineNum">     210</span> <span class="tlaUNC">           0 :         return Future.value();</span></span>
-<span id="L211"><span class="lineNum">     211</span>              :       },</span>
-<span id="L212"><span class="lineNum">     212</span>              :     );</span>
-<span id="L213"><span class="lineNum">     213</span>              :   }</span>
-<span id="L214"><span class="lineNum">     214</span>              : </span>
-<span id="L215"><span class="lineNum">     215</span> <span class="tlaGNC">           1 :   @override</span></span>
-<span id="L216"><span class="lineNum">     216</span>              :   Widget build(BuildContext context) {</span>
-<span id="L217"><span class="lineNum">     217</span> <span class="tlaGNC">           1 :     return Scaffold(</span></span>
-<span id="L218"><span class="lineNum">     218</span> <span class="tlaGNC">           1 :       appBar: AppBar(title: const Text('Create Trail/Event')),</span></span>
-<span id="L219"><span class="lineNum">     219</span> <span class="tlaGNC">           1 :       body: _isLoading</span></span>
-<span id="L220"><span class="lineNum">     220</span>              :           ? const Center(child: CircularProgressIndicator())</span>
-<span id="L221"><span class="lineNum">     221</span> <span class="tlaGNC">           1 :           : SingleChildScrollView(</span></span>
-<span id="L222"><span class="lineNum">     222</span>              :         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,</span>
-<span id="L223"><span class="lineNum">     223</span>              :         padding: const EdgeInsets.all(16.0),</span>
-<span id="L224"><span class="lineNum">     224</span> <span class="tlaGNC">           1 :         child: Form(</span></span>
-<span id="L225"><span class="lineNum">     225</span> <span class="tlaGNC">           1 :           key: _formKey,</span></span>
-<span id="L226"><span class="lineNum">     226</span> <span class="tlaGNC">           1 :           child: Column(</span></span>
-<span id="L227"><span class="lineNum">     227</span> <span class="tlaGNC">           1 :             children: [</span></span>
-<span id="L228"><span class="lineNum">     228</span> <span class="tlaGNC">           1 :               DropdownButtonFormField&lt;String&gt;(</span></span>
-<span id="L229"><span class="lineNum">     229</span> <span class="tlaGNC">           1 :                 value: _selectedType,</span></span>
-<span id="L230"><span class="lineNum">     230</span> <span class="tlaGNC">           1 :                 items: ['Trail', 'Event']</span></span>
-<span id="L231"><span class="lineNum">     231</span> <span class="tlaGNC">           3 :                     .map((type) =&gt; DropdownMenuItem(</span></span>
-<span id="L232"><span class="lineNum">     232</span>              :                   value: type,</span>
-<span id="L233"><span class="lineNum">     233</span> <span class="tlaGNC">           1 :                   child: Text(type),</span></span>
-<span id="L234"><span class="lineNum">     234</span>              :                 ))</span>
-<span id="L235"><span class="lineNum">     235</span> <span class="tlaGNC">           1 :                     .toList(),</span></span>
-<span id="L236"><span class="lineNum">     236</span> <span class="tlaUNC">           0 :                 onChanged: (value) {</span></span>
-<span id="L237"><span class="lineNum">     237</span> <span class="tlaUNC">           0 :                   setState(() {</span></span>
-<span id="L238"><span class="lineNum">     238</span> <span class="tlaUNC">           0 :                     _selectedType = value!;</span></span>
-<span id="L239"><span class="lineNum">     239</span>              :                   });</span>
-<span id="L240"><span class="lineNum">     240</span>              :                 },</span>
-<span id="L241"><span class="lineNum">     241</span>              :                 decoration: const InputDecoration(</span>
-<span id="L242"><span class="lineNum">     242</span>              :                   labelText: 'Type',</span>
-<span id="L243"><span class="lineNum">     243</span>              :                   border: OutlineInputBorder(),</span>
-<span id="L244"><span class="lineNum">     244</span>              :                 ),</span>
-<span id="L245"><span class="lineNum">     245</span> <span class="tlaGNC">           1 :                 validator: (value) =&gt;</span></span>
-<span id="L246"><span class="lineNum">     246</span>              :                 value == null ? 'Please select a type (Trail or Event)' : null,</span>
-<span id="L247"><span class="lineNum">     247</span>              :               ),</span>
-<span id="L248"><span class="lineNum">     248</span>              :               const SizedBox(height: 16.0),</span>
-<span id="L249"><span class="lineNum">     249</span> <span class="tlaGNC">           1 :               TextFormField(</span></span>
-<span id="L250"><span class="lineNum">     250</span> <span class="tlaGNC">           1 :                 controller: _nameController,</span></span>
-<span id="L251"><span class="lineNum">     251</span> <span class="tlaGNC">           1 :                 decoration: InputDecoration(</span></span>
-<span id="L252"><span class="lineNum">     252</span> <span class="tlaGNC">           2 :                   labelText: _selectedType == 'Trail' ? 'Trail Name' : 'Event Name',</span></span>
-<span id="L253"><span class="lineNum">     253</span>              :                   border: const OutlineInputBorder(),</span>
-<span id="L254"><span class="lineNum">     254</span>              :                 ),</span>
-<span id="L255"><span class="lineNum">     255</span> <span class="tlaGNC">           2 :                 validator: (value) =&gt; value == null || value.isEmpty</span></span>
-<span id="L256"><span class="lineNum">     256</span> <span class="tlaGNC">           2 :                     ? 'Please enter ${_selectedType == 'Trail' ? 'Trail' : 'Event'} name'</span></span>
-<span id="L257"><span class="lineNum">     257</span> <span class="tlaGNC">           1 :                     : null,</span></span>
-<span id="L258"><span class="lineNum">     258</span>              :               ),</span>
-<span id="L259"><span class="lineNum">     259</span>              :               const SizedBox(height: 16.0),</span>
-<span id="L260"><span class="lineNum">     260</span> <span class="tlaGNC">           1 :               TextFormField(</span></span>
-<span id="L261"><span class="lineNum">     261</span> <span class="tlaGNC">           1 :                 controller: _descriptionController,</span></span>
-<span id="L262"><span class="lineNum">     262</span> <span class="tlaGNC">           1 :                 decoration: InputDecoration(</span></span>
-<span id="L263"><span class="lineNum">     263</span> <span class="tlaGNC">           2 :                   labelText: _selectedType == 'Trail' ? 'Trail Description' : 'Event Description',</span></span>
-<span id="L264"><span class="lineNum">     264</span> <span class="tlaGNC">           1 :                   border: OutlineInputBorder(),</span></span>
-<span id="L265"><span class="lineNum">     265</span>              :                 ),</span>
-<span id="L266"><span class="lineNum">     266</span> <span class="tlaGNC">           2 :                 validator: (value) =&gt; value == null || value.isEmpty</span></span>
-<span id="L267"><span class="lineNum">     267</span> <span class="tlaGNC">           2 :                     ? 'Please enter ${_selectedType == 'Trail' ? 'Trail' : 'Event'} description'</span></span>
-<span id="L268"><span class="lineNum">     268</span> <span class="tlaGNC">           1 :                     : null,</span></span>
-<span id="L269"><span class="lineNum">     269</span>              :               ),</span>
-<span id="L270"><span class="lineNum">     270</span>              :               const SizedBox(height: 16.0),</span>
-<span id="L271"><span class="lineNum">     271</span> <span class="tlaGNC">           1 :               TextFormField(</span></span>
-<span id="L272"><span class="lineNum">     272</span> <span class="tlaGNC">           1 :                 controller: _locationController,</span></span>
-<span id="L273"><span class="lineNum">     273</span>              :                 decoration: const InputDecoration(</span>
-<span id="L274"><span class="lineNum">     274</span>              :                   labelText: 'Location',</span>
-<span id="L275"><span class="lineNum">     275</span>              :                   border: OutlineInputBorder(),</span>
-<span id="L276"><span class="lineNum">     276</span>              :                 ),</span>
-<span id="L277"><span class="lineNum">     277</span> <span class="tlaGNC">           2 :                 validator: (value) =&gt; value == null || value.isEmpty</span></span>
-<span id="L278"><span class="lineNum">     278</span> <span class="tlaGNC">           2 :                     ? 'Please enter ${_selectedType == 'Trail' ? 'Trail' : 'Event'} Location'</span></span>
-<span id="L279"><span class="lineNum">     279</span> <span class="tlaGNC">           1 :                     : null,</span></span>
-<span id="L280"><span class="lineNum">     280</span>              :               ),</span>
-<span id="L281"><span class="lineNum">     281</span>              :               const SizedBox(height: 16.0),</span>
-<span id="L282"><span class="lineNum">     282</span> <span class="tlaGNC">           1 :               DropdownButtonFormField&lt;String&gt;(</span></span>
-<span id="L283"><span class="lineNum">     283</span> <span class="tlaGNC">           1 :                 value: _difficulty,</span></span>
-<span id="L284"><span class="lineNum">     284</span> <span class="tlaGNC">           1 :                 items: ['Easy', 'Moderate', 'Hard']</span></span>
-<span id="L285"><span class="lineNum">     285</span> <span class="tlaGNC">           4 :                     .map((level) =&gt; DropdownMenuItem(value: level, child: Text(level)))</span></span>
-<span id="L286"><span class="lineNum">     286</span> <span class="tlaGNC">           1 :                     .toList(),</span></span>
-<span id="L287"><span class="lineNum">     287</span> <span class="tlaGNC">           4 :                 onChanged: (value) =&gt; setState(() =&gt; _difficulty = value!),</span></span>
-<span id="L288"><span class="lineNum">     288</span>              :                 decoration: const InputDecoration(</span>
-<span id="L289"><span class="lineNum">     289</span>              :                   labelText: 'Difficulty Level',</span>
-<span id="L290"><span class="lineNum">     290</span>              :                   border: OutlineInputBorder(),</span>
-<span id="L291"><span class="lineNum">     291</span>              :                 ),</span>
-<span id="L292"><span class="lineNum">     292</span>              :               ),</span>
-<span id="L293"><span class="lineNum">     293</span>              :               const SizedBox(height: 16.0),</span>
-<span id="L294"><span class="lineNum">     294</span> <span class="tlaGNC">           1 :               TextFormField(</span></span>
-<span id="L295"><span class="lineNum">     295</span> <span class="tlaGNC">           1 :                 controller: _noticeController,</span></span>
-<span id="L296"><span class="lineNum">     296</span>              :                 decoration: const InputDecoration(</span>
-<span id="L297"><span class="lineNum">     297</span>              :                   labelText: 'Notice (e.g., special instructions)',</span>
-<span id="L298"><span class="lineNum">     298</span>              :                   border: OutlineInputBorder(),</span>
-<span id="L299"><span class="lineNum">     299</span>              :                 ),</span>
-<span id="L300"><span class="lineNum">     300</span>              :               ),</span>
-<span id="L301"><span class="lineNum">     301</span>              :               const SizedBox(height: 16.0),</span>
-<span id="L302"><span class="lineNum">     302</span> <span class="tlaGNC">           1 :               TextFormField(</span></span>
-<span id="L303"><span class="lineNum">     303</span> <span class="tlaGNC">           1 :                 controller: _participantsController,</span></span>
-<span id="L304"><span class="lineNum">     304</span>              :                 keyboardType: TextInputType.number,</span>
-<span id="L305"><span class="lineNum">     305</span> <span class="tlaGNC">           2 :                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],</span></span>
-<span id="L306"><span class="lineNum">     306</span>              :                 decoration: const InputDecoration(</span>
-<span id="L307"><span class="lineNum">     307</span>              :                   labelText: 'Number of Participants',</span>
-<span id="L308"><span class="lineNum">     308</span>              :                   border: OutlineInputBorder(),</span>
-<span id="L309"><span class="lineNum">     309</span>              :                 ),</span>
-<span id="L310"><span class="lineNum">     310</span> <span class="tlaGNC">           3 :                 validator: (value) =&gt; value == null || value.isEmpty || int.tryParse(value) == null</span></span>
-<span id="L311"><span class="lineNum">     311</span>              :                     ? 'Please enter a valid number of participants'</span>
-<span id="L312"><span class="lineNum">     312</span>              :                     : null,</span>
-<span id="L313"><span class="lineNum">     313</span>              :               ),</span>
-<span id="L314"><span class="lineNum">     314</span>              :               const SizedBox(height: 16.0),</span>
-<span id="L315"><span class="lineNum">     315</span>              : </span>
-<span id="L316"><span class="lineNum">     316</span> <span class="tlaGNC">           1 :               GestureDetector(</span></span>
-<span id="L317"><span class="lineNum">     317</span> <span class="tlaGNC">           1 :                 onTap: _selectDate,</span></span>
-<span id="L318"><span class="lineNum">     318</span> <span class="tlaGNC">           1 :                 child: Container(</span></span>
-<span id="L319"><span class="lineNum">     319</span>              :                   padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),</span>
-<span id="L320"><span class="lineNum">     320</span> <span class="tlaGNC">           1 :                   decoration: BoxDecoration(</span></span>
-<span id="L321"><span class="lineNum">     321</span> <span class="tlaGNC">           1 :                     border: Border.all(color: Colors.grey),</span></span>
-<span id="L322"><span class="lineNum">     322</span> <span class="tlaGNC">           1 :                     borderRadius: BorderRadius.circular(5.0),</span></span>
-<span id="L323"><span class="lineNum">     323</span>              :                   ),</span>
-<span id="L324"><span class="lineNum">     324</span> <span class="tlaGNC">           1 :                   child: Row(</span></span>
-<span id="L325"><span class="lineNum">     325</span>              :                     mainAxisAlignment: MainAxisAlignment.spaceBetween,</span>
-<span id="L326"><span class="lineNum">     326</span> <span class="tlaGNC">           1 :                     children: [</span></span>
-<span id="L327"><span class="lineNum">     327</span> <span class="tlaGNC">           1 :                       Text(</span></span>
-<span id="L328"><span class="lineNum">     328</span> <span class="tlaGNC">           1 :                         _eventDate ==null</span></span>
-<span id="L329"><span class="lineNum">     329</span> <span class="tlaGNC">           2 :                             ? 'Select ${_selectedType == 'Trail' ? 'Trail' : 'Event'} Date'</span></span>
-<span id="L330"><span class="lineNum">     330</span> <span class="tlaGNC">           7 :                             : '${_selectedType == 'Trail' ? 'Trail Date:' : 'Event Date:'}  ${DateFormat('yyyy-MM-dd').format(_eventDate!)}',</span></span>
-<span id="L331"><span class="lineNum">     331</span>              :                         // _eventDate == null</span>
-<span id="L332"><span class="lineNum">     332</span>              :                         //     ? 'Select Trail Date'</span>
-<span id="L333"><span class="lineNum">     333</span>              :                         //     : 'Trail Date: ${DateFormat('yyyy-MM-dd').format(_eventDate!)}',</span>
-<span id="L334"><span class="lineNum">     334</span>              :                         // style: const TextStyle(fontSize: 16.0),</span>
-<span id="L335"><span class="lineNum">     335</span>              :                       ),</span>
-<span id="L336"><span class="lineNum">     336</span>              :                       const Icon(Icons.calendar_today),</span>
-<span id="L337"><span class="lineNum">     337</span>              :                     ],</span>
-<span id="L338"><span class="lineNum">     338</span>              :                   ),</span>
-<span id="L339"><span class="lineNum">     339</span>              :                 ),</span>
-<span id="L340"><span class="lineNum">     340</span>              :               ),</span>
-<span id="L341"><span class="lineNum">     341</span>              :               const SizedBox(height: 16.0),</span>
-<span id="L342"><span class="lineNum">     342</span>              : </span>
-<span id="L343"><span class="lineNum">     343</span>              :               // Duration Picker (Hours &amp; Minutes)</span>
-<span id="L344"><span class="lineNum">     344</span> <span class="tlaGNC">           1 :               Row(</span></span>
-<span id="L345"><span class="lineNum">     345</span> <span class="tlaGNC">           1 :                 children: [</span></span>
-<span id="L346"><span class="lineNum">     346</span> <span class="tlaGNC">           1 :                   Expanded(</span></span>
-<span id="L347"><span class="lineNum">     347</span> <span class="tlaGNC">           1 :                     child: DropdownButtonFormField&lt;int&gt;(</span></span>
-<span id="L348"><span class="lineNum">     348</span> <span class="tlaGNC">           1 :                       value: _selectedHours,</span></span>
-<span id="L349"><span class="lineNum">     349</span> <span class="tlaGNC">           2 :                       items: List.generate(24, (index) =&gt; index)</span></span>
-<span id="L350"><span class="lineNum">     350</span> <span class="tlaGNC">           5 :                           .map((hour) =&gt; DropdownMenuItem(value: hour, child: Text('$hour hrs')))</span></span>
-<span id="L351"><span class="lineNum">     351</span> <span class="tlaGNC">           1 :                           .toList(),</span></span>
-<span id="L352"><span class="lineNum">     352</span> <span class="tlaGNC">           4 :                       onChanged: (value) =&gt; setState(() =&gt; _selectedHours = value!),</span></span>
-<span id="L353"><span class="lineNum">     353</span>              :                       decoration: const InputDecoration(</span>
-<span id="L354"><span class="lineNum">     354</span>              :                         labelText: 'Hours',</span>
-<span id="L355"><span class="lineNum">     355</span>              :                         border: OutlineInputBorder(),</span>
-<span id="L356"><span class="lineNum">     356</span>              :                       ),</span>
-<span id="L357"><span class="lineNum">     357</span>              :                     ),</span>
-<span id="L358"><span class="lineNum">     358</span>              :                   ),</span>
-<span id="L359"><span class="lineNum">     359</span>              :                   const SizedBox(width: 10),</span>
-<span id="L360"><span class="lineNum">     360</span> <span class="tlaGNC">           1 :                   Expanded(</span></span>
-<span id="L361"><span class="lineNum">     361</span> <span class="tlaGNC">           1 :                     child: DropdownButtonFormField&lt;int&gt;(</span></span>
-<span id="L362"><span class="lineNum">     362</span> <span class="tlaGNC">           1 :                       value: _selectedMinutes,</span></span>
-<span id="L363"><span class="lineNum">     363</span> <span class="tlaGNC">           2 :                       items: List.generate(60, (index) =&gt; index)</span></span>
-<span id="L364"><span class="lineNum">     364</span> <span class="tlaGNC">           5 :                           .map((minute) =&gt; DropdownMenuItem(value: minute, child: Text('$minute min')))</span></span>
-<span id="L365"><span class="lineNum">     365</span> <span class="tlaGNC">           1 :                           .toList(),</span></span>
-<span id="L366"><span class="lineNum">     366</span> <span class="tlaGNC">           4 :                       onChanged: (value) =&gt; setState(() =&gt; _selectedMinutes = value!),</span></span>
-<span id="L367"><span class="lineNum">     367</span>              :                       decoration: const InputDecoration(</span>
-<span id="L368"><span class="lineNum">     368</span>              :                         labelText: 'Minutes',</span>
-<span id="L369"><span class="lineNum">     369</span>              :                         border: OutlineInputBorder(),</span>
-<span id="L370"><span class="lineNum">     370</span>              :                       ),</span>
-<span id="L371"><span class="lineNum">     371</span>              :                     ),</span>
-<span id="L372"><span class="lineNum">     372</span>              :                   ),</span>
-<span id="L373"><span class="lineNum">     373</span>              :                 ],</span>
-<span id="L374"><span class="lineNum">     374</span>              :               ),</span>
-<span id="L375"><span class="lineNum">     375</span>              :               const SizedBox(height: 16.0),</span>
-<span id="L376"><span class="lineNum">     376</span>              : </span>
-<span id="L377"><span class="lineNum">     377</span>              :               // Image Upload</span>
-<span id="L378"><span class="lineNum">     378</span> <span class="tlaGNC">           1 :               Wrap(</span></span>
-<span id="L379"><span class="lineNum">     379</span> <span class="tlaGNC">           1 :                 children: _eventImages</span></span>
-<span id="L380"><span class="lineNum">     380</span> <span class="tlaGNC">           1 :                     .map((image) =&gt; Padding(</span></span>
-<span id="L381"><span class="lineNum">     381</span>              :                   padding: const EdgeInsets.all(4.0),</span>
-<span id="L382"><span class="lineNum">     382</span> <span class="tlaUNC">           0 :                   child: Stack(</span></span>
-<span id="L383"><span class="lineNum">     383</span> <span class="tlaUNC">           0 :                     children: [</span></span>
-<span id="L384"><span class="lineNum">     384</span> <span class="tlaUNC">           0 :                       Image.file(image, height: 100, width: 100),</span></span>
-<span id="L385"><span class="lineNum">     385</span> <span class="tlaUNC">           0 :                       Positioned(</span></span>
-<span id="L386"><span class="lineNum">     386</span>              :                         top: 0,</span>
-<span id="L387"><span class="lineNum">     387</span>              :                         right: 0,</span>
-<span id="L388"><span class="lineNum">     388</span> <span class="tlaUNC">           0 :                         child: GestureDetector(</span></span>
-<span id="L389"><span class="lineNum">     389</span> <span class="tlaUNC">           0 :                           onTap: () {</span></span>
-<span id="L390"><span class="lineNum">     390</span> <span class="tlaUNC">           0 :                             setState(() {</span></span>
-<span id="L391"><span class="lineNum">     391</span> <span class="tlaUNC">           0 :                               _eventImages.remove(image);</span></span>
-<span id="L392"><span class="lineNum">     392</span>              :                             });</span>
-<span id="L393"><span class="lineNum">     393</span>              :                           },</span>
-<span id="L394"><span class="lineNum">     394</span> <span class="tlaUNC">           0 :                           child: Container(</span></span>
-<span id="L395"><span class="lineNum">     395</span>              :                             padding: const EdgeInsets.all(2),</span>
-<span id="L396"><span class="lineNum">     396</span>              :                             decoration: const BoxDecoration(</span>
-<span id="L397"><span class="lineNum">     397</span>              :                               color: Colors.white,</span>
-<span id="L398"><span class="lineNum">     398</span>              :                               shape: BoxShape.circle,</span>
-<span id="L399"><span class="lineNum">     399</span>              :                             ),</span>
-<span id="L400"><span class="lineNum">     400</span>              :                             child: const Icon(Icons.close, color: Colors.red, size: 20),</span>
-<span id="L401"><span class="lineNum">     401</span>              :                           ),</span>
-<span id="L402"><span class="lineNum">     402</span>              :                         ),</span>
-<span id="L403"><span class="lineNum">     403</span>              :                       ),</span>
-<span id="L404"><span class="lineNum">     404</span>              :                     ],</span>
-<span id="L405"><span class="lineNum">     405</span>              :                   ),</span>
-<span id="L406"><span class="lineNum">     406</span>              :                 ))</span>
-<span id="L407"><span class="lineNum">     407</span> <span class="tlaGNC">           1 :                     .toList(),</span></span>
-<span id="L408"><span class="lineNum">     408</span>              :               ),</span>
-<span id="L409"><span class="lineNum">     409</span> <span class="tlaGNC">           1 :               TextButton.icon(</span></span>
-<span id="L410"><span class="lineNum">     410</span> <span class="tlaGNC">           1 :                 onPressed: _pickImage,</span></span>
-<span id="L411"><span class="lineNum">     411</span>              :                 icon: const Icon(Icons.add_photo_alternate),</span>
-<span id="L412"><span class="lineNum">     412</span>              :                 label: const Text('Upload Image'),</span>
+<span id="L129"><span class="lineNum">     129</span>              :           // Add debug log</span>
+<span id="L130"><span class="lineNum">     130</span> <span class="tlaUNC">           0 :           print(&quot;CREATING NEW TRAIL: ${newTrail.trailName} with type ${newTrail.trailType}&quot;);</span></span>
+<span id="L131"><span class="lineNum">     131</span> <span class="tlaUNC">           0 :           await dbService.insertTrails(newTrail);</span></span>
+<span id="L132"><span class="lineNum">     132</span>              : </span>
+<span id="L133"><span class="lineNum">     133</span> <span class="tlaUNC">           0 :           ScaffoldMessenger.of(context).showSnackBar(</span></span>
+<span id="L134"><span class="lineNum">     134</span>              :             const SnackBar(content: Text('Trail saved successfully')),</span>
+<span id="L135"><span class="lineNum">     135</span>              :           );</span>
+<span id="L136"><span class="lineNum">     136</span>              : </span>
+<span id="L137"><span class="lineNum">     137</span>              :           // Debug log for navigation</span>
+<span id="L138"><span class="lineNum">     138</span> <span class="tlaUNC">           0 :           print(&quot;NAVIGATING TO: /trails&quot;);</span></span>
+<span id="L139"><span class="lineNum">     139</span> <span class="tlaUNC">           0 :           Navigator.pushReplacementNamed(context, '/trails');</span></span>
+<span id="L140"><span class="lineNum">     140</span>              :         } else {</span>
+<span id="L141"><span class="lineNum">     141</span>              :           // Create EventData</span>
+<span id="L142"><span class="lineNum">     142</span> <span class="tlaUNC">           0 :           final newEvent = TrailData(</span></span>
+<span id="L143"><span class="lineNum">     143</span>              :             trailId: uniqueId,</span>
+<span id="L144"><span class="lineNum">     144</span> <span class="tlaUNC">           0 :             trailName: _nameController.text,</span></span>
+<span id="L145"><span class="lineNum">     145</span> <span class="tlaUNC">           0 :             trailDescription: _descriptionController.text,</span></span>
+<span id="L146"><span class="lineNum">     146</span> <span class="tlaUNC">           0 :             trailDifficulty: _difficulty,</span></span>
+<span id="L147"><span class="lineNum">     147</span> <span class="tlaUNC">           0 :             trailNotice: _noticeController.text,</span></span>
+<span id="L148"><span class="lineNum">     148</span> <span class="tlaUNC">           0 :             trailImages: _eventImages.map((image) =&gt; image.path).toList(),</span></span>
+<span id="L149"><span class="lineNum">     149</span> <span class="tlaUNC">           0 :             trailDate: _eventDate ?? DateTime.now(),</span></span>
+<span id="L150"><span class="lineNum">     150</span> <span class="tlaUNC">           0 :             trailLocation: _locationController.text,</span></span>
+<span id="L151"><span class="lineNum">     151</span> <span class="tlaUNC">           0 :             trailParticipantNumber: int.tryParse(_participantsController.text) ?? 0,</span></span>
+<span id="L152"><span class="lineNum">     152</span> <span class="tlaUNC">           0 :             trailDuration: Duration(hours: _selectedHours, minutes: _selectedMinutes),</span></span>
+<span id="L153"><span class="lineNum">     153</span>              :             trailType: 'Event', // Make sure this is exactly 'Event'</span>
+<span id="L154"><span class="lineNum">     154</span>              :           );</span>
+<span id="L155"><span class="lineNum">     155</span>              : </span>
+<span id="L156"><span class="lineNum">     156</span>              :           // Add debug log</span>
+<span id="L157"><span class="lineNum">     157</span> <span class="tlaUNC">           0 :           print(&quot;CREATING NEW EVENT: ${newEvent.trailName} with type ${newEvent.trailType}&quot;);</span></span>
+<span id="L158"><span class="lineNum">     158</span> <span class="tlaUNC">           0 :           await dbService.insertTrails(newEvent);</span></span>
+<span id="L159"><span class="lineNum">     159</span>              : </span>
+<span id="L160"><span class="lineNum">     160</span> <span class="tlaUNC">           0 :           ScaffoldMessenger.of(context).showSnackBar(</span></span>
+<span id="L161"><span class="lineNum">     161</span>              :             const SnackBar(content: Text('Event saved successfully')),</span>
+<span id="L162"><span class="lineNum">     162</span>              :           );</span>
+<span id="L163"><span class="lineNum">     163</span>              : </span>
+<span id="L164"><span class="lineNum">     164</span>              :           // Debug log for navigation</span>
+<span id="L165"><span class="lineNum">     165</span> <span class="tlaUNC">           0 :           print(&quot;NAVIGATING TO: /events&quot;);</span></span>
+<span id="L166"><span class="lineNum">     166</span> <span class="tlaUNC">           0 :           Navigator.pushReplacementNamed(context, '/events');</span></span>
+<span id="L167"><span class="lineNum">     167</span>              :         }</span>
+<span id="L168"><span class="lineNum">     168</span> <span class="tlaUNC">           0 :         return Future.value();</span></span>
+<span id="L169"><span class="lineNum">     169</span>              :       },</span>
+<span id="L170"><span class="lineNum">     170</span> <span class="tlaGNC">           1 :       onSuccess: () {</span></span>
+<span id="L171"><span class="lineNum">     171</span> <span class="tlaGNC">           2 :         setState(() {</span></span>
+<span id="L172"><span class="lineNum">     172</span> <span class="tlaGNC">           1 :           _isLoading = false;</span></span>
+<span id="L173"><span class="lineNum">     173</span>              :         });</span>
+<span id="L174"><span class="lineNum">     174</span>              :       },</span>
+<span id="L175"><span class="lineNum">     175</span> <span class="tlaUNC">           0 :       onError: (error) {</span></span>
+<span id="L176"><span class="lineNum">     176</span> <span class="tlaUNC">           0 :         AppLogger.error('Error submitting trail: ${error.toString()}');</span></span>
+<span id="L177"><span class="lineNum">     177</span> <span class="tlaUNC">           0 :         ScaffoldMessenger.of(context).showSnackBar(</span></span>
+<span id="L178"><span class="lineNum">     178</span> <span class="tlaUNC">           0 :           SnackBar(content: Text('Error saving trail: $error')),</span></span>
+<span id="L179"><span class="lineNum">     179</span>              :         );</span>
+<span id="L180"><span class="lineNum">     180</span> <span class="tlaUNC">           0 :         setState(() {</span></span>
+<span id="L181"><span class="lineNum">     181</span> <span class="tlaUNC">           0 :           _isLoading = false;</span></span>
+<span id="L182"><span class="lineNum">     182</span>              :         });</span>
+<span id="L183"><span class="lineNum">     183</span> <span class="tlaUNC">           0 :         return Future.value();</span></span>
+<span id="L184"><span class="lineNum">     184</span>              :       },</span>
+<span id="L185"><span class="lineNum">     185</span>              :     );</span>
+<span id="L186"><span class="lineNum">     186</span>              :   }</span>
+<span id="L187"><span class="lineNum">     187</span>              : </span>
+<span id="L188"><span class="lineNum">     188</span> <span class="tlaGNC">           1 :   Future&lt;void&gt; _selectDate() async {</span></span>
+<span id="L189"><span class="lineNum">     189</span> <span class="tlaGNC">           1 :     AsyncContextHandler.safeAsyncOperation(</span></span>
+<span id="L190"><span class="lineNum">     190</span> <span class="tlaGNC">           1 :       context,</span></span>
+<span id="L191"><span class="lineNum">     191</span> <span class="tlaGNC">           1 :           () async {</span></span>
+<span id="L192"><span class="lineNum">     192</span> <span class="tlaGNC">           1 :         final DateTime today = DateTime.now();</span></span>
+<span id="L193"><span class="lineNum">     193</span> <span class="tlaGNC">           1 :         final DateTime? picked = await showDatePicker(</span></span>
+<span id="L194"><span class="lineNum">     194</span> <span class="tlaGNC">           1 :           context: context,</span></span>
+<span id="L195"><span class="lineNum">     195</span> <span class="tlaGNC">           1 :           initialDate: today.add(const Duration(days: 1)), // Default to tomorrow</span></span>
+<span id="L196"><span class="lineNum">     196</span> <span class="tlaGNC">           1 :           firstDate: today.add(const Duration(days: 1)), // Restrict past dates</span></span>
+<span id="L197"><span class="lineNum">     197</span> <span class="tlaGNC">           1 :           lastDate: DateTime(2101),</span></span>
+<span id="L198"><span class="lineNum">     198</span>              :         );</span>
+<span id="L199"><span class="lineNum">     199</span>              : </span>
+<span id="L200"><span class="lineNum">     200</span> <span class="tlaGNC">           2 :         if (picked != null &amp;&amp; picked != _eventDate) {</span></span>
+<span id="L201"><span class="lineNum">     201</span> <span class="tlaGNC">           2 :           setState(() {</span></span>
+<span id="L202"><span class="lineNum">     202</span> <span class="tlaGNC">           1 :             _eventDate = picked;</span></span>
+<span id="L203"><span class="lineNum">     203</span>              :           });</span>
+<span id="L204"><span class="lineNum">     204</span>              :         }</span>
+<span id="L205"><span class="lineNum">     205</span>              :         // if (_selectedType == 'Event') {</span>
+<span id="L206"><span class="lineNum">     206</span>              :         //   Navigator.pushReplacementNamed(context, '/events');</span>
+<span id="L207"><span class="lineNum">     207</span>              :         // } else {</span>
+<span id="L208"><span class="lineNum">     208</span>              :         //   Navigator.pushReplacementNamed(context, '/trails');</span>
+<span id="L209"><span class="lineNum">     209</span>              :         // }</span>
+<span id="L210"><span class="lineNum">     210</span>              : </span>
+<span id="L211"><span class="lineNum">     211</span> <span class="tlaGNC">           1 :         return Future.value();</span></span>
+<span id="L212"><span class="lineNum">     212</span>              :       },</span>
+<span id="L213"><span class="lineNum">     213</span> <span class="tlaUNC">           0 :       onError: (error) {</span></span>
+<span id="L214"><span class="lineNum">     214</span> <span class="tlaUNC">           0 :         AppLogger.error('Error selecting date: ${error.toString()}');</span></span>
+<span id="L215"><span class="lineNum">     215</span> <span class="tlaUNC">           0 :         ScaffoldMessenger.of(context).showSnackBar(</span></span>
+<span id="L216"><span class="lineNum">     216</span> <span class="tlaUNC">           0 :           SnackBar(content: Text('Error selecting date: $error')),</span></span>
+<span id="L217"><span class="lineNum">     217</span>              :         );</span>
+<span id="L218"><span class="lineNum">     218</span> <span class="tlaUNC">           0 :         return Future.value();</span></span>
+<span id="L219"><span class="lineNum">     219</span>              :       },</span>
+<span id="L220"><span class="lineNum">     220</span>              :     );</span>
+<span id="L221"><span class="lineNum">     221</span>              :   }</span>
+<span id="L222"><span class="lineNum">     222</span>              : </span>
+<span id="L223"><span class="lineNum">     223</span> <span class="tlaGNC">           1 :   @override</span></span>
+<span id="L224"><span class="lineNum">     224</span>              :   Widget build(BuildContext context) {</span>
+<span id="L225"><span class="lineNum">     225</span> <span class="tlaGNC">           1 :     return Scaffold(</span></span>
+<span id="L226"><span class="lineNum">     226</span> <span class="tlaGNC">           1 :       appBar: AppBar(title: const Text('Create Trail/Event')),</span></span>
+<span id="L227"><span class="lineNum">     227</span> <span class="tlaGNC">           1 :       body: _isLoading</span></span>
+<span id="L228"><span class="lineNum">     228</span>              :           ? const Center(child: CircularProgressIndicator())</span>
+<span id="L229"><span class="lineNum">     229</span> <span class="tlaGNC">           1 :           : SingleChildScrollView(</span></span>
+<span id="L230"><span class="lineNum">     230</span>              :         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,</span>
+<span id="L231"><span class="lineNum">     231</span>              :         padding: const EdgeInsets.all(16.0),</span>
+<span id="L232"><span class="lineNum">     232</span> <span class="tlaGNC">           1 :         child: Form(</span></span>
+<span id="L233"><span class="lineNum">     233</span> <span class="tlaGNC">           1 :           key: _formKey,</span></span>
+<span id="L234"><span class="lineNum">     234</span> <span class="tlaGNC">           1 :           child: Column(</span></span>
+<span id="L235"><span class="lineNum">     235</span> <span class="tlaGNC">           1 :             children: [</span></span>
+<span id="L236"><span class="lineNum">     236</span> <span class="tlaGNC">           1 :               DropdownButtonFormField&lt;String&gt;(</span></span>
+<span id="L237"><span class="lineNum">     237</span> <span class="tlaGNC">           1 :                 value: _selectedType,</span></span>
+<span id="L238"><span class="lineNum">     238</span> <span class="tlaGNC">           1 :                 items: ['Trail', 'Event']</span></span>
+<span id="L239"><span class="lineNum">     239</span> <span class="tlaGNC">           3 :                     .map((type) =&gt; DropdownMenuItem(</span></span>
+<span id="L240"><span class="lineNum">     240</span>              :                   value: type,</span>
+<span id="L241"><span class="lineNum">     241</span> <span class="tlaGNC">           1 :                   child: Text(type),</span></span>
+<span id="L242"><span class="lineNum">     242</span>              :                 ))</span>
+<span id="L243"><span class="lineNum">     243</span> <span class="tlaGNC">           1 :                     .toList(),</span></span>
+<span id="L244"><span class="lineNum">     244</span> <span class="tlaUNC">           0 :                 onChanged: (value) {</span></span>
+<span id="L245"><span class="lineNum">     245</span> <span class="tlaUNC">           0 :                   setState(() {</span></span>
+<span id="L246"><span class="lineNum">     246</span> <span class="tlaUNC">           0 :                     _selectedType = value!;</span></span>
+<span id="L247"><span class="lineNum">     247</span> <span class="tlaUNC">           0 :                     print(&quot;TYPE SELECTED: $_selectedType&quot;);</span></span>
+<span id="L248"><span class="lineNum">     248</span>              :                   });</span>
+<span id="L249"><span class="lineNum">     249</span>              :                 },</span>
+<span id="L250"><span class="lineNum">     250</span>              :                 decoration: const InputDecoration(</span>
+<span id="L251"><span class="lineNum">     251</span>              :                   labelText: 'Type',</span>
+<span id="L252"><span class="lineNum">     252</span>              :                   border: OutlineInputBorder(),</span>
+<span id="L253"><span class="lineNum">     253</span>              :                 ),</span>
+<span id="L254"><span class="lineNum">     254</span> <span class="tlaGNC">           1 :                 validator: (value) =&gt;</span></span>
+<span id="L255"><span class="lineNum">     255</span>              :                 value == null ? 'Please select a type (Trail or Event)' : null,</span>
+<span id="L256"><span class="lineNum">     256</span>              :               ),</span>
+<span id="L257"><span class="lineNum">     257</span>              :               const SizedBox(height: 16.0),</span>
+<span id="L258"><span class="lineNum">     258</span> <span class="tlaGNC">           1 :               TextFormField(</span></span>
+<span id="L259"><span class="lineNum">     259</span> <span class="tlaGNC">           1 :                 controller: _nameController,</span></span>
+<span id="L260"><span class="lineNum">     260</span> <span class="tlaGNC">           1 :                 decoration: InputDecoration(</span></span>
+<span id="L261"><span class="lineNum">     261</span> <span class="tlaGNC">           2 :                   labelText: _selectedType == 'Trail' ? 'Trail Name' : 'Event Name',</span></span>
+<span id="L262"><span class="lineNum">     262</span>              :                   border: const OutlineInputBorder(),</span>
+<span id="L263"><span class="lineNum">     263</span>              :                 ),</span>
+<span id="L264"><span class="lineNum">     264</span> <span class="tlaGNC">           2 :                 validator: (value) =&gt; value == null || value.isEmpty</span></span>
+<span id="L265"><span class="lineNum">     265</span> <span class="tlaGNC">           2 :                     ? 'Please enter ${_selectedType == 'Trail' ? 'Trail' : 'Event'} name'</span></span>
+<span id="L266"><span class="lineNum">     266</span> <span class="tlaGNC">           1 :                     : null,</span></span>
+<span id="L267"><span class="lineNum">     267</span>              :               ),</span>
+<span id="L268"><span class="lineNum">     268</span>              :               const SizedBox(height: 16.0),</span>
+<span id="L269"><span class="lineNum">     269</span> <span class="tlaGNC">           1 :               TextFormField(</span></span>
+<span id="L270"><span class="lineNum">     270</span> <span class="tlaGNC">           1 :                 controller: _descriptionController,</span></span>
+<span id="L271"><span class="lineNum">     271</span> <span class="tlaGNC">           1 :                 decoration: InputDecoration(</span></span>
+<span id="L272"><span class="lineNum">     272</span> <span class="tlaGNC">           2 :                   labelText: _selectedType == 'Trail' ? 'Trail Description' : 'Event Description',</span></span>
+<span id="L273"><span class="lineNum">     273</span> <span class="tlaGNC">           1 :                   border: OutlineInputBorder(),</span></span>
+<span id="L274"><span class="lineNum">     274</span>              :                 ),</span>
+<span id="L275"><span class="lineNum">     275</span> <span class="tlaGNC">           2 :                 validator: (value) =&gt; value == null || value.isEmpty</span></span>
+<span id="L276"><span class="lineNum">     276</span> <span class="tlaGNC">           2 :                     ? 'Please enter ${_selectedType == 'Trail' ? 'Trail' : 'Event'} description'</span></span>
+<span id="L277"><span class="lineNum">     277</span> <span class="tlaGNC">           1 :                     : null,</span></span>
+<span id="L278"><span class="lineNum">     278</span>              :               ),</span>
+<span id="L279"><span class="lineNum">     279</span>              :               const SizedBox(height: 16.0),</span>
+<span id="L280"><span class="lineNum">     280</span> <span class="tlaGNC">           1 :               TextFormField(</span></span>
+<span id="L281"><span class="lineNum">     281</span> <span class="tlaGNC">           1 :                 controller: _locationController,</span></span>
+<span id="L282"><span class="lineNum">     282</span>              :                 decoration: const InputDecoration(</span>
+<span id="L283"><span class="lineNum">     283</span>              :                   labelText: 'Location',</span>
+<span id="L284"><span class="lineNum">     284</span>              :                   border: OutlineInputBorder(),</span>
+<span id="L285"><span class="lineNum">     285</span>              :                 ),</span>
+<span id="L286"><span class="lineNum">     286</span> <span class="tlaGNC">           2 :                 validator: (value) =&gt; value == null || value.isEmpty</span></span>
+<span id="L287"><span class="lineNum">     287</span> <span class="tlaGNC">           2 :                     ? 'Please enter ${_selectedType == 'Trail' ? 'Trail' : 'Event'} Location'</span></span>
+<span id="L288"><span class="lineNum">     288</span> <span class="tlaGNC">           1 :                     : null,</span></span>
+<span id="L289"><span class="lineNum">     289</span>              :               ),</span>
+<span id="L290"><span class="lineNum">     290</span>              :               const SizedBox(height: 16.0),</span>
+<span id="L291"><span class="lineNum">     291</span> <span class="tlaGNC">           1 :               DropdownButtonFormField&lt;String&gt;(</span></span>
+<span id="L292"><span class="lineNum">     292</span> <span class="tlaGNC">           1 :                 value: _difficulty,</span></span>
+<span id="L293"><span class="lineNum">     293</span> <span class="tlaGNC">           1 :                 items: ['Easy', 'Moderate', 'Hard']</span></span>
+<span id="L294"><span class="lineNum">     294</span> <span class="tlaGNC">           4 :                     .map((level) =&gt; DropdownMenuItem(value: level, child: Text(level)))</span></span>
+<span id="L295"><span class="lineNum">     295</span> <span class="tlaGNC">           1 :                     .toList(),</span></span>
+<span id="L296"><span class="lineNum">     296</span> <span class="tlaGNC">           4 :                 onChanged: (value) =&gt; setState(() =&gt; _difficulty = value!),</span></span>
+<span id="L297"><span class="lineNum">     297</span>              :                 decoration: const InputDecoration(</span>
+<span id="L298"><span class="lineNum">     298</span>              :                   labelText: 'Difficulty Level',</span>
+<span id="L299"><span class="lineNum">     299</span>              :                   border: OutlineInputBorder(),</span>
+<span id="L300"><span class="lineNum">     300</span>              :                 ),</span>
+<span id="L301"><span class="lineNum">     301</span>              :               ),</span>
+<span id="L302"><span class="lineNum">     302</span>              :               const SizedBox(height: 16.0),</span>
+<span id="L303"><span class="lineNum">     303</span> <span class="tlaGNC">           1 :               TextFormField(</span></span>
+<span id="L304"><span class="lineNum">     304</span> <span class="tlaGNC">           1 :                 controller: _noticeController,</span></span>
+<span id="L305"><span class="lineNum">     305</span>              :                 decoration: const InputDecoration(</span>
+<span id="L306"><span class="lineNum">     306</span>              :                   labelText: 'Notice (e.g., special instructions)',</span>
+<span id="L307"><span class="lineNum">     307</span>              :                   border: OutlineInputBorder(),</span>
+<span id="L308"><span class="lineNum">     308</span>              :                 ),</span>
+<span id="L309"><span class="lineNum">     309</span>              :               ),</span>
+<span id="L310"><span class="lineNum">     310</span>              :               const SizedBox(height: 16.0),</span>
+<span id="L311"><span class="lineNum">     311</span> <span class="tlaGNC">           1 :               TextFormField(</span></span>
+<span id="L312"><span class="lineNum">     312</span> <span class="tlaGNC">           1 :                 controller: _participantsController,</span></span>
+<span id="L313"><span class="lineNum">     313</span>              :                 keyboardType: TextInputType.number,</span>
+<span id="L314"><span class="lineNum">     314</span> <span class="tlaGNC">           2 :                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],</span></span>
+<span id="L315"><span class="lineNum">     315</span>              :                 decoration: const InputDecoration(</span>
+<span id="L316"><span class="lineNum">     316</span>              :                   labelText: 'Number of Participants',</span>
+<span id="L317"><span class="lineNum">     317</span>              :                   border: OutlineInputBorder(),</span>
+<span id="L318"><span class="lineNum">     318</span>              :                 ),</span>
+<span id="L319"><span class="lineNum">     319</span> <span class="tlaGNC">           3 :                 validator: (value) =&gt; value == null || value.isEmpty || int.tryParse(value) == null</span></span>
+<span id="L320"><span class="lineNum">     320</span>              :                     ? 'Please enter a valid number of participants'</span>
+<span id="L321"><span class="lineNum">     321</span>              :                     : null,</span>
+<span id="L322"><span class="lineNum">     322</span>              :               ),</span>
+<span id="L323"><span class="lineNum">     323</span>              :               const SizedBox(height: 16.0),</span>
+<span id="L324"><span class="lineNum">     324</span>              : </span>
+<span id="L325"><span class="lineNum">     325</span> <span class="tlaGNC">           1 :               GestureDetector(</span></span>
+<span id="L326"><span class="lineNum">     326</span> <span class="tlaGNC">           1 :                 onTap: _selectDate,</span></span>
+<span id="L327"><span class="lineNum">     327</span> <span class="tlaGNC">           1 :                 child: Container(</span></span>
+<span id="L328"><span class="lineNum">     328</span>              :                   padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 12.0),</span>
+<span id="L329"><span class="lineNum">     329</span> <span class="tlaGNC">           1 :                   decoration: BoxDecoration(</span></span>
+<span id="L330"><span class="lineNum">     330</span> <span class="tlaGNC">           1 :                     border: Border.all(color: Colors.grey),</span></span>
+<span id="L331"><span class="lineNum">     331</span> <span class="tlaGNC">           1 :                     borderRadius: BorderRadius.circular(5.0),</span></span>
+<span id="L332"><span class="lineNum">     332</span>              :                   ),</span>
+<span id="L333"><span class="lineNum">     333</span> <span class="tlaGNC">           1 :                   child: Row(</span></span>
+<span id="L334"><span class="lineNum">     334</span>              :                     mainAxisAlignment: MainAxisAlignment.spaceBetween,</span>
+<span id="L335"><span class="lineNum">     335</span> <span class="tlaGNC">           1 :                     children: [</span></span>
+<span id="L336"><span class="lineNum">     336</span> <span class="tlaGNC">           1 :                       Text(</span></span>
+<span id="L337"><span class="lineNum">     337</span> <span class="tlaGNC">           1 :                         _eventDate ==null</span></span>
+<span id="L338"><span class="lineNum">     338</span> <span class="tlaGNC">           2 :                             ? 'Select ${_selectedType == 'Trail' ? 'Trail' : 'Event'} Date'</span></span>
+<span id="L339"><span class="lineNum">     339</span> <span class="tlaGNC">           7 :                             : '${_selectedType == 'Trail' ? 'Trail Date:' : 'Event Date:'}  ${DateFormat('yyyy-MM-dd').format(_eventDate!)}',</span></span>
+<span id="L340"><span class="lineNum">     340</span>              :                       ),</span>
+<span id="L341"><span class="lineNum">     341</span>              :                       const Icon(Icons.calendar_today),</span>
+<span id="L342"><span class="lineNum">     342</span>              :                     ],</span>
+<span id="L343"><span class="lineNum">     343</span>              :                   ),</span>
+<span id="L344"><span class="lineNum">     344</span>              :                 ),</span>
+<span id="L345"><span class="lineNum">     345</span>              :               ),</span>
+<span id="L346"><span class="lineNum">     346</span>              :               const SizedBox(height: 16.0),</span>
+<span id="L347"><span class="lineNum">     347</span>              : </span>
+<span id="L348"><span class="lineNum">     348</span>              :               // Duration Picker (Hours &amp; Minutes)</span>
+<span id="L349"><span class="lineNum">     349</span> <span class="tlaGNC">           1 :               Row(</span></span>
+<span id="L350"><span class="lineNum">     350</span> <span class="tlaGNC">           1 :                 children: [</span></span>
+<span id="L351"><span class="lineNum">     351</span> <span class="tlaGNC">           1 :                   Expanded(</span></span>
+<span id="L352"><span class="lineNum">     352</span> <span class="tlaGNC">           1 :                     child: DropdownButtonFormField&lt;int&gt;(</span></span>
+<span id="L353"><span class="lineNum">     353</span> <span class="tlaGNC">           1 :                       value: _selectedHours,</span></span>
+<span id="L354"><span class="lineNum">     354</span> <span class="tlaGNC">           2 :                       items: List.generate(24, (index) =&gt; index)</span></span>
+<span id="L355"><span class="lineNum">     355</span> <span class="tlaGNC">           5 :                           .map((hour) =&gt; DropdownMenuItem(value: hour, child: Text('$hour hrs')))</span></span>
+<span id="L356"><span class="lineNum">     356</span> <span class="tlaGNC">           1 :                           .toList(),</span></span>
+<span id="L357"><span class="lineNum">     357</span> <span class="tlaGNC">           4 :                       onChanged: (value) =&gt; setState(() =&gt; _selectedHours = value!),</span></span>
+<span id="L358"><span class="lineNum">     358</span>              :                       decoration: const InputDecoration(</span>
+<span id="L359"><span class="lineNum">     359</span>              :                         labelText: 'Hours',</span>
+<span id="L360"><span class="lineNum">     360</span>              :                         border: OutlineInputBorder(),</span>
+<span id="L361"><span class="lineNum">     361</span>              :                       ),</span>
+<span id="L362"><span class="lineNum">     362</span>              :                     ),</span>
+<span id="L363"><span class="lineNum">     363</span>              :                   ),</span>
+<span id="L364"><span class="lineNum">     364</span>              :                   const SizedBox(width: 10),</span>
+<span id="L365"><span class="lineNum">     365</span> <span class="tlaGNC">           1 :                   Expanded(</span></span>
+<span id="L366"><span class="lineNum">     366</span> <span class="tlaGNC">           1 :                     child: DropdownButtonFormField&lt;int&gt;(</span></span>
+<span id="L367"><span class="lineNum">     367</span> <span class="tlaGNC">           1 :                       value: _selectedMinutes,</span></span>
+<span id="L368"><span class="lineNum">     368</span> <span class="tlaGNC">           2 :                       items: List.generate(60, (index) =&gt; index)</span></span>
+<span id="L369"><span class="lineNum">     369</span> <span class="tlaGNC">           5 :                           .map((minute) =&gt; DropdownMenuItem(value: minute, child: Text('$minute min')))</span></span>
+<span id="L370"><span class="lineNum">     370</span> <span class="tlaGNC">           1 :                           .toList(),</span></span>
+<span id="L371"><span class="lineNum">     371</span> <span class="tlaGNC">           4 :                       onChanged: (value) =&gt; setState(() =&gt; _selectedMinutes = value!),</span></span>
+<span id="L372"><span class="lineNum">     372</span>              :                       decoration: const InputDecoration(</span>
+<span id="L373"><span class="lineNum">     373</span>              :                         labelText: 'Minutes',</span>
+<span id="L374"><span class="lineNum">     374</span>              :                         border: OutlineInputBorder(),</span>
+<span id="L375"><span class="lineNum">     375</span>              :                       ),</span>
+<span id="L376"><span class="lineNum">     376</span>              :                     ),</span>
+<span id="L377"><span class="lineNum">     377</span>              :                   ),</span>
+<span id="L378"><span class="lineNum">     378</span>              :                 ],</span>
+<span id="L379"><span class="lineNum">     379</span>              :               ),</span>
+<span id="L380"><span class="lineNum">     380</span>              :               const SizedBox(height: 16.0),</span>
+<span id="L381"><span class="lineNum">     381</span>              : </span>
+<span id="L382"><span class="lineNum">     382</span>              :               // Image Upload</span>
+<span id="L383"><span class="lineNum">     383</span> <span class="tlaGNC">           1 :               Wrap(</span></span>
+<span id="L384"><span class="lineNum">     384</span> <span class="tlaGNC">           1 :                 children: _eventImages</span></span>
+<span id="L385"><span class="lineNum">     385</span> <span class="tlaGNC">           1 :                     .map((image) =&gt; Padding(</span></span>
+<span id="L386"><span class="lineNum">     386</span>              :                   padding: const EdgeInsets.all(4.0),</span>
+<span id="L387"><span class="lineNum">     387</span> <span class="tlaUNC">           0 :                   child: Stack(</span></span>
+<span id="L388"><span class="lineNum">     388</span> <span class="tlaUNC">           0 :                     children: [</span></span>
+<span id="L389"><span class="lineNum">     389</span> <span class="tlaUNC">           0 :                       Image.file(image, height: 100, width: 100),</span></span>
+<span id="L390"><span class="lineNum">     390</span> <span class="tlaUNC">           0 :                       Positioned(</span></span>
+<span id="L391"><span class="lineNum">     391</span>              :                         top: 0,</span>
+<span id="L392"><span class="lineNum">     392</span>              :                         right: 0,</span>
+<span id="L393"><span class="lineNum">     393</span> <span class="tlaUNC">           0 :                         child: GestureDetector(</span></span>
+<span id="L394"><span class="lineNum">     394</span> <span class="tlaUNC">           0 :                           onTap: () {</span></span>
+<span id="L395"><span class="lineNum">     395</span> <span class="tlaUNC">           0 :                             setState(() {</span></span>
+<span id="L396"><span class="lineNum">     396</span> <span class="tlaUNC">           0 :                               _eventImages.remove(image);</span></span>
+<span id="L397"><span class="lineNum">     397</span>              :                             });</span>
+<span id="L398"><span class="lineNum">     398</span>              :                           },</span>
+<span id="L399"><span class="lineNum">     399</span> <span class="tlaUNC">           0 :                           child: Container(</span></span>
+<span id="L400"><span class="lineNum">     400</span>              :                             padding: const EdgeInsets.all(2),</span>
+<span id="L401"><span class="lineNum">     401</span>              :                             decoration: const BoxDecoration(</span>
+<span id="L402"><span class="lineNum">     402</span>              :                               color: Colors.white,</span>
+<span id="L403"><span class="lineNum">     403</span>              :                               shape: BoxShape.circle,</span>
+<span id="L404"><span class="lineNum">     404</span>              :                             ),</span>
+<span id="L405"><span class="lineNum">     405</span>              :                             child: const Icon(Icons.close, color: Colors.red, size: 20),</span>
+<span id="L406"><span class="lineNum">     406</span>              :                           ),</span>
+<span id="L407"><span class="lineNum">     407</span>              :                         ),</span>
+<span id="L408"><span class="lineNum">     408</span>              :                       ),</span>
+<span id="L409"><span class="lineNum">     409</span>              :                     ],</span>
+<span id="L410"><span class="lineNum">     410</span>              :                   ),</span>
+<span id="L411"><span class="lineNum">     411</span>              :                 ))</span>
+<span id="L412"><span class="lineNum">     412</span> <span class="tlaGNC">           1 :                     .toList(),</span></span>
 <span id="L413"><span class="lineNum">     413</span>              :               ),</span>
-<span id="L414"><span class="lineNum">     414</span>              :               const SizedBox(height: 20.0),</span>
-<span id="L415"><span class="lineNum">     415</span> <span class="tlaGNC">           1 :               SizedBox(</span></span>
-<span id="L416"><span class="lineNum">     416</span>              :                 width: double.infinity,</span>
-<span id="L417"><span class="lineNum">     417</span> <span class="tlaGNC">           1 :                 child: ElevatedButton(</span></span>
-<span id="L418"><span class="lineNum">     418</span> <span class="tlaGNC">           1 :                   onPressed: _submitForm,</span></span>
-<span id="L419"><span class="lineNum">     419</span> <span class="tlaGNC">           3 :                   child: Text(_selectedType == 'Trail' ? 'Save Trail' : 'Save Event'),</span></span>
-<span id="L420"><span class="lineNum">     420</span>              :                 ),</span>
-<span id="L421"><span class="lineNum">     421</span>              :               )</span>
-<span id="L422"><span class="lineNum">     422</span>              :             ],</span>
-<span id="L423"><span class="lineNum">     423</span>              :           ),</span>
-<span id="L424"><span class="lineNum">     424</span>              :         ),</span>
-<span id="L425"><span class="lineNum">     425</span>              :       ),</span>
-<span id="L426"><span class="lineNum">     426</span>              :     );</span>
-<span id="L427"><span class="lineNum">     427</span>              :   }</span>
-<span id="L428"><span class="lineNum">     428</span>              : </span>
-<span id="L429"><span class="lineNum">     429</span> <span class="tlaGNC">           1 :   @override</span></span>
-<span id="L430"><span class="lineNum">     430</span>              :   void dispose() {</span>
-<span id="L431"><span class="lineNum">     431</span>              :     // Dispose all text editing controllers</span>
-<span id="L432"><span class="lineNum">     432</span> <span class="tlaGNC">           2 :     _nameController.dispose();</span></span>
-<span id="L433"><span class="lineNum">     433</span> <span class="tlaGNC">           2 :     _descriptionController.dispose();</span></span>
-<span id="L434"><span class="lineNum">     434</span> <span class="tlaGNC">           2 :     _noticeController.dispose();</span></span>
-<span id="L435"><span class="lineNum">     435</span> <span class="tlaGNC">           2 :     _locationController.dispose();</span></span>
-<span id="L436"><span class="lineNum">     436</span> <span class="tlaGNC">           2 :     _participantsController.dispose();</span></span>
-<span id="L437"><span class="lineNum">     437</span> <span class="tlaGNC">           1 :     super.dispose();</span></span>
-<span id="L438"><span class="lineNum">     438</span>              :   }</span>
-<span id="L439"><span class="lineNum">     439</span>              : }</span>
+<span id="L414"><span class="lineNum">     414</span> <span class="tlaGNC">           1 :               TextButton.icon(</span></span>
+<span id="L415"><span class="lineNum">     415</span> <span class="tlaGNC">           1 :                 onPressed: _pickImage,</span></span>
+<span id="L416"><span class="lineNum">     416</span>              :                 icon: const Icon(Icons.add_photo_alternate),</span>
+<span id="L417"><span class="lineNum">     417</span>              :                 label: const Text('Upload Image'),</span>
+<span id="L418"><span class="lineNum">     418</span>              :               ),</span>
+<span id="L419"><span class="lineNum">     419</span>              :               const SizedBox(height: 20.0),</span>
+<span id="L420"><span class="lineNum">     420</span> <span class="tlaGNC">           1 :               SizedBox(</span></span>
+<span id="L421"><span class="lineNum">     421</span>              :                 width: double.infinity,</span>
+<span id="L422"><span class="lineNum">     422</span> <span class="tlaGNC">           1 :                 child: ElevatedButton(</span></span>
+<span id="L423"><span class="lineNum">     423</span> <span class="tlaGNC">           1 :                   onPressed: _submitForm,</span></span>
+<span id="L424"><span class="lineNum">     424</span> <span class="tlaGNC">           3 :                   child: Text(_selectedType == 'Trail' ? 'Save Trail' : 'Save Event'),</span></span>
+<span id="L425"><span class="lineNum">     425</span>              :                 ),</span>
+<span id="L426"><span class="lineNum">     426</span>              :               )</span>
+<span id="L427"><span class="lineNum">     427</span>              :             ],</span>
+<span id="L428"><span class="lineNum">     428</span>              :           ),</span>
+<span id="L429"><span class="lineNum">     429</span>              :         ),</span>
+<span id="L430"><span class="lineNum">     430</span>              :       ),</span>
+<span id="L431"><span class="lineNum">     431</span>              :     );</span>
+<span id="L432"><span class="lineNum">     432</span>              :   }</span>
+<span id="L433"><span class="lineNum">     433</span>              : </span>
+<span id="L434"><span class="lineNum">     434</span> <span class="tlaGNC">           1 :   @override</span></span>
+<span id="L435"><span class="lineNum">     435</span>              :   void dispose() {</span>
+<span id="L436"><span class="lineNum">     436</span>              :     // Dispose all text editing controllers</span>
+<span id="L437"><span class="lineNum">     437</span> <span class="tlaGNC">           2 :     _nameController.dispose();</span></span>
+<span id="L438"><span class="lineNum">     438</span> <span class="tlaGNC">           2 :     _descriptionController.dispose();</span></span>
+<span id="L439"><span class="lineNum">     439</span> <span class="tlaGNC">           2 :     _noticeController.dispose();</span></span>
+<span id="L440"><span class="lineNum">     440</span> <span class="tlaGNC">           2 :     _locationController.dispose();</span></span>
+<span id="L441"><span class="lineNum">     441</span> <span class="tlaGNC">           2 :     _participantsController.dispose();</span></span>
+<span id="L442"><span class="lineNum">     442</span> <span class="tlaGNC">           1 :     super.dispose();</span></span>
+<span id="L443"><span class="lineNum">     443</span>              :   }</span>
+<span id="L444"><span class="lineNum">     444</span>              : }</span>
         </pre>
               </td>
             </tr>
