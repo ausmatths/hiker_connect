@@ -175,9 +175,9 @@ class AppInitializer {
             name: 'App Setup');
       }
 
-      // Force direct logging of environment variables
-      developer.log('EVENTBRITE_PUBLIC_TOKEN from env: ${dotenv.env['EVENTBRITE_PUBLIC_TOKEN']}', name: 'App Setup');
-      developer.log('EVENTBRITE_PRIVATE_TOKEN from env: ${dotenv.env['EVENTBRITE_PRIVATE_TOKEN']}', name: 'App Setup');
+      // Force direct logging of environment variables and hardcoded tokens
+      developer.log('Public token from environment: ${dotenv.env['EVENTBRITE_PUBLIC_TOKEN']}', name: 'App Setup');
+      developer.log('Fallback public token: V7IFGJ6CYWAWYOZAGN27', name: 'App Setup');
 
       // Get tokens from .env with fallback to your actual Eventbrite tokens
       final publicToken = dotenv.env['EVENTBRITE_PUBLIC_TOKEN'] ?? 'V7IFGJ6CYWAWYOZAGN27';

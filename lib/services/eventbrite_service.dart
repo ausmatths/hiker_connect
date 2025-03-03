@@ -29,7 +29,7 @@ class EventBriteService {
         name: 'EventBriteService');
   }
 
-  /// Validates if the current token is valid
+  /// Modify your validateToken method
   Future<bool> validateToken({bool privileged = false}) async {
     try {
       final token = await _getToken(privileged: privileged);
@@ -39,46 +39,45 @@ class EventBriteService {
         return false;
       }
 
-      developer.log('Validating token: $token', name: 'EventBriteService');
+      // Try both authentication methods
+      // Method 1: Bearer token in header
+      Uri url1 = Uri.parse('$_baseUrl/users/me/');
+      developer.log('Trying header auth: ${url1.toString()}', name: 'EventBriteService');
 
-      final Uri url = Uri.parse('$_baseUrl/users/me/');
-
-      developer.log('Validating EventBrite token by accessing: ${url.toString()}', name: 'EventBriteService');
-
-      final response = await _client.get(
-        url,
+      final response1 = await _client.get(
+        url1,
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
       );
 
-      developer.log('Validation response status: ${response.statusCode}', name: 'EventBriteService');
+      // Method 2: Token as query parameter
+      Uri url2 = Uri.parse('$_baseUrl/users/me/?token=$token');
+      developer.log('Trying query param auth: ${url2.toString()}', name: 'EventBriteService');
 
-      if (response.statusCode == 200) {
+      final response2 = await _client.get(
+        url2,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      );
+
+      developer.log('Auth method 1 status: ${response1.statusCode}', name: 'EventBriteService');
+      developer.log('Auth method 2 status: ${response2.statusCode}', name: 'EventBriteService');
+
+      // If either method works, return true
+      if (response1.statusCode == 200 || response2.statusCode == 200) {
         developer.log('Token validated successfully', name: 'EventBriteService');
         return true;
       } else {
-        // Log the specific error
-        developer.log(
-            'Token validation failed: ${response.statusCode} - ${response.body}',
-            name: 'EventBriteService'
-        );
-
-        // Clear stored token if it's invalid
-        if (privileged) {
-          await _secureStorage.delete(key: 'eventbrite_private_token');
-        } else {
-          await _secureStorage.delete(key: 'eventbrite_public_token');
-        }
-
+        // Log full response for debugging
+        developer.log('Full response 1: ${response1.body}', name: 'EventBriteService');
+        developer.log('Full response 2: ${response2.body}', name: 'EventBriteService');
         return false;
       }
     } catch (e) {
-      developer.log(
-          'Error validating token: $e',
-          name: 'EventBriteService'
-      );
+      developer.log('Error validating token: $e', name: 'EventBriteService');
       return false;
     }
   }
