@@ -28,6 +28,9 @@ class EventsListScreenState extends State<EventsListScreen> {
   }
 
   Future<void> _loadEvents() async {
+    // Prevent setState if widget is not mounted
+    if (!mounted) return;
+
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -45,10 +48,13 @@ class EventsListScreenState extends State<EventsListScreen> {
 
       print("EVENTS SCREEN: After filtering, found ${eventTrails.length} Event items");
 
-      setState(() {
-        events = eventTrails;
-        _isLoading = false;
-      });
+      // Safely update state if widget is still mounted
+      if (mounted) {
+        setState(() {
+          events = eventTrails;
+          _isLoading = false;
+        });
+      }
 
       // Then fetch from Firestore
       List<TrailData> cloudTrails = await dbService.getTrailsFromFirestore();
@@ -73,30 +79,42 @@ class EventsListScreenState extends State<EventsListScreen> {
         }
         print("EVENTS SCREEN: Found $eventCount Event items in Firestore");
 
-        setState(() {
-          events = trailMap.values.toList();
-          _isLoading = false;
-        });
+        // Safely update state if widget is still mounted
+        if (mounted) {
+          setState(() {
+            events = trailMap.values.toList();
+            _isLoading = false;
+          });
+        }
       } else if (eventTrails.isEmpty) {
-        setState(() {
-          _isLoading = false;
-          _errorMessage = 'No events found';
-        });
+        // Safely update state if widget is still mounted
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _errorMessage = 'No events found';
+          });
+        }
       }
     } catch (e) {
       print("EVENTS SCREEN ERROR: $e");
-      setState(() {
-        _isLoading = false;
-        _errorMessage = 'Error loading events: $e';
-      });
+      // Safely update state if widget is still mounted
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Error loading events: $e';
+        });
+      }
     }
   }
 
   // Method to handle changing the selected event type
   void _onEventTypeChanged(String? newType) {
-    setState(() {
-      _selectedEventType = newType ?? 'All';
-    });
+    // Safely update state if widget is still mounted
+    if (mounted) {
+      setState(() {
+        _selectedEventType = newType ?? 'All';
+      });
+    }
     _loadEvents(); // Reload events based on the new type
   }
 
@@ -167,7 +185,7 @@ class EventsListScreenState extends State<EventsListScreen> {
                           builder: (context) => const create_screen.EventFormScreen(),
                         ),
                       ).then((newEvent) {
-                        if (newEvent != null && newEvent.trailName.isNotEmpty) {
+                        if (newEvent != null && newEvent.trailName.isNotEmpty && mounted) {
                           setState(() {
                             events.add(newEvent);
                           });
@@ -267,7 +285,11 @@ class EventsListScreenState extends State<EventsListScreen> {
             MaterialPageRoute(
               builder: (context) => const create_screen.EventFormScreen(),
             ),
-          ).then((_) => _loadEvents());
+          ).then((_) {
+            if (mounted) {
+              _loadEvents();
+            }
+          });
         },
         child: const Icon(Icons.add),
         tooltip: 'Add New Event',
@@ -276,13 +298,16 @@ class EventsListScreenState extends State<EventsListScreen> {
   }
 
   void _toggleJoinEvent(TrailData event) {
-    setState(() {
-      if (joinedEvents.contains(event)) {
-        joinedEvents.remove(event);
-      } else {
-        joinedEvents.add(event);
-      }
-    });
+    // Safely update state if widget is still mounted
+    if (mounted) {
+      setState(() {
+        if (joinedEvents.contains(event)) {
+          joinedEvents.remove(event);
+        } else {
+          joinedEvents.add(event);
+        }
+      });
+    }
   }
 
   void _navigateToEventEdit(TrailData event) {
@@ -292,12 +317,15 @@ class EventsListScreenState extends State<EventsListScreen> {
         builder: (context) => EventEditScreen(
           event: event,
           onUpdate: (updatedEvent) {
-            setState(() {
-              int index = events.indexWhere((e) => e.trailId == event.trailId);
-              if (index != -1) {
-                events[index] = updatedEvent;
-              }
-            });
+            // Safely update state if widget is still mounted
+            if (mounted) {
+              setState(() {
+                int index = events.indexWhere((e) => e.trailId == event.trailId);
+                if (index != -1) {
+                  events[index] = updatedEvent;
+                }
+              });
+            }
           },
           onDelete: () async {
             // Show a confirmation dialog first
@@ -329,23 +357,27 @@ class EventsListScreenState extends State<EventsListScreen> {
                 // Delete from both databases
                 await dbService.deleteTrail(event.trailId);
 
-                // Update UI state
-                setState(() {
-                  events.remove(event);
-                });
+                // Update UI state only if widget is still mounted
+                if (mounted) {
+                  setState(() {
+                    events.remove(event);
+                  });
 
-                // Show success message
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Event deleted successfully')),
-                );
+                  // Show success message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Event deleted successfully')),
+                  );
 
-                // Navigate back
-                Navigator.pop(context);
+                  // Navigate back
+                  Navigator.pop(context);
+                }
               } catch (e) {
-                // Show error message
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error deleting event: ${e.toString()}')),
-                );
+                // Show error message only if widget is still mounted
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error deleting event: ${e.toString()}')),
+                  );
+                }
               }
             }
           },

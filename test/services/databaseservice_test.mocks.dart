@@ -143,4 +143,25 @@ class MockDatabaseService extends _i1.Mock implements _i3.DatabaseService {
         ),
         returnValue: _i4.Future<_i5.TrailData?>.value(),
       ) as _i4.Future<_i5.TrailData?>);
+
+  @override
+  _i4.Future<void> deleteTrail(int? trailId) => (super.noSuchMethod(
+        Invocation.method(
+          #deleteTrail,
+          [trailId],
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> deleteTrailFromFirestore(int? trailId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #deleteTrailFromFirestore,
+          [trailId],
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
 }

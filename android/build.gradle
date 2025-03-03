@@ -3,6 +3,7 @@ buildscript {
     repositories {
         google()
         mavenCentral()
+        gradlePluginPortal()
     }
 
     dependencies {
@@ -16,24 +17,21 @@ allprojects {
     repositories {
         google()
         mavenCentral()
-    }
-
-    // Add this to fix namespace issues with plugins
-    afterEvaluate {
-        if (project.hasProperty('android')) {
-            if (project.name == 'permission_handler_android' && !project.android.hasProperty('namespace')) {
-                project.android.namespace = "com.baseflow.permissionhandler"
-            }
-        }
+        gradlePluginPortal()
     }
 }
 
 rootProject.buildDir = "../build"
+
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
-}
-subprojects {
     project.evaluationDependsOn(":app")
+}
+
+// Ensure JDK compatibility (Optional, but recommended)
+tasks.withType(JavaCompile).configureEach {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 tasks.register("clean", Delete) {

@@ -124,6 +124,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
       // Initialize other fields with null safety
       _selectedGender = widget.user.gender;
+
+      // Make sure gender is one of the available options or null
+      if (_selectedGender != null && !_genderOptions.contains(_selectedGender)) {
+        _selectedGender = null;
+      }
+
       _selectedDateOfBirth = widget.user.dateOfBirth;
 
       // Initialize social links controllers with empty map if null
@@ -166,6 +172,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _medications = [];
     _emergencyContacts = [];
     _selectedInterests = [];
+    _selectedGender = null;
 
     _socialLinksControllers = Map.fromEntries(
         _availableSocialPlatforms.map((platform) => MapEntry(

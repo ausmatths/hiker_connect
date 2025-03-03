@@ -17,16 +17,16 @@ class TrailListScreen extends StatefulWidget {
   TrailListScreenState createState() => TrailListScreenState();
 }
 
-class TrailListScreenState extends State<TrailListScreen> {
+class TrailListScreenState extends State<TrailListScreen> with AutomaticKeepAliveClientMixin {
   List<TrailData> events = [];
-  List<TrailData> filteredEvents = []; // Store filtered events
+  List<TrailData> filteredEvents = [];
   final Set<TrailData> joinedEvents = {};
   bool _isLoading = true;
   String _errorMessage = '';
   late DatabaseService dbService;
 
   // Filter related variables
-  String _selectedDifficulty = 'All'; // Default filter is 'All'
+  String _selectedDifficulty = 'All';
   final List<String> _difficultyOptions = ['All', 'Easy', 'Moderate', 'Hard'];
 
   // Calendar-related variables
@@ -34,27 +34,15 @@ class TrailListScreenState extends State<TrailListScreen> {
   List<Calendar>? _availableCalendars;
 
   @override
+  bool get wantKeepAlive => true;
+
+  @override
   void initState() {
     super.initState();
-    // Initialize timezone data
     tz_data.initializeTimeZones();
     _calendarPlugin = DeviceCalendarPlugin();
-    _checkAndRequestCalendarPermissions(); // Check and request calendar permissions
-    _getAvailableCalendars(); // Load calendars
-  }
-
-  // Apply filter based on selected difficulty
-  void _applyFilter() {
-    setState(() {
-      if (_selectedDifficulty == 'All') {
-        filteredEvents = List.from(events);
-      } else {
-        filteredEvents = events
-            .where((event) => event.trailDifficulty == _selectedDifficulty)
-            .toList();
-      }
-      print("TRAIL SCREEN: After difficulty filtering, showing ${filteredEvents.length} trails");
-    });
+    _checkAndRequestCalendarPermissions();
+    _getAvailableCalendars();
   }
 
   Future<void> _checkAndRequestCalendarPermissions() async {
@@ -75,36 +63,33 @@ class TrailListScreenState extends State<TrailListScreen> {
 
   Future<void> _getAvailableCalendars() async {
     try {
-      // Check if we have permissions using device_calendar's methods
       final permissionsResult = await _calendarPlugin.hasPermissions();
-      print('Initial calendar permission status: ${permissionsResult.data}');
 
       if (permissionsResult.data == null || permissionsResult.data == false) {
-        // Request permissions if needed
         final requestResult = await _calendarPlugin.requestPermissions();
-        print('Calendar permission request result: ${requestResult.data}');
 
         if (requestResult.data == null || requestResult.data == false) {
           print('Calendar permission denied after request');
-          setState(() {
-            _availableCalendars = [];
-          });
+          if (mounted) {
+            setState(() {
+              _availableCalendars = [];
+            });
+          }
           return;
         }
       }
 
-      // Permissions should be granted now, try to retrieve calendars
-      print('Retrieving calendars...');
       final calendarsResult = await _calendarPlugin.retrieveCalendars();
-      print('Calendar retrieval result: ${calendarsResult.isSuccess}');
 
       if (calendarsResult.isSuccess && calendarsResult.data != null && calendarsResult.data!.isNotEmpty) {
-        setState(() {
-          _availableCalendars = calendarsResult.data;
-        });
+        if (mounted) {
+          setState(() {
+            _availableCalendars = calendarsResult.data;
+          });
+        }
 
         // Debug available calendars
-        for (var calendar in _availableCalendars!) {
+        for (var calendar in _availableCalendars ?? []) {
           print('Calendar found: ${calendar.id}, ${calendar.name}, Account: ${calendar.accountName}, Type: ${calendar.accountType}');
         }
         return;
@@ -120,24 +105,37 @@ class TrailListScreenState extends State<TrailListScreen> {
       }
 
       // If no calendars loaded, set to empty list instead of null
-      setState(() {
-        _availableCalendars = [];
-      });
+      if (mounted) {
+        setState(() {
+          _availableCalendars = [];
+        });
+      }
     } catch (e) {
       print('Exception in _getAvailableCalendars: ${e.toString()}');
-      setState(() {
-        _availableCalendars = [];
-      });
+      if (mounted) {
+        setState(() {
+          _availableCalendars = [];
+        });
+      }
     }
   }
 
-  // Method to generate a unique URL for each trail
+  void _applyFilter() {
+    if (!mounted) return;
+
+    setState(() {
+      filteredEvents = _selectedDifficulty == 'All'
+          ? List.from(events)
+          : events.where((event) => event.trailDifficulty == _selectedDifficulty).toList();
+
+      print("TRAIL SCREEN: After difficulty filtering, showing ${filteredEvents.length} trails");
+    });
+  }
+
   String _generateTrailUrl(TrailData event) {
-    // Generate a unique URL for the trail using trailId
     return 'https://hikerconnect.app/trail/${event.trailId}';
   }
 
-  // Method to show the share dialog for a trail
   void _shareTrail(TrailData event) {
     final trailUrl = _generateTrailUrl(event);
 
@@ -182,9 +180,7 @@ class TrailListScreenState extends State<TrailListScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
               child: const Text('Cancel'),
             ),
             TextButton(
@@ -192,6 +188,7 @@ class TrailListScreenState extends State<TrailListScreen> {
                 Share.share(
                   'Join me on this trail! ${event.trailName}\n${event.trailDescription}\nLocation: ${event.trailLocation}\nDate: ${event.trailDate.toString().split(' ')[0]}\n\n$trailUrl',
                 );
+                Navigator.of(context).pop();
               },
               child: const Text('Share'),
             ),
@@ -201,7 +198,6 @@ class TrailListScreenState extends State<TrailListScreen> {
     );
   }
 
-  // Method to show join dialog with URL field
   void _showJoinDialog() {
     final TextEditingController urlController = TextEditingController();
 
@@ -226,9 +222,7 @@ class TrailListScreenState extends State<TrailListScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+              onPressed: () => Navigator.of(context).pop(),
               child: const Text('Cancel'),
             ),
             TextButton(
@@ -294,183 +288,21 @@ class TrailListScreenState extends State<TrailListScreen> {
   }
 
   void _toggleJoinEvent(TrailData event) {
-    if (joinedEvents.contains(event)) {
-      _unjoinEvent(event);
-    } else {
-      _joinEvent(event);
-    }
-  }
+    if (!mounted) return;
 
-  void _unjoinEvent(TrailData event) {
     setState(() {
-      joinedEvents.remove(event);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('You have unjoined the trail "${event.trailName}".')),
-      );
-    });
-  }
-
-  void _joinEvent(TrailData event) {
-    setState(() {
-      joinedEvents.add(event);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('You have joined the trail "${event.trailName}"!')),
-      );
-    });
-  }
-
-  void _showCalendarSelectionDialog(TrailData event) {
-    // We'll refresh the calendar list just before showing the dialog to ensure we have the latest
-    _getAvailableCalendars().then((_) {
-      if (_availableCalendars == null || _availableCalendars!.isEmpty) {
-        // Enhanced error handling with options to fix
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('No Calendars Available'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text('No calendars were found on your device. This could be due to:'),
-                  const SizedBox(height: 8),
-                  const Text('1. Calendar permissions not granted'),
-                  const Text('2. No calendar app is installed or configured'),
-                  const Text('3. Your device uses a different calendar system'),
-                  const SizedBox(height: 16),
-                  const Text('Would you like to try again?'),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('Cancel'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    _checkAndRequestCalendarPermissions().then((_) => _getAvailableCalendars());
-                  },
-                  child: const Text('Request Permissions Again'),
-                ),
-              ],
-            );
-          },
-        );
-        return;
-      }
-
-      showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('Select Calendar'),
-            content: SizedBox(
-              width: double.maxFinite,
-              height: 300,
-              child: ListView.builder(
-                itemCount: _availableCalendars!.length,
-                itemBuilder: (context, index) {
-                  final calendar = _availableCalendars![index];
-                  final isGoogleCalendar = calendar.accountType?.toLowerCase().contains('google') ?? false;
-                  final icon = isGoogleCalendar
-                      ? const Icon(Icons.calendar_month, color: Colors.blue)
-                      : const Icon(Icons.calendar_today);
-
-                  return ListTile(
-                    leading: icon,
-                    title: Text(calendar.name ?? 'Unknown Calendar'),
-                    subtitle: Text(calendar.accountName ?? 'Unknown Account'),
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      _addEventToCalendar(event, calendar);
-                    },
-                  );
-                },
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text('Cancel'),
-              ),
-            ],
-          );
-        },
-      );
-    });
-  }
-
-  Future<void> _addEventToCalendar(TrailData event, Calendar calendar) async {
-    try {
-      final location = tz.local;
-
-      final eventStart = tz.TZDateTime(
-        location,
-        event.trailDate.year,
-        event.trailDate.month,
-        event.trailDate.day,
-        event.trailDate.hour,
-        event.trailDate.minute,
-      );
-
-      final eventEnd = tz.TZDateTime(
-        location,
-        event.trailDate.year,
-        event.trailDate.month,
-        event.trailDate.day,
-        event.trailDate.hour,
-        event.trailDate.minute,
-      ).add(event.trailDuration);
-
-      // Create event
-      final eventToCreate = Event(
-        calendar.id,
-        title: event.trailName,
-        description: "Hiking trail: ${event.trailDescription}\nDifficulty: ${event.trailDifficulty}\nNotice: ${event.trailNotice}",
-        start: eventStart,
-        end: eventEnd,
-        location: event.trailLocation,
-      );
-
-      print('Creating event in calendar: ${calendar.name} (${calendar.id})');
-      print('Event details: ${eventToCreate.title}, ${eventToCreate.start}, ${eventToCreate.end}');
-
-      final createResult = await _calendarPlugin.createOrUpdateEvent(eventToCreate);
-
-      if (createResult != null) {
-        print('Create result success: ${createResult.isSuccess}');
-        if (!createResult.isSuccess) {
-          print('Error messages: ${createResult.errors?.map((e) => e.errorMessage).join(", ")}');
-        } else if (createResult.data != null) {
-          print('Created event ID: ${createResult.data}');
-        }
-      }
-
-      if (createResult != null && createResult.isSuccess) {
+      if (joinedEvents.contains(event)) {
+        joinedEvents.remove(event);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Trail added to ${calendar.name} successfully!')),
+          SnackBar(content: Text('You have unjoined the trail "${event.trailName}".')),
         );
       } else {
-        String errorMsg = 'Unknown error';
-        if (createResult?.errors != null && createResult!.errors!.isNotEmpty) {
-          errorMsg = createResult.errors!.map((e) => e.errorMessage).join(", ");
-        }
+        joinedEvents.add(event);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to add trail to calendar: $errorMsg')),
+          SnackBar(content: Text('You have joined the trail "${event.trailName}"!')),
         );
       }
-    } catch (e) {
-      print('Calendar error: ${e.toString()}');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Calendar error: ${e.toString()}')),
-      );
-    }
+    });
   }
 
   void _navigateToEventForm() {
@@ -480,10 +312,10 @@ class TrailListScreenState extends State<TrailListScreen> {
         builder: (context) => const create_screen.EventFormScreen(),
       ),
     ).then((newEvent) {
-      if (newEvent != null && newEvent.trailName.isNotEmpty) {
+      if (newEvent != null && newEvent.trailName.isNotEmpty && mounted) {
         setState(() {
           events.add(newEvent);
-          _applyFilter(); // Apply filter to update filteredEvents
+          _applyFilter();
         });
       }
     });
@@ -491,19 +323,21 @@ class TrailListScreenState extends State<TrailListScreen> {
 
   void _navigateToEventEdit(TrailData event) {
     Navigator.push(
-        context,
-        MaterialPageRoute(
+      context,
+      MaterialPageRoute(
         builder: (context) => EventEditScreen(
-        event: event,
-        onUpdate: (updatedEvent) {
-      setState(() {
-        int index = events.indexWhere((e) => e.trailName == event.trailName);
-        if (index != -1) {
-          events[index] = updatedEvent;
-          _applyFilter(); // Apply filter to update filteredEvents
-        }
-      });
-    },
+          event: event,
+          onUpdate: (updatedEvent) {
+            if (mounted) {
+              setState(() {
+                int index = events.indexWhere((e) => e.trailId == event.trailId);
+                if (index != -1) {
+                  events[index] = updatedEvent;
+                  _applyFilter();
+                }
+              });
+            }
+          },
           onDelete: () async {
             final shouldDelete = await showDialog<bool>(
               context: context,
@@ -525,37 +359,35 @@ class TrailListScreenState extends State<TrailListScreen> {
 
             if (shouldDelete) {
               try {
-                // Show loading indicator
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Deleting trail...')),
                 );
 
-                // Delete from both databases
                 await dbService.deleteTrail(event.trailId);
 
-                // Update UI state
-                setState(() {
-                  events.remove(event);
-                  _applyFilter(); // Apply filter to update filteredEvents
-                });
+                if (mounted) {
+                  setState(() {
+                    events.remove(event);
+                    _applyFilter();
+                  });
 
-                // Show success message
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Trail deleted successfully')),
-                );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Trail deleted successfully')),
+                  );
 
-                // Navigate back
-                Navigator.pop(context);
+                  Navigator.pop(context);
+                }
               } catch (e) {
-                // Show error message
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error deleting trail: ${e.toString()}')),
-                );
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Error deleting trail: ${e.toString()}')),
+                  );
+                }
               }
             }
           },
         ),
-        ),
+      ),
     );
   }
 
@@ -566,8 +398,10 @@ class TrailListScreenState extends State<TrailListScreen> {
     _loadEvents();
   }
 
-  // UPDATED: Modified to filter by trailType = 'Trail'
   Future<void> _loadEvents() async {
+    // Prevent setState if widget is not mounted
+    if (!mounted) return;
+
     setState(() {
       _isLoading = true;
       _errorMessage = '';
@@ -585,17 +419,23 @@ class TrailListScreenState extends State<TrailListScreen> {
 
       print("TRAILS SCREEN: After filtering, found ${localTrails.length} Trail items");
 
+      // Prevent setState if widget is not mounted
+      if (!mounted) return;
+
       // Update state with local trails immediately for better UX
       if (localTrails.isNotEmpty) {
         setState(() {
           events = localTrails;
-          _applyFilter(); // Apply difficulty filter to update filteredEvents
+          _applyFilter();
         });
       }
 
       // Then get cloud trails
       List<TrailData> cloudTrails = await dbService.getTrailsFromFirestore();
       print("TRAILS SCREEN: Retrieved ${cloudTrails.length} total items from Firestore");
+
+      // Prevent setState if widget is not mounted
+      if (!mounted) return;
 
       // Create a map to combine trails, with cloud trails taking precedence
       final Map<int, TrailData> trailMap = {};
@@ -615,21 +455,28 @@ class TrailListScreenState extends State<TrailListScreen> {
       }
       print("TRAILS SCREEN: Found $trailCount Trail items in Firestore");
 
+      // Prevent setState if widget is not mounted
+      if (!mounted) return;
+
       // Update state with combined data
       setState(() {
         events = trailMap.values.toList();
-        _applyFilter(); // Apply difficulty filter to update filteredEvents
+        _applyFilter();
         _isLoading = false;
       });
 
       // If we had no trails at all, show error message
-      if (events.isEmpty) {
+      if (events.isEmpty && mounted) {
         setState(() {
           _errorMessage = 'No trails found';
         });
       }
     } catch (e) {
       print('Error in _loadEvents: $e');
+
+      // Prevent setState if widget is not mounted
+      if (!mounted) return;
+
       setState(() {
         _isLoading = false;
         _errorMessage = 'Error loading trails: $e';
@@ -639,6 +486,8 @@ class TrailListScreenState extends State<TrailListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Trails'),
@@ -683,7 +532,7 @@ class TrailListScreenState extends State<TrailListScreen> {
                             fontWeight: FontWeight.bold,
                           ),
                           onChanged: (String? newValue) {
-                            if (newValue != null) {
+                            if (newValue != null && mounted) {
                               setState(() {
                                 _selectedDifficulty = newValue;
                                 _applyFilter();
@@ -712,7 +561,7 @@ class TrailListScreenState extends State<TrailListScreen> {
             ),
           ),
 
-          // Trail list - FIXED: Removed FutureBuilder to avoid race conditions
+          // Trail list
           Expanded(
             child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
@@ -811,13 +660,6 @@ class TrailListScreenState extends State<TrailListScreen> {
                                       color: joinedEvents.contains(event) ? Colors.red : Colors.blue,
                                       fontWeight: FontWeight.bold,
                                     ),
-                                  ),
-                                ),
-                                TextButton(
-                                  onPressed: () => _showCalendarSelectionDialog(event),
-                                  child: const Text(
-                                    'Add to Calendar',
-                                    style: TextStyle(fontWeight: FontWeight.bold),
                                   ),
                                 ),
                               ],

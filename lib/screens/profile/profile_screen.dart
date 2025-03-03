@@ -77,7 +77,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 onPressed: () {
                   Navigator.of(context).pop();
                   final authService = context.read<AuthService>();
-                  _loadUserData(authService);
+
+                  // Separate method to handle retry
+                  _retryLoadUserData(authService);
                 },
                 child: const Text('Retry'),
               ),
@@ -93,61 +95,49 @@ class _ProfileScreenState extends State<ProfileScreen> {
         AppLogger.error('Error showing initialization error dialog: ${dialogError.toString()}');
       },
     );
+  }
 
+  void _retryLoadUserData(AuthService authService) {
+    // Set a new future that attempts to load user data
     setState(() {
-      _userFuture = Future.value(null);
+      _userFuture = Future.sync(() async {
+        try {
+          return await (widget.userId != null
+              ? authService.getUserData(widget.userId!)
+              : authService.getCurrentUserData());
+        } catch (e) {
+          AppLogger.error('Error reloading user data: $e');
+          return null;
+        }
+      });
     });
   }
 
   Future<void> _editProfile(UserModel user) async {
-    await AsyncContextHandler.safeAsyncOperation(
+    final result = await Navigator.push(
       context,
-          () async {
-        final result = await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => EditProfileScreen(user: user),
-          ),
-        );
-
-        if (result == true) {
-          final authService = context.read<AuthService>();
-          setState(() {
-            _loadUserData(authService);
-          });
-        }
-        return Future.value();
-      },
-      onError: (error) {
-        AppLogger.error('Error editing profile: ${error.toString()}');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading profile: $error')),
-        );
-        return Future.value();
-      },
+      MaterialPageRoute(
+        builder: (context) => EditProfileScreen(user: user),
+      ),
     );
+
+    if (result == true && mounted) {
+      final authService = context.read<AuthService>();
+
+      // Use _retryLoadUserData method
+      _retryLoadUserData(authService);
+    }
   }
 
   Future<void> _handleSignOut() async {
     try {
-      await AsyncContextHandler.safeAsyncOperation(
-        context,
-            () async {
-          final authService = context.read<AuthService>();
-          await authService.signOut();
-          return Future.value();
-        },
-        onError: (error) {
-          AppLogger.error('Error signing out: ${error.toString()}');
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error signing out: $error')),
-          );
-          return Future.value();
-        },
-      );
+      final authService = context.read<AuthService>();
+      await authService.signOut();
     } catch (e) {
       AppLogger.error('Unexpected error during sign out: ${e.toString()}');
-      return Future.value();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error signing out: $e')),
+      );
     }
   }
 
@@ -170,23 +160,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               IconButton(
                 icon: const Icon(Icons.edit, color: Colors.black),
                 onPressed: () async {
-                  await AsyncContextHandler.safeAsyncOperation(
-                    context,
-                        () async {
-                      final user = await _userFuture;
-                      if (user != null) {
-                        await _editProfile(user);
-                      }
-                      return Future.value();
-                    },
-                    onError: (error) {
-                      AppLogger.error('Error loading profile for editing: ${error.toString()}');
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text('Error loading profile: $error')),
-                      );
-                      return Future.value();
-                    },
-                  );
+                  final user = await _userFuture;
+                  if (user != null) {
+                    await _editProfile(user);
+                  }
                 },
               ),
               IconButton(
@@ -195,11 +172,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ],
           ],
-          bottom: TabBar(
+          bottom: const TabBar(
             labelColor: Colors.black,
             unselectedLabelColor: Colors.grey,
             indicatorColor: Colors.deepPurple,
-            tabs: const [
+            tabs: [
               Tab(key: ValueKey('info_tab'), text: 'Info'),
               Tab(key: ValueKey('medical_tab'), text: 'Medical'),
               Tab(key: ValueKey('emergency_tab'), text: 'Emergency'),
@@ -242,22 +219,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(height: 16),
                       ElevatedButton(
-                        onPressed: () async {
-                          await AsyncContextHandler.safeAsyncOperation(
-                            context,
-                                () async {
-                              final authService = context.read<AuthService>();
-                              setState(() => _loadUserData(authService));
-                              return Future.value();
-                            },
-                            onError: (error) {
-                              AppLogger.error('Error reloading user data: ${error.toString()}');
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Failed to reload user data: $error')),
-                              );
-                              return Future.value();
-                            },
-                          );
+                        onPressed: () {
+                          final authService = context.read<AuthService>();
+                          // Use _retryLoadUserData method
+                          _retryLoadUserData(authService);
                         },
                         child: const Text('Retry'),
                       ),

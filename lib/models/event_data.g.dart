@@ -8,7 +8,7 @@ part of 'event_data.dart';
 
 class EventDataAdapter extends TypeAdapter<EventData> {
   @override
-  final int typeId = 0;
+  final int typeId = 4;
 
   @override
   EventData read(BinaryReader reader) {
@@ -17,34 +17,67 @@ class EventDataAdapter extends TypeAdapter<EventData> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return EventData(
-      eventId: fields[0] as int,
-      eventName: fields[1] as String,
-      eventDescription: fields[2] as String,
-      eventDate: fields[6] as DateTime,
-      eventLocation: fields[7] as String,
-      evenParticipantNumber: fields[8] as int,
-      eventDuration: fields[9] as Duration,
+      id: fields[0] as String,
+      title: fields[1] as String,
+      description: fields[2] as String?,
+      startDate: fields[3] as DateTime?,
+      location: fields[4] as String?,
+      participantLimit: fields[5] as int?,
+      duration: fields[6] as Duration?,
+      endDate: fields[7] as DateTime?,
+      imageUrl: fields[8] as String?,
+      organizer: fields[9] as String?,
+      url: fields[10] as String?,
+      isFree: fields[11] as bool?,
+      price: fields[12] as String?,
+      capacity: fields[13] as int?,
+      status: fields[14] as String?,
+      venueId: fields[15] as String?,
+      organizerId: fields[16] as String?,
+      eventbriteId: fields[17] as String?,
     );
   }
 
   @override
   void write(BinaryWriter writer, EventData obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(18)
       ..writeByte(0)
-      ..write(obj.eventId)
+      ..write(obj.id)
       ..writeByte(1)
-      ..write(obj.eventName)
+      ..write(obj.title)
       ..writeByte(2)
-      ..write(obj.eventDescription)
+      ..write(obj.description)
+      ..writeByte(3)
+      ..write(obj.startDate)
+      ..writeByte(4)
+      ..write(obj.location)
+      ..writeByte(5)
+      ..write(obj.participantLimit)
       ..writeByte(6)
-      ..write(obj.eventDate)
+      ..write(obj.duration)
       ..writeByte(7)
-      ..write(obj.eventLocation)
+      ..write(obj.endDate)
       ..writeByte(8)
-      ..write(obj.evenParticipantNumber)
+      ..write(obj.imageUrl)
       ..writeByte(9)
-      ..write(obj.eventDuration);
+      ..write(obj.organizer)
+      ..writeByte(10)
+      ..write(obj.url)
+      ..writeByte(11)
+      ..write(obj.isFree)
+      ..writeByte(12)
+      ..write(obj.price)
+      ..writeByte(13)
+      ..write(obj.capacity)
+      ..writeByte(14)
+      ..write(obj.status)
+      ..writeByte(15)
+      ..write(obj.venueId)
+      ..writeByte(16)
+      ..write(obj.organizerId)
+      ..writeByte(17)
+      ..write(obj.eventbriteId);
   }
 
   @override

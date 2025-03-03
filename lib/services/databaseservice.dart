@@ -7,8 +7,6 @@ import 'package:hiker_connect/utils/logger.dart';
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
   static Box<TrailData>? _trailBox;
-  //static Box<UserModel>? _userBox;
-  //static Box<EventData>? _eventBox;
 
   factory DatabaseService() {
     return _instance;
@@ -16,25 +14,14 @@ class DatabaseService {
 
   DatabaseService._internal();
 
-
   Future<Box<TrailData>> getTrailBox() async {
     return _trailBox ?? await Hive.openBox<TrailData>('trailBox');
   }
-
-  // Future<Box<UserModel>> getUserBox() async {
-  //   return _userBox ?? await Hive.openBox<UserModel>('userBox');
-  // }
-
-  // Future<Box<EventData>> getEventBox() async {
-  //   return _eventBox ?? await Hive.openBox<EventData>('eventBox');
-  // }
 
   Future<void> init() async {
     try {
       // Just open the boxes
       _trailBox = await Hive.openBox<TrailData>('trailBox');
-      //_userBox = await Hive.openBox<UserModel>('userBox');
-     // _eventBox = await Hive.openBox<EventData>('eventBox');
 
       AppLogger.info('Hive boxes initialized successfully');
     } catch (e) {
@@ -141,17 +128,22 @@ class DatabaseService {
     }
   }
 
-  // Firestore integration methods
   Future<void> syncTrailToFirestore(TrailData trail) async {
     try {
       final FirebaseFirestore firestore = FirebaseFirestore.instance;
+      final currentUser = FirebaseAuth.instance.currentUser;
+
+      if (currentUser == null) {
+        AppLogger.warning('No authenticated user to sync trail');
+        return;
+      }
 
       // Convert trail to Map
       final trailMap = trail.toMap();
 
       // Add additional metadata for cloud storage
       trailMap['lastUpdated'] = FieldValue.serverTimestamp();
-      trailMap['createdBy'] = FirebaseAuth.instance.currentUser?.uid;
+      trailMap['createdBy'] = currentUser.uid;
 
       // Save to Firestore
       await firestore.collection('trails').doc(trail.trailId.toString()).set(trailMap);
@@ -172,27 +164,45 @@ class DatabaseService {
         return [];
       }
 
-      final trails = snapshot.docs.map((doc) {
-        final data = doc.data();
+      final trails = <TrailData>[];
+      final processingErrors = <String>[];
 
-        // Fix for the trailImages field - this is the key issue
-        if (data.containsKey('trailImages')) {
-          var imagesData = data['trailImages'];
-          if (imagesData is String) {
-            // Convert single string to a list of one string
-            data['trailImages'] = [imagesData];
-          } else if (imagesData == null) {
-            // Provide default empty list if missing
-            data['trailImages'] = [];
+      for (var doc in snapshot.docs) {
+        try {
+          // Get the document data as a map
+          final data = Map<String, dynamic>.from(doc.data());
+
+          // Ensure trailId is included (use document ID if not present)
+          data['trailId'] = int.tryParse(doc.id) ?? 0;
+
+          // Validate and modify problematic fields
+          // Ensure trailDuration is converted to int (minutes)
+          data['trailDuration'] = _safeConvertToInt(data['trailDuration'], defaultValue: 0);
+
+          // Ensure trailImages is a list
+          data['trailImages'] = _safeConvertToList(data['trailImages']);
+
+          // Convert Timestamp to DateTime if needed
+          if (data['trailDate'] is Timestamp) {
+            data['trailDate'] = (data['trailDate'] as Timestamp).toDate().toIso8601String();
           }
-        } else {
-          // If the field doesn't exist, add an empty list
-          data['trailImages'] = [];
-        }
 
-        // Convert Firestore data to TrailData
-        return TrailData.fromMap(data);
-      }).toList();
+          // Convert all fields to ensure they match the expected types
+          final trail = TrailData.fromMap(data);
+          trails.add(trail);
+        } catch (e) {
+          // Log individual document processing errors
+          final errorMsg = 'Error processing trail document ${doc.id}: ${e.toString()}';
+          AppLogger.error(errorMsg);
+          processingErrors.add(errorMsg);
+          continue;
+        }
+      }
+
+      // Log any processing errors
+      if (processingErrors.isNotEmpty) {
+        AppLogger.warning('Encountered ${processingErrors.length} trail processing errors');
+      }
 
       // Save fetched trails to local storage for offline access
       final box = _trailBox ?? await Hive.openBox<TrailData>('trailBox');
@@ -204,9 +214,38 @@ class DatabaseService {
       AppLogger.info('Retrieved ${trails.length} trails from Firestore');
       return trails;
     } catch (e) {
+      // More detailed error logging
       AppLogger.error('Failed to get trails from Firestore: ${e.toString()}');
-      return []; // Return empty list on error instead of throwing
+      print('Full error details: ${e.toString()}');
+      print('Error stack trace: ${StackTrace.current}');
+
+      // Return an empty list to prevent app crash
+      return [];
     }
+  }
+
+  // Helper method to safely convert to int
+  int _safeConvertToInt(dynamic value, {int defaultValue = 0}) {
+    if (value == null) return defaultValue;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value) ?? defaultValue;
+    return defaultValue;
+  }
+
+  // Helper method to safely convert to list
+  List<String> _safeConvertToList(dynamic value) {
+    if (value == null) return [];
+    if (value is List) {
+      return value
+          .map((e) => e?.toString().trim() ?? '')
+          .where((e) => e.isNotEmpty)
+          .toList();
+    }
+    if (value is String && value.isNotEmpty) {
+      return [value.trim()];
+    }
+    return [];
   }
 
   Future<TrailData?> getTrailByNameFromFirestore(String name) async {
@@ -221,7 +260,11 @@ class DatabaseService {
         return null;
       }
 
-      final data = snapshot.docs.first.data();
+      final data = Map<String, dynamic>.from(snapshot.docs.first.data());
+
+      // Ensure trailId is included
+      data['trailId'] = int.tryParse(snapshot.docs.first.id) ?? 0;
+
       final trail = TrailData.fromMap(data);
 
       // Save to local storage

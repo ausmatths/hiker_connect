@@ -47,3 +47,6 @@ app.*.map.json
 
 .docker/
 docker-compose.override.yml
+
+# Ignore environment files
+.env

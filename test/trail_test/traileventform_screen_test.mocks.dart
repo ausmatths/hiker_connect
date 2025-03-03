@@ -330,6 +330,27 @@ class MockDatabaseService extends _i1.Mock implements _i8.DatabaseService {
         ),
         returnValue: _i7.Future<_i9.TrailData?>.value(),
       ) as _i7.Future<_i9.TrailData?>);
+
+  @override
+  _i7.Future<void> deleteTrail(int? trailId) => (super.noSuchMethod(
+        Invocation.method(
+          #deleteTrail,
+          [trailId],
+        ),
+        returnValue: _i7.Future<void>.value(),
+        returnValueForMissingStub: _i7.Future<void>.value(),
+      ) as _i7.Future<void>);
+
+  @override
+  _i7.Future<void> deleteTrailFromFirestore(int? trailId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #deleteTrailFromFirestore,
+          [trailId],
+        ),
+        returnValue: _i7.Future<void>.value(),
+        returnValueForMissingStub: _i7.Future<void>.value(),
+      ) as _i7.Future<void>);
 }
 
 /// A class which mocks [FirebaseAuth].

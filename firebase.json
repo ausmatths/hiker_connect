@@ -44,28 +44,28 @@
   },
   "emulators": {
     "auth": {
-      "host": "127.0.0.1",
+      "host": "0.0.0.0",
       "port": 9099
     },
     "firestore": {
-      "host": "127.0.0.1",
+      "host": "0.0.0.0",
       "port": 7070
     },
     "database": {
-      "host": "127.0.0.1",
-      "port": 9090
+      "host": "0.0.0.0",
+      "port": 9000
     },
     "hosting": {
-      "host": "127.0.0.1",
+      "host": "0.0.0.0",
       "port": 5011
     },
     "storage": {
-      "host": "127.0.0.1",
+      "host": "0.0.0.0",
       "port": 9195
     },
     "ui": {
       "enabled": true,
-      "host": "127.0.0.1",
+      "host": "0.0.0.0",
       "port": 4000
     },
     "dataconnect": {

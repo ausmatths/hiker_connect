@@ -4,28 +4,38 @@
 <dict>
     <key>CADisableMinimumFrameDurationOnPhone</key>
     <true/>
+
     <key>CFBundleDevelopmentRegion</key>
     <string>$(DEVELOPMENT_LANGUAGE)</string>
+
     <key>CFBundleDisplayName</key>
     <string>Hiker Connect</string>
+
     <key>CFBundleExecutable</key>
     <string>$(EXECUTABLE_NAME)</string>
+
     <key>CFBundleIdentifier</key>
     <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
+
     <key>CFBundleName</key>
     <string>hiker_connect</string>
+
     <key>CFBundlePackageType</key>
     <string>APPL</string>
+
     <key>CFBundleShortVersionString</key>
     <string>$(FLUTTER_BUILD_NAME)</string>
+
     <key>CFBundleSignature</key>
     <string></string>
+
     <key>CFBundleVersion</key>
     <string>$(FLUTTER_BUILD_NUMBER)</string>
 
-    <!-- Google Sign-in Section -->
+    <!-- Google Sign-In and URL Schemes - Combined properly -->
     <key>CFBundleURLTypes</key>
     <array>
         <dict>
@@ -33,45 +43,62 @@
             <string>Editor</string>
             <key>CFBundleURLSchemes</key>
             <array>
-                <!-- Replace with value from GoogleService-Info.plist -->
-                <string>com.googleusercontent.apps.967683373829-v2dg79vtpr1qr8buh5h3j10ejsaq06ah</string>
-            </array>
-        </dict>
-    </array>
-
-    <key>FDAllowedProviderTypes</key>
-    <array>
-        <string>DEVICE_CHECK</string>
-        <string>DEBUG</string>
-    </array>
-
-    <key>CFBundleURLTypes</key>
-    <array>
-        <dict>
-            <key>CFBundleURLSchemes</key>
-            <array>
+                <string>com.googleusercontent.apps.967683373829-etonh967dnlo7mrmtha7qvbl78u9a3s9</string>
                 <string>com.ausmatths.hikerConnect</string>
             </array>
         </dict>
     </array>
 
     <key>GIDClientID</key>
-    <string>967683373829-v2dg79vtpr1qr8buh5h3j10ejsaq06ah.apps.googleusercontent.com</string>
+    <string>967683373829-etonh967dnlo7mrmtha7qvbl78u9a3s9.apps.googleusercontent.com</string>
 
+    <!-- Firebase App Check (Added) -->
+    <key>FDAllowedProviderTypes</key>
+    <array>
+        <string>DEVICE_CHECK</string>
+        <string>DEBUG</string>
+    </array>
+
+    <!-- Permissions and Network Security -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
+    </dict>
+
+    <!-- Location Permissions -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Hiker Connect needs access to your location to provide trail and hiking recommendations.</string>
+
+    <!-- Camera and Photo Library Permissions -->
+    <key>NSCameraUsageDescription</key>
+    <string>Hiker Connect needs camera access to upload profile pictures and trail photos.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Hiker Connect needs photo library access to upload profile pictures and trail photos.</string>
+
+    <!-- App Configuration -->
     <key>LSRequiresIPhoneOS</key>
     <true/>
+
     <key>UIApplicationSupportsIndirectInputEvents</key>
     <true/>
+
     <key>UILaunchStoryboardName</key>
     <string>LaunchScreen</string>
+
     <key>UIMainStoryboardFile</key>
     <string>Main</string>
+
+    <!-- Supported Interface Orientations -->
     <key>UISupportedInterfaceOrientations</key>
     <array>
         <string>UIInterfaceOrientationPortrait</string>
         <string>UIInterfaceOrientationLandscapeLeft</string>
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
+
     <key>UISupportedInterfaceOrientations~ipad</key>
     <array>
         <string>UIInterfaceOrientationPortrait</string>
