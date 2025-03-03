@@ -29,6 +29,7 @@ FlutterError,
 FlutterErrorDetails,
 ErrorSummary;
 import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 // Import screens and services
 import 'package:hiker_connect/services/firebase_auth.dart';
@@ -54,7 +55,7 @@ class AppInitializer {
 
     // Initialize services in the correct order
     final dbService = await _initializeDatabaseService();
-    final eventbriteService = _initializeEventBriteService();
+    final eventbriteService = await _initializeEventBriteService();
 
     // Initialize auth service after Firebase is ready
     final authService = AuthService();
@@ -160,24 +161,66 @@ class AppInitializer {
     }
   }
 
-  /// Initialize the EventBrite service
-  static EventBriteService _initializeEventBriteService() {
-    // Get the tokens, with fallback to hardcoded values if not in .env
-    final publicToken = dotenv.env['EVENTBRITE_PUBLIC_TOKEN'] ?? 'V7IFGJ6CYWAWYOZAGN27';
-    final privateToken = dotenv.env['EVENTBRITE_PRIVATE_TOKEN'] ?? '5D5NPXG5TIPXU6GLFNCF';
+  /// Initialize the EventBrite service with enhanced error handling and connectivity check
+  static Future<EventBriteService> _initializeEventBriteService() async {
+    try {
+      developer.log('Initializing EventBrite service...', name: 'App Setup');
 
-    // Note: In a production app, you would not hardcode tokens like this.
-    // This is a temporary solution for development.
-    developer.log('Using EventBrite tokens (source: ${dotenv.isInitialized ? '.env file' : 'hardcoded'})',
-        name: 'App Setup');
+      // Check for internet connectivity
+      final connectivityResult = await Connectivity().checkConnectivity();
+      final hasConnectivity = connectivityResult != ConnectivityResult.none;
 
-    // Create EventBrite service with the tokens
-    final eventbriteService = EventBriteService(
-        publicToken: publicToken,
-        privateToken: privateToken
-    );
+      if (!hasConnectivity) {
+        developer.log('No internet connectivity detected. EventBrite API may not work.',
+            name: 'App Setup');
+      }
 
-    return eventbriteService;
+      // Force direct logging of environment variables
+      developer.log('EVENTBRITE_PUBLIC_TOKEN from env: ${dotenv.env['EVENTBRITE_PUBLIC_TOKEN']}', name: 'App Setup');
+      developer.log('EVENTBRITE_PRIVATE_TOKEN from env: ${dotenv.env['EVENTBRITE_PRIVATE_TOKEN']}', name: 'App Setup');
+
+      // Get tokens from .env with fallback to your actual Eventbrite tokens
+      final publicToken = dotenv.env['EVENTBRITE_PUBLIC_TOKEN'] ?? 'V7IFGJ6CYWAWYOZAGN27';
+      final privateToken = dotenv.env['EVENTBRITE_PRIVATE_TOKEN'] ?? '5D5NPXG5TIPXU6GLFNCF';
+
+      // Log the tokens that will be used
+      developer.log('Using EventBrite tokens - Public: $publicToken, Private: ${privateToken.substring(0, 4)}...', name: 'App Setup');
+
+      // Create EventBrite service
+      final eventbriteService = EventBriteService(
+          publicToken: publicToken,
+          privateToken: privateToken
+      );
+
+      developer.log('EventBrite service initialized with tokens (source: ${dotenv.isInitialized ? '.env file' : 'hardcoded'})',
+          name: 'App Setup');
+
+      // Validate tokens if we have connectivity
+      if (hasConnectivity) {
+        try {
+          final isValid = await eventbriteService.validateToken();
+          developer.log('EventBrite token validation result: ${isValid ? 'Valid' : 'Invalid'}',
+              name: 'App Setup');
+
+          if (!isValid) {
+            developer.log('WARNING: EventBrite token appears to be invalid. Event fetching may fail.',
+                name: 'App Setup');
+          }
+        } catch (e) {
+          developer.log('Failed to validate EventBrite token: $e', name: 'App Setup');
+        }
+      }
+
+      return eventbriteService;
+    } catch (e) {
+      developer.log('Error initializing EventBrite service: $e', name: 'App Setup');
+
+      // Return a service with correct tokens as fallback - we'll show proper errors in the UI
+      return EventBriteService(
+          publicToken: 'V7IFGJ6CYWAWYOZAGN27',
+          privateToken: '5D5NPXG5TIPXU6GLFNCF'
+      );
+    }
   }
 
   /// Configure Firebase emulators for local development
@@ -375,6 +418,7 @@ void main() async {
             // State providers
             ChangeNotifierProvider<EventBriteProvider>(
               create: (_) => EventBriteProvider(eventbriteService: eventbriteService),
+              lazy: false, // Initialize immediately to start pre-fetching events
             ),
           ],
           child: const App(),
