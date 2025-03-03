@@ -88,9 +88,9 @@ class EventBriteService {
       // For this specific app, it seems we should just use the tokens directly
       // since we're seeing errors with the stored tokens
       if (privileged) {
-        return _privateToken; // Use "5D5NPXG5TIPXU6GLFNCF"
+        return _privateToken;
       } else {
-        return _publicToken; // Use "V7IFGJ6CYWAWYOZAGN27"
+        return _publicToken;
       }
 
       // The code below is kept commented to simplify for now
