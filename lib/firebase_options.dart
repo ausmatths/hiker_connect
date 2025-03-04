@@ -31,7 +31,7 @@ class DefaultFirebaseOptions {
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
+              'you can reconfigure this by running the FlutterFire CLI again.',
         );
       default:
         throw UnsupportedError(
@@ -81,7 +81,7 @@ class DefaultFirebaseOptions {
     storageBucket: 'hiker-connect.firebasestorage.app',
     androidClientId: '967683373829-4k5ut5k12o375qc2da2pr47jj9dufk64.apps.googleusercontent.com',
     iosClientId: '967683373829-uiu2p09vi3j6er3cobi7r354fbm5pird.apps.googleusercontent.com',
-    iosBundleId: 'com.example.hikerConnect',
+    iosBundleId: 'com.ausmatths.hikerConnect',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
@@ -94,5 +94,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'hiker-connect.firebasestorage.app',
     measurementId: 'G-85ZZM444KG',
   );
-
 }

@@ -87,7 +87,7 @@ class AppInitializer {
       );
       developer.log('Firebase initialized successfully', name: 'App Setup');
 
-      // Initialize App Check if needed
+      // Initialize App Check properly - with the correct provider
       await _initializeAppCheck();
 
       // Configure emulators for local development
@@ -321,32 +321,45 @@ class AppInitializer {
 
   /// Initialize Firebase App Check
   static Future<void> _initializeAppCheck() async {
-    if (!kDebugMode) {
-      try {
-        if (defaultTargetPlatform == TargetPlatform.iOS) {
-          developer.log('Initializing App Check for iOS', name: 'App Setup');
+    try {
+      // Always use the debug provider in debug mode
+      if (kDebugMode) {
+        developer.log('Initializing App Check with debug provider', name: 'App Setup');
+
+        // Use debug provider for all platforms in debug mode
+        await FirebaseAppCheck.instance.activate(
+          // Debug provider is suitable for development
+          androidProvider: AndroidProvider.debug,
+          appleProvider: AppleProvider.debug,
+          webProvider: ReCaptchaV3Provider('6LfoXNUqAAAAACnOEV3yeMG5a7du0spOyuYp2l0J'),
+        );
+
+        // Set a debug token that will be accepted by Firebase
+        await FirebaseAppCheck.instance.setTokenAutoRefreshEnabled(true);
+        developer.log('App Check activated with debug provider', name: 'App Setup');
+      } else {
+        // Production mode - use the appropriate provider based on platform
+        if (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS) {
+          developer.log('Initializing App Check for iOS/macOS with DeviceCheck', name: 'App Setup');
           await FirebaseAppCheck.instance.activate(
-            appleProvider: AppleProvider.debug,
+            appleProvider: AppleProvider.deviceCheck,
           );
-          developer.log('App Check activated for iOS', name: 'App Setup');
         } else if (kIsWeb) {
-          developer.log('Initializing App Check for Web', name: 'App Setup');
+          developer.log('Initializing App Check for Web with reCAPTCHA', name: 'App Setup');
           await FirebaseAppCheck.instance.activate(
             webProvider: ReCaptchaV3Provider('6LfoXNUqAAAAACnOEV3yeMG5a7du0spOyuYp2l0J'),
           );
-          developer.log('App Check activated for Web', name: 'App Setup');
         } else if (defaultTargetPlatform == TargetPlatform.android) {
-          developer.log('Initializing App Check for Android', name: 'App Setup');
+          developer.log('Initializing App Check for Android with Play Integrity', name: 'App Setup');
           await FirebaseAppCheck.instance.activate(
-            androidProvider: AndroidProvider.debug,
+            androidProvider: AndroidProvider.playIntegrity,
           );
-          developer.log('App Check activated for Android', name: 'App Setup');
         }
-      } catch (e) {
-        developer.log('App Check initialization error', name: 'App Setup', error: e);
+        developer.log('App Check activated for production', name: 'App Setup');
       }
-    } else {
-      developer.log('Skipping App Check activation in debug mode with emulators', name: 'App Setup');
+    } catch (e) {
+      developer.log('App Check initialization error: $e', name: 'App Setup', error: e);
+      // Continue without App Check rather than failing the app startup
     }
   }
 }
