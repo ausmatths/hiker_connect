@@ -175,27 +175,24 @@ class AppInitializer {
             name: 'App Setup');
       }
 
-      // Force direct logging of environment variables and hardcoded tokens
-      developer.log('Public token from environment: ${dotenv.env['EVENTBRITE_PUBLIC_TOKEN']}', name: 'App Setup');
-      developer.log('Fallback public token: V7IFGJ6CYWAWYOZAGN27', name: 'App Setup');
+      // Get tokens from .env with fallback - not logging token values for security
+      final privateToken = dotenv.env['EVENTBRITE_PRIVATE_TOKEN'];
+      final clientSecret = dotenv.env['EVENTBRITE_CLIENT_SECRET'];
 
-      // Get tokens from .env with fallback to your actual Eventbrite tokens
-      final publicToken = dotenv.env['EVENTBRITE_PUBLIC_TOKEN'] ?? 'V7IFGJ6CYWAWYOZAGN27';
-      final privateToken = dotenv.env['EVENTBRITE_PRIVATE_TOKEN'] ?? '5D5NPXG5TIPXU6GLFNCF';
-
-      // Log the tokens that will be used
-      developer.log('Using EventBrite tokens - Public: $publicToken, Private: ${privateToken.substring(0, 4)}...', name: 'App Setup');
-
-      // Create EventBrite service
-      final eventbriteService = EventBriteService(
-          publicToken: publicToken,
-          privateToken: privateToken
+      developer.log(
+          'EventBrite tokens from ${dotenv.isInitialized ? '.env file' : 'defaults'} will be stored securely',
+          name: 'App Setup'
       );
 
-      developer.log('EventBrite service initialized with tokens (source: ${dotenv.isInitialized ? '.env file' : 'hardcoded'})',
-          name: 'App Setup');
+      // Create EventBrite service with secure token handling
+      final eventbriteService = EventBriteService(
+          privateToken: privateToken,
+          clientSecret: clientSecret
+      );
 
-      // Validate tokens if we have connectivity
+      developer.log('EventBrite service initialized securely', name: 'App Setup');
+
+      // Validate tokens if we have connectivity, but don't expose token values
       if (hasConnectivity) {
         try {
           final isValid = await eventbriteService.validateToken();
@@ -215,11 +212,8 @@ class AppInitializer {
     } catch (e) {
       developer.log('Error initializing EventBrite service: $e', name: 'App Setup');
 
-      // Return a service with correct tokens as fallback - we'll show proper errors in the UI
-      return EventBriteService(
-          publicToken: 'V7IFGJ6CYWAWYOZAGN27',
-          privateToken: '5D5NPXG5TIPXU6GLFNCF'
-      );
+      // Return a service without hardcoded tokens - it will use secure storage or fallback to samples
+      return EventBriteService();
     }
   }
 

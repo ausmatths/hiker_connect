@@ -106,103 +106,310 @@ class EventData {
 
   // Custom factory constructor for EventBrite API data
   factory EventData.fromEventBrite(Map<String, dynamic> json) {
-    // Extract start date
-    DateTime? startDate;
-    if (json['start'] != null && json['start']['utc'] != null) {
-      startDate = DateTime.parse(json['start']['utc']);
-    }
+    try {
+      // Extract and safely handle required fields
+      String id = json['id']?.toString() ?? '';
 
-    // Extract end date
-    DateTime? endDate;
-    if (json['end'] != null && json['end']['utc'] != null) {
-      endDate = DateTime.parse(json['end']['utc']);
-    }
-
-    // Calculate duration if both dates are available
-    Duration? duration;
-    if (startDate != null && endDate != null) {
-      duration = endDate.difference(startDate);
-    }
-
-    // Extract venue information
-    String? location;
-    String? venueId;
-    if (json['venue'] != null) {
-      venueId = json['venue']['id'];
-
-      final venue = json['venue'];
-      final address = venue['address'];
-
-      List<String> locationParts = [];
-
-      if (address != null) {
-        if (address['address_1'] != null && address['address_1'].isNotEmpty) {
-          locationParts.add(address['address_1']);
+      // Extract title from various potential paths
+      String title;
+      if (json['name'] != null) {
+        if (json['name'] is Map) {
+          title = json['name']['text'] ?? json['name']['html'] ?? 'Untitled Event';
+        } else if (json['name'] is String) {
+          title = json['name'];
+        } else {
+          title = 'Untitled Event';
         }
+      } else {
+        title = 'Untitled Event';
+      }
 
-        if (address['city'] != null && address['city'].isNotEmpty) {
-          locationParts.add(address['city']);
-        }
-
-        if (address['region'] != null && address['region'].isNotEmpty) {
-          locationParts.add(address['region']);
-        }
-
-        if (address['postal_code'] != null && address['postal_code'].isNotEmpty) {
-          locationParts.add(address['postal_code']);
+      // Extract description from various potential paths
+      String? description;
+      if (json['description'] != null) {
+        if (json['description'] is Map) {
+          description = json['description']['text'] ?? json['description']['html'] ?? '';
+        } else if (json['description'] is String) {
+          description = json['description'];
         }
       }
 
-      location = locationParts.join(', ');
-    }
+      // Parse dates safely
+      DateTime? startDate;
+      DateTime? endDate;
 
-    // Extract organizer information
-    String? organizer;
-    String? organizerId;
-    if (json['organizer'] != null) {
-      organizerId = json['organizer']['id'];
-      organizer = json['organizer']['name'];
-    }
+      // Extract start date from various potential paths
+      if (json['start'] != null) {
+        String? rawStartDate;
+        if (json['start'] is Map) {
+          rawStartDate = json['start']['utc'] ?? json['start']['local'] ?? json['start']['timezone'];
+        } else if (json['start'] is String) {
+          rawStartDate = json['start'];
+        }
 
-    // Extract price information
-    bool isFree = json['is_free'] ?? false;
-    String? price;
+        if (rawStartDate != null) {
+          try {
+            startDate = DateTime.parse(rawStartDate);
+          } catch (e) {
+            // Fallback to current date if parsing fails
+            startDate = DateTime.now();
+          }
+        } else {
+          // Default to current date if no start date found
+          startDate = DateTime.now();
+        }
+      } else if (json['start_date'] != null) {
+        try {
+          startDate = DateTime.parse(json['start_date'].toString());
+        } catch (e) {
+          startDate = DateTime.now();
+        }
+      } else {
+        // Default to current date if no start date found
+        startDate = DateTime.now();
+      }
 
-    if (!isFree && json['ticket_availability'] != null) {
-      if (json['ticket_availability']['minimum_ticket_price'] != null) {
-        final minPrice = json['ticket_availability']['minimum_ticket_price'];
-        if (minPrice['value'] != null && minPrice['currency'] != null) {
-          price = '${minPrice['currency']} ${minPrice['value']}';
+      // Extract end date from various potential paths
+      if (json['end'] != null) {
+        String? rawEndDate;
+        if (json['end'] is Map) {
+          rawEndDate = json['end']['utc'] ?? json['end']['local'] ?? json['end']['timezone'];
+        } else if (json['end'] is String) {
+          rawEndDate = json['end'];
+        }
+
+        if (rawEndDate != null) {
+          try {
+            endDate = DateTime.parse(rawEndDate);
+          } catch (e) {
+            // End date is optional, it's fine if it's null
+          }
+        }
+      } else if (json['end_date'] != null) {
+        try {
+          endDate = DateTime.parse(json['end_date'].toString());
+        } catch (e) {
+          // End date is optional
         }
       }
-    }
 
-    // Extract image URL
-    String? imageUrl;
-    if (json['logo'] != null && json['logo']['url'] != null) {
-      imageUrl = json['logo']['url'];
-    }
+      // Calculate duration if both dates are available
+      Duration? duration;
+      if (startDate != null && endDate != null) {
+        duration = endDate.difference(startDate);
+      }
 
-    return EventData(
-      id: json['id'] ?? '',
-      eventbriteId: json['id'], // Store the EventBrite ID as well
-      title: json['name']?['text'] ?? 'No Title',
-      description: json['description']?['text'] ?? '',
-      imageUrl: imageUrl,
-      startDate: startDate,
-      endDate: endDate,
-      location: location,
-      organizer: organizer,
-      url: json['url'],
-      isFree: isFree,
-      price: price,
-      capacity: json['capacity'],
-      status: json['status'],
-      venueId: venueId,
-      organizerId: organizerId,
-      duration: duration,
-      // participantLimit can be set if needed from EventBrite data
-    );
+      // Extract venue and location information
+      String? location;
+      String? venueId;
+
+      if (json['venue'] != null) {
+        // Try to extract venue ID
+        venueId = json['venue'] is Map ? json['venue']['id']?.toString() : null;
+
+        // Try to extract location from venue
+        if (json['venue'] is Map) {
+          var venue = json['venue'];
+          List<String> locationParts = [];
+
+          // Add venue name if available
+          if (venue['name'] != null) {
+            locationParts.add(venue['name'].toString());
+          }
+
+          // Add address components if available
+          if (venue['address'] != null && venue['address'] is Map) {
+            var address = venue['address'];
+
+            // Try different address field naming patterns
+            var addressLine = address['address_1'] ??
+                address['line1'] ??
+                address['street_address'] ??
+                address['address'] ??
+                address['localized_address_display'];
+
+            if (addressLine != null) {
+              locationParts.add(addressLine.toString());
+            }
+
+            // Add city if available
+            var city = address['city'] ?? address['town'] ?? address['locality'];
+            if (city != null) {
+              locationParts.add(city.toString());
+            }
+
+            // Add region/state if available
+            var region = address['region'] ?? address['state'] ?? address['administrative_area'];
+            if (region != null) {
+              locationParts.add(region.toString());
+            }
+
+            // Add postal code if available
+            var postalCode = address['postal_code'] ?? address['zip'] ?? address['zip_code'];
+            if (postalCode != null) {
+              locationParts.add(postalCode.toString());
+            }
+          }
+
+          // Compile location string if parts were found
+          if (locationParts.isNotEmpty) {
+            location = locationParts.join(', ');
+          }
+        } else if (json['venue'] is String) {
+          // If venue is just a string, use that
+          location = json['venue'].toString();
+        }
+      } else if (json['location'] != null) {
+        // Direct location field
+        if (json['location'] is Map) {
+          var loc = json['location'];
+          List<String> locationParts = [];
+
+          var name = loc['name'] ?? loc['venue'];
+          if (name != null) {
+            locationParts.add(name.toString());
+          }
+
+          var address = loc['address'] ?? loc['display_address'];
+          if (address != null) {
+            if (address is String) {
+              locationParts.add(address);
+            } else if (address is Map) {
+              // Handle address as a map
+              var addressLine = address['address_1'] ?? address['line1'] ?? address['display'];
+              if (addressLine != null) {
+                locationParts.add(addressLine.toString());
+              }
+            }
+          }
+
+          if (locationParts.isNotEmpty) {
+            location = locationParts.join(', ');
+          }
+        } else {
+          // If location is just a string, use that
+          location = json['location'].toString();
+        }
+      }
+
+      // Extract organizer information
+      String? organizer;
+      String? organizerId;
+
+      if (json['organizer'] != null) {
+        if (json['organizer'] is Map) {
+          organizerId = json['organizer']['id']?.toString();
+          organizer = json['organizer']['name'] ?? json['organizer']['description'];
+        } else if (json['organizer'] is String) {
+          organizer = json['organizer'];
+        }
+      }
+
+      // Extract pricing information
+      bool isFree = json['is_free'] == true;
+      String? price;
+
+      if (!isFree) {
+        // Try to get price from ticket_availability
+        if (json['ticket_availability'] != null && json['ticket_availability'] is Map) {
+          var ticketInfo = json['ticket_availability'];
+
+          if (ticketInfo['minimum_ticket_price'] != null && ticketInfo['minimum_ticket_price'] is Map) {
+            var priceInfo = ticketInfo['minimum_ticket_price'];
+            var currency = priceInfo['currency'] ?? 'USD';
+            var value = priceInfo['value'] ?? '0';
+            price = '$currency $value';
+          }
+        }
+        // Try to get price from cost field
+        else if (json['cost'] != null) {
+          if (json['cost'] is Map) {
+            var priceInfo = json['cost'];
+            var currency = priceInfo['currency'] ?? 'USD';
+            var value = priceInfo['value'] ?? '0';
+            price = '$currency $value';
+          } else {
+            price = json['cost'].toString();
+          }
+        }
+        // Try to get price from price field
+        else if (json['price'] != null) {
+          price = json['price'].toString();
+        }
+      }
+
+      // Extract image URL
+      String? imageUrl;
+      if (json['logo'] != null) {
+        if (json['logo'] is Map) {
+          // Try various image URL paths
+          imageUrl = json['logo']['url'] ??
+              json['logo']['original'] ??
+              json['logo']['original']['url'];
+        } else if (json['logo'] is String) {
+          imageUrl = json['logo'];
+        }
+      } else if (json['image'] != null) {
+        if (json['image'] is Map) {
+          imageUrl = json['image']['url'] ?? json['image']['original'];
+        } else if (json['image'] is String) {
+          imageUrl = json['image'];
+        }
+      }
+
+      // Extract participant limit/capacity
+      int? capacity;
+      int? participantLimit;
+
+      if (json['capacity'] != null) {
+        try {
+          capacity = int.parse(json['capacity'].toString());
+          participantLimit = capacity; // Use capacity for participantLimit as well
+        } catch (e) {
+          // Leave as null if parsing fails
+        }
+      }
+
+      // Extract status
+      String? status = json['status']?.toString();
+
+      // Extract URL
+      String? url;
+      if (json['url'] != null) {
+        url = json['url'].toString();
+      } else if (json['event_url'] != null) {
+        url = json['event_url'].toString();
+      }
+
+      return EventData(
+        id: id,
+        eventbriteId: id, // Store the EventBrite ID as well
+        title: title,
+        description: description,
+        startDate: startDate,
+        endDate: endDate,
+        location: location,
+        imageUrl: imageUrl,
+        organizer: organizer,
+        url: url,
+        isFree: isFree,
+        price: price,
+        capacity: capacity,
+        status: status,
+        venueId: venueId,
+        organizerId: organizerId,
+        participantLimit: participantLimit,
+        duration: duration,
+      );
+    } catch (e) {
+      // If there's any error parsing the event, return a fallback event
+      return EventData(
+        id: json['id']?.toString() ?? 'unknown',
+        title: 'Event Data Error',
+        description: 'There was an error parsing this event from EventBrite: $e',
+        startDate: DateTime.now(), // Use current date as fallback
+      );
+    }
   }
 
   // Factory constructor for Firestore data
