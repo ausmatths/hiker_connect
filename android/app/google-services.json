@@ -8,6 +8,42 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:967683373829:android:c25cd36567a50f7020956c",
+        "android_client_info": {
+          "package_name": "com.ausmatths.hikerConnect"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "967683373829-kjq1shb1aavq4jr2rgibg5ddtdk5bvrm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBJndcitHYrgEHuSHcjlE48QhHnxhRRd8Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "967683373829-kjq1shb1aavq4jr2rgibg5ddtdk5bvrm.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "967683373829-b51b3rmjjj6ikrl9bt81o6plto76q2pm.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.hikerconnect.app"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:967683373829:android:1973708e7f1815f920956c",
         "android_client_info": {
           "package_name": "com.example.hiker_connect"
@@ -58,14 +94,6 @@
         }
       },
       "oauth_client": [
-        {
-          "client_id": "967683373829-4k5ut5k12o375qc2da2pr47jj9dufk64.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.hikerconnect.app",
-            "certificate_hash": "8c6bf6729779ae3dafe6c87b64886609c198ebb4"
-          }
-        },
         {
           "client_id": "967683373829-kjq1shb1aavq4jr2rgibg5ddtdk5bvrm.apps.googleusercontent.com",
           "client_type": 3

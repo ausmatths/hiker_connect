@@ -53,7 +53,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyBJndcitHYrgEHuSHcjlE48QhHnxhRRd8Q',
-    appId: '1:967683373829:android:1973708e7f1815f920956c',
+    appId: '1:967683373829:android:c25cd36567a50f7020956c',
     messagingSenderId: '967683373829',
     projectId: 'hiker-connect',
     databaseURL: 'https://hiker-connect-default-rtdb.firebaseio.com',
@@ -81,7 +81,7 @@ class DefaultFirebaseOptions {
     storageBucket: 'hiker-connect.firebasestorage.app',
     androidClientId: '967683373829-4k5ut5k12o375qc2da2pr47jj9dufk64.apps.googleusercontent.com',
     iosClientId: '967683373829-uiu2p09vi3j6er3cobi7r354fbm5pird.apps.googleusercontent.com',
-    iosBundleId: 'com.ausmatths.hikerConnect',
+    iosBundleId: 'com.example.hikerConnect',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
@@ -94,4 +94,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'hiker-connect.firebasestorage.app',
     measurementId: 'G-85ZZM444KG',
   );
+
 }
