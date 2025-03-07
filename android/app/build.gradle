@@ -7,7 +7,8 @@ plugins {
 
 android {
     namespace "com.ausmatths.hikerConnect"
-    compileSdk 35  // Updated to 35 to fix plugin compatibility
+    compileSdk 35
+    ndkVersion = "26.3.11579264"
 
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17

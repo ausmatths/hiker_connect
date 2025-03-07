@@ -28,6 +28,7 @@ TargetPlatform,
 FlutterError,
 FlutterErrorDetails,
 ErrorSummary;
+import 'package:flutter/src/foundation/binding.dart' show BindingBase;
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
@@ -44,9 +45,6 @@ import 'firebase_options.dart';
 class AppInitializer {
   /// Initialize all services and return them for use in the app
   static Future<(DatabaseService, EventBriteService, AuthService)> initialize() async {
-    // Ensure Flutter binding is initialized
-    WidgetsFlutterBinding.ensureInitialized();
-
     // Configure error handling
     _setupErrorHandling();
 
@@ -359,42 +357,43 @@ class AppInitializer {
 }
 
 /// App entry point
-void main() async {
-  // Ensure Flutter binding is initialized first
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Load environment variables before running the app
-  bool envLoaded = false;
-  try {
-    // Try the standard path first
-    await dotenv.load(fileName: ".env");
-    developer.log('Environment variables loaded successfully', name: 'App Setup');
-    envLoaded = true;
-  } catch (e) {
-    developer.log('Failed to load .env file with standard path: $e', name: 'App Setup');
-
-    // Try with an absolute path as a fallback
-    try {
-      if (Platform.isIOS || Platform.isMacOS) {
-        final directory = await path_provider.getApplicationDocumentsDirectory();
-        final path = '${directory.path}/.env';
-        developer.log('Trying alternate path: $path', name: 'App Setup');
-        await dotenv.load(fileName: path);
-        developer.log('Environment variables loaded from alternate path', name: 'App Setup');
-        envLoaded = true;
-      }
-    } catch (e2) {
-      developer.log('Failed to load .env from alternate path: $e2', name: 'App Setup');
-    }
-
-    // If all loading attempts fail, log a warning but continue
-    if (!envLoaded) {
-      developer.log('WARNING: Continuing without environment variables', name: 'App Setup');
-    }
-  }
+void main() {
+  // Set this to true to make the zone error fatal during development
+  // This helps catch the issue early
+  BindingBase.debugZoneErrorsAreFatal = true;
 
   // Wrap everything in a zone to catch all uncaught errors
   runZonedGuarded(() async {
+    // Ensure Flutter binding is initialized inside the same zone as runApp
+    WidgetsFlutterBinding.ensureInitialized();
+
+    // Load environment variables
+    bool envLoaded = false;
+    try {
+      await dotenv.load(fileName: ".env");
+      developer.log('Environment variables loaded successfully', name: 'App Setup');
+      envLoaded = true;
+    } catch (e) {
+      developer.log('Failed to load .env file with standard path: $e', name: 'App Setup');
+
+      try {
+        if (Platform.isIOS || Platform.isMacOS) {
+          final directory = await path_provider.getApplicationDocumentsDirectory();
+          final path = '${directory.path}/.env';
+          developer.log('Trying alternate path: $path', name: 'App Setup');
+          await dotenv.load(fileName: path);
+          developer.log('Environment variables loaded from alternate path', name: 'App Setup');
+          envLoaded = true;
+        }
+      } catch (e2) {
+        developer.log('Failed to load .env from alternate path: $e2', name: 'App Setup');
+      }
+
+      if (!envLoaded) {
+        developer.log('WARNING: Continuing without environment variables', name: 'App Setup');
+      }
+    }
+
     try {
       // Initialize all app dependencies
       final (dbService, eventbriteService, authService) = await AppInitializer.initialize();
@@ -403,7 +402,6 @@ void main() async {
       runApp(
         MultiProvider(
           providers: [
-            // Auth service and state
             ChangeNotifierProvider<AuthService>.value(value: authService),
             StreamProvider<User?>.value(
               value: authService.authStateChanges,
@@ -417,22 +415,17 @@ void main() async {
                 return null;
               },
             ),
-
-            // Services
             Provider<DatabaseService>.value(value: dbService),
             Provider<EventBriteService>.value(value: eventbriteService),
-
-            // State providers
             ChangeNotifierProvider<EventBriteProvider>(
               create: (_) => EventBriteProvider(eventbriteService: eventbriteService),
-              lazy: false, // Initialize immediately to start pre-fetching events
+              lazy: false,
             ),
           ],
           child: const App(),
         ),
       );
     } catch (e, stackTrace) {
-      // Fallback to error app if initialization fails
       developer.log(
         'Fatal Error during app initialization',
         name: 'App Setup',
@@ -442,7 +435,6 @@ void main() async {
       runApp(ErrorApp(error: e));
     }
   }, (error, stackTrace) {
-    // Global error handler for uncaught asynchronous errors
     developer.log(
       'UNCAUGHT EXCEPTION in app',
       name: 'Global Error Handler',
