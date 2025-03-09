@@ -17,7 +17,7 @@ class EventData {
   final String? description;
 
   @HiveField(3)
-  final DateTime? startDate;
+  final DateTime eventDate; // Renamed from startDate for compatibility
 
   @HiveField(4)
   final String? location;
@@ -62,11 +62,30 @@ class EventData {
   @HiveField(17)
   final String? eventbriteId;
 
+  // New fields for Event Browsing
+  @HiveField(18)
+  final String? category;
+
+  @HiveField(19)
+  final int? difficulty;
+
+  @HiveField(20)
+  final double? latitude;
+
+  @HiveField(21)
+  final double? longitude;
+
+  @HiveField(22)
+  final List<String>? attendees;
+
+  @HiveField(23)
+  final String? createdBy;
+
   EventData({
     required this.id,
     required this.title,
     this.description,
-    this.startDate,
+    required this.eventDate,
     this.location,
     this.participantLimit,
     this.duration,
@@ -81,7 +100,68 @@ class EventData {
     this.venueId,
     this.organizerId,
     this.eventbriteId,
+    this.category,
+    this.difficulty,
+    this.latitude,
+    this.longitude,
+    this.attendees,
+    this.createdBy,
   });
+
+  // Create a copy with some fields updated
+  EventData copyWith({
+    String? id,
+    String? title,
+    String? description,
+    DateTime? eventDate,
+    String? location,
+    int? participantLimit,
+    Duration? duration,
+    DateTime? endDate,
+    String? imageUrl,
+    String? organizer,
+    String? url,
+    bool? isFree,
+    String? price,
+    int? capacity,
+    String? status,
+    String? venueId,
+    String? organizerId,
+    String? eventbriteId,
+    String? category,
+    int? difficulty,
+    double? latitude,
+    double? longitude,
+    List<String>? attendees,
+    String? createdBy,
+  }) {
+    return EventData(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      eventDate: eventDate ?? this.eventDate,
+      location: location ?? this.location,
+      participantLimit: participantLimit ?? this.participantLimit,
+      duration: duration ?? this.duration,
+      endDate: endDate ?? this.endDate,
+      imageUrl: imageUrl ?? this.imageUrl,
+      organizer: organizer ?? this.organizer,
+      url: url ?? this.url,
+      isFree: isFree ?? this.isFree,
+      price: price ?? this.price,
+      capacity: capacity ?? this.capacity,
+      status: status ?? this.status,
+      venueId: venueId ?? this.venueId,
+      organizerId: organizerId ?? this.organizerId,
+      eventbriteId: eventbriteId ?? this.eventbriteId,
+      category: category ?? this.category,
+      difficulty: difficulty ?? this.difficulty,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      attendees: attendees ?? this.attendees,
+      createdBy: createdBy ?? this.createdBy,
+    );
+  }
 
   // Constructor for backward compatibility with your existing code
   factory EventData.legacy({
@@ -97,7 +177,7 @@ class EventData {
       id: eventId.toString(),
       title: eventName,
       description: eventDescription,
-      startDate: eventDate,
+      eventDate: eventDate,
       location: eventLocation,
       participantLimit: evenParticipantNumber,
       duration: eventDuration,
@@ -135,7 +215,7 @@ class EventData {
       }
 
       // Parse dates safely
-      DateTime? startDate;
+      DateTime startDate;
       DateTime? endDate;
 
       // Extract start date from various potential paths
@@ -202,6 +282,8 @@ class EventData {
       // Extract venue and location information
       String? location;
       String? venueId;
+      double? latitude;
+      double? longitude;
 
       if (json['venue'] != null) {
         // Try to extract venue ID
@@ -251,6 +333,16 @@ class EventData {
             }
           }
 
+          // Extract latitude/longitude if available
+          if (venue['latitude'] != null && venue['longitude'] != null) {
+            try {
+              latitude = double.parse(venue['latitude'].toString());
+              longitude = double.parse(venue['longitude'].toString());
+            } catch (e) {
+              // Ignore if parsing fails
+            }
+          }
+
           // Compile location string if parts were found
           if (locationParts.isNotEmpty) {
             location = locationParts.join(', ');
@@ -283,12 +375,39 @@ class EventData {
             }
           }
 
+          // Extract latitude/longitude if available
+          if (loc['latitude'] != null && loc['longitude'] != null) {
+            try {
+              latitude = double.parse(loc['latitude'].toString());
+              longitude = double.parse(loc['longitude'].toString());
+            } catch (e) {
+              // Ignore if parsing fails
+            }
+          }
+
           if (locationParts.isNotEmpty) {
             location = locationParts.join(', ');
           }
         } else {
           // If location is just a string, use that
           location = json['location'].toString();
+        }
+      }
+
+      // Extract category if available
+      String? category;
+      if (json['category'] != null) {
+        if (json['category'] is Map) {
+          category = json['category']['name']?.toString();
+        } else {
+          category = json['category'].toString();
+        }
+      } else if (json['categories'] != null && json['categories'] is List && (json['categories'] as List).isNotEmpty) {
+        final categories = json['categories'] as List;
+        if (categories[0] is Map) {
+          category = categories[0]['name']?.toString();
+        } else {
+          category = categories[0].toString();
         }
       }
 
@@ -370,6 +489,20 @@ class EventData {
         }
       }
 
+      // Attempt to extract difficulty level (1-5)
+      int? difficulty;
+      if (json['difficulty'] != null) {
+        try {
+          difficulty = int.parse(json['difficulty'].toString());
+          // Ensure it's in the valid range
+          if (difficulty! < 1 || difficulty > 5) {
+            difficulty = null;
+          }
+        } catch (e) {
+          // Ignore if parsing fails
+        }
+      }
+
       // Extract status
       String? status = json['status']?.toString();
 
@@ -386,7 +519,7 @@ class EventData {
         eventbriteId: id, // Store the EventBrite ID as well
         title: title,
         description: description,
-        startDate: startDate,
+        eventDate: startDate,
         endDate: endDate,
         location: location,
         imageUrl: imageUrl,
@@ -400,6 +533,11 @@ class EventData {
         organizerId: organizerId,
         participantLimit: participantLimit,
         duration: duration,
+        category: category,
+        difficulty: difficulty,
+        latitude: latitude,
+        longitude: longitude,
+        attendees: [], // Default empty attendees list
       );
     } catch (e) {
       // If there's any error parsing the event, return a fallback event
@@ -407,27 +545,80 @@ class EventData {
         id: json['id']?.toString() ?? 'unknown',
         title: 'Event Data Error',
         description: 'There was an error parsing this event from EventBrite: $e',
-        startDate: DateTime.now(), // Use current date as fallback
+        eventDate: DateTime.now(), // Use current date as fallback
       );
     }
   }
 
-  // Factory constructor for Firestore data
-  factory EventData.fromFirestore(Map<String, dynamic> data) {
+  // Convert to a map for Firebase
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'eventDate': eventDate,
+      'location': location,
+      'participantLimit': participantLimit,
+      'duration': duration?.inMinutes,
+      'endDate': endDate,
+      'imageUrl': imageUrl,
+      'organizer': organizer,
+      'url': url,
+      'isFree': isFree,
+      'price': price,
+      'capacity': capacity,
+      'status': status,
+      'venueId': venueId,
+      'organizerId': organizerId,
+      'eventbriteId': eventbriteId,
+      'category': category,
+      'difficulty': difficulty,
+      'latitude': latitude,
+      'longitude': longitude,
+      'attendees': attendees,
+      'createdBy': createdBy,
+    };
+  }
+
+  // Factory constructor for Map data (from Firestore or local storage)
+  factory EventData.fromMap(Map<String, dynamic> data) {
     // Handle date conversions from Firestore Timestamp type
-    DateTime? startDate;
+    DateTime eventDate;
     DateTime? endDate;
     Duration? duration;
 
-    // Parse startDate
-    if (data['startDate'] != null) {
+    // Parse eventDate (renamed from startDate)
+    if (data['eventDate'] != null) {
+      if (data['eventDate'] is Timestamp) {
+        eventDate = (data['eventDate'] as Timestamp).toDate();
+      } else if (data['eventDate'] is String) {
+        try {
+          eventDate = DateTime.parse(data['eventDate'] as String);
+        } catch (_) {
+          eventDate = DateTime.now(); // Fallback
+        }
+      } else if (data['eventDate'] is DateTime) {
+        eventDate = data['eventDate'] as DateTime;
+      } else {
+        eventDate = DateTime.now(); // Default fallback
+      }
+    } else if (data['startDate'] != null) {
+      // Try the old field name for backward compatibility
       if (data['startDate'] is Timestamp) {
-        startDate = (data['startDate'] as Timestamp).toDate();
+        eventDate = (data['startDate'] as Timestamp).toDate();
       } else if (data['startDate'] is String) {
         try {
-          startDate = DateTime.parse(data['startDate'] as String);
-        } catch (_) {}
+          eventDate = DateTime.parse(data['startDate'] as String);
+        } catch (_) {
+          eventDate = DateTime.now(); // Fallback
+        }
+      } else if (data['startDate'] is DateTime) {
+        eventDate = data['startDate'] as DateTime;
+      } else {
+        eventDate = DateTime.now(); // Default fallback
       }
+    } else {
+      eventDate = DateTime.now(); // Default fallback
     }
 
     // Parse endDate
@@ -438,12 +629,14 @@ class EventData {
         try {
           endDate = DateTime.parse(data['endDate'] as String);
         } catch (_) {}
+      } else if (data['endDate'] is DateTime) {
+        endDate = data['endDate'] as DateTime;
       }
     }
 
     // Calculate duration if both dates are available
-    if (startDate != null && endDate != null) {
-      duration = endDate.difference(startDate);
+    if (eventDate != null && endDate != null) {
+      duration = endDate.difference(eventDate);
     } else if (data['duration'] != null) {
       // Try to extract duration directly if available
       try {
@@ -455,105 +648,29 @@ class EventData {
       } catch (_) {}
     }
 
-    // Extract and normalize title from different possible fields
-    String title = 'Unnamed Event';
-    if (data['title'] != null && data['title'] is String) {
-      title = data['title'] as String;
-    } else if (data['name'] != null) {
-      if (data['name'] is String) {
-        title = data['name'] as String;
-      } else if (data['name'] is Map && data['name']['text'] != null) {
-        title = data['name']['text'] as String;
-      }
-    } else if (data['eventName'] != null && data['eventName'] is String) {
-      title = data['eventName'] as String;
-    }
+    // Extract and normalize title
+    String title = data['title'] as String? ?? 'Unnamed Event';
 
-    // Extract and normalize description from different possible fields
-    String? description;
-    if (data['description'] != null) {
-      if (data['description'] is String) {
-        description = data['description'] as String;
-      } else if (data['description'] is Map && data['description']['text'] != null) {
-        description = data['description']['text'] as String;
-      }
-    } else if (data['eventDescription'] != null && data['eventDescription'] is String) {
-      description = data['eventDescription'] as String;
-    }
+    // Extract category
+    String? category = data['category'] as String?;
 
-    // Extract location, handling different possible structures
-    String? location;
-    if (data['location'] != null && data['location'] is String) {
-      location = data['location'] as String;
-    } else if (data['eventLocation'] != null && data['eventLocation'] is String) {
-      location = data['eventLocation'] as String;
-    } else if (data['venue'] != null) {
-      // Extract from venue object if available
-      if (data['venue'] is String) {
-        location = data['venue'] as String;
-      } else if (data['venue'] is Map) {
-        final venue = data['venue'] as Map;
-        List<String> locationParts = [];
+    // Extract difficulty
+    int? difficulty = _parseIntSafely(data['difficulty']);
 
-        if (venue['name'] != null) {
-          locationParts.add(venue['name'] as String);
-        }
+    // Extract coordinates
+    double? latitude = _parseDoubleSafely(data['latitude']);
+    double? longitude = _parseDoubleSafely(data['longitude']);
 
-        if (venue['address'] != null) {
-          final address = venue['address'] as Map;
-          if (address['address_1'] != null) {
-            locationParts.add(address['address_1'] as String);
-          }
-          if (address['city'] != null) {
-            locationParts.add(address['city'] as String);
-          }
-          if (address['region'] != null) {
-            locationParts.add(address['region'] as String);
-          }
-        }
-
-        if (locationParts.isNotEmpty) {
-          location = locationParts.join(', ');
-        }
+    // Extract attendees
+    List<String>? attendees;
+    if (data['attendees'] != null) {
+      if (data['attendees'] is List) {
+        attendees = List<String>.from(data['attendees'] as List);
       }
     }
 
-    // Extract image URL
-    String? imageUrl;
-    if (data['imageUrl'] != null && data['imageUrl'] is String) {
-      imageUrl = data['imageUrl'] as String;
-    } else if (data['image'] != null && data['image'] is String) {
-      imageUrl = data['image'] as String;
-    } else if (data['logo'] != null) {
-      if (data['logo'] is String) {
-        imageUrl = data['logo'] as String;
-      } else if (data['logo'] is Map && data['logo']['url'] != null) {
-        imageUrl = data['logo']['url'] as String;
-      }
-    }
-
-    // Extract organizer
-    String? organizer;
-    if (data['organizer'] != null) {
-      if (data['organizer'] is String) {
-        organizer = data['organizer'] as String;
-      } else if (data['organizer'] is Map && data['organizer']['name'] != null) {
-        organizer = data['organizer']['name'] as String;
-      }
-    } else if (data['organizerName'] != null && data['organizerName'] is String) {
-      organizer = data['organizerName'] as String;
-    }
-
-    // Extract various other fields
-    String? url = data['url'] as String?;
-    bool? isFree = data['isFree'] as bool?;
-    String? price = data['price'] as String?;
-    int? capacity = _parseIntSafely(data['capacity']);
-    int? participantLimit = _parseIntSafely(data['participantLimit'] ?? data['evenParticipantNumber']);
-    String? status = data['status'] as String?;
-    String? venueId = data['venueId'] as String?;
-    String? organizerId = data['organizerId'] as String?;
-    String? eventbriteId = data['eventbriteId'] as String?;
+    // Extract creator
+    String? createdBy = data['createdBy'] as String?;
 
     // Use document ID if id field is missing
     String id = (data['id'] as String?) ?? '';
@@ -561,48 +678,51 @@ class EventData {
     return EventData(
       id: id,
       title: title,
-      description: description,
-      startDate: startDate,
+      description: data['description'] as String?,
+      eventDate: eventDate,
       endDate: endDate,
-      location: location,
-      imageUrl: imageUrl,
-      organizer: organizer,
-      url: url,
-      isFree: isFree,
-      price: price,
-      capacity: capacity,
-      status: status,
-      venueId: venueId,
-      organizerId: organizerId,
-      eventbriteId: eventbriteId,
-      participantLimit: participantLimit,
+      location: data['location'] as String?,
+      imageUrl: data['imageUrl'] as String?,
+      organizer: data['organizer'] as String?,
+      url: data['url'] as String?,
+      isFree: data['isFree'] as bool?,
+      price: data['price'] as String?,
+      capacity: _parseIntSafely(data['capacity']),
+      status: data['status'] as String?,
+      venueId: data['venueId'] as String?,
+      organizerId: data['organizerId'] as String?,
+      eventbriteId: data['eventbriteId'] as String?,
+      participantLimit: _parseIntSafely(data['participantLimit']),
       duration: duration,
+      category: category,
+      difficulty: difficulty,
+      latitude: latitude,
+      longitude: longitude,
+      attendees: attendees,
+      createdBy: createdBy,
     );
   }
 
   // Helper methods for formatting
   String getFormattedStartDate() {
-    if (startDate == null) return 'Date not specified';
-    return DateFormat('MMM dd, yyyy • h:mm a').format(startDate!);
+    return DateFormat('MMM dd, yyyy • h:mm a').format(eventDate);
   }
 
   String getFormattedDateRange() {
-    if (startDate == null) return 'Date not specified';
-
-    String start = DateFormat('MMM dd, yyyy • h:mm a').format(startDate!);
+    String start = DateFormat('MMM dd, yyyy • h:mm a').format(eventDate);
 
     if (endDate == null) return start;
 
     // If same day, just show time range
-    if (startDate!.year == endDate!.year &&
-        startDate!.month == endDate!.month &&
-        startDate!.day == endDate!.day) {
-      return '${DateFormat('MMM dd, yyyy').format(startDate!)} • ' +
-          '${DateFormat('h:mm a').format(startDate!)} - ' +
+    if (eventDate.year == endDate!.year &&
+        eventDate.month == endDate!.month &&
+        eventDate.day == endDate!.day) {
+      return '${DateFormat('MMM dd, yyyy').format(eventDate)} • ' +
+          '${DateFormat('h:mm a').format(eventDate)} - ' +
           '${DateFormat('h:mm a').format(endDate!)}';
     } else {
       // Show full date range
-      return '${DateFormat('MMM dd, yyyy • h:mm a').format(startDate!)} - ' +
+      return '${DateFormat('MMM dd, yyyy • h:mm a').format(eventDate)} - ' +
           '${DateFormat('MMM dd, yyyy • h:mm a').format(endDate!)}';
     }
   }
@@ -628,7 +748,7 @@ class EventData {
         other.id == id &&
         other.title == title &&
         other.description == description &&
-        other.startDate == startDate &&
+        other.eventDate == eventDate &&
         other.location == location &&
         other.participantLimit == participantLimit &&
         other.duration == duration;
@@ -640,7 +760,7 @@ class EventData {
       id,
       title,
       description,
-      startDate,
+      eventDate,
       location,
       participantLimit,
       duration,
@@ -655,6 +775,21 @@ class EventData {
     if (value is String) {
       try {
         return int.parse(value);
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  // Helper method to safely parse double values
+  static double? _parseDoubleSafely(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) {
+      try {
+        return double.parse(value);
       } catch (_) {
         return null;
       }

@@ -56,11 +56,26 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="hikercconnect"/>
             </intent-filter>
+
+            <!-- Google Sign-In OAuth Redirect -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data
+                    android:scheme="com.googleusercontent.apps.967683373829-etonh967dnlo7mrmtha7qvbl78u9a3s9"
+                    android:host="oauth2redirect"/>
+            </intent-filter>
         </activity>
 
         <!-- Flutter Embedding -->
         <meta-data
             android:name="flutterEmbedding"
             android:value="2"/>
+
+        <!-- Google Services Configuration -->
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
     </application>
 </manifest>

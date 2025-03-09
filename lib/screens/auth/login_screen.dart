@@ -3,6 +3,9 @@ import 'package:hiker_connect/services/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'dart:developer' as developer;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'dart:io' show Platform;
+import 'package:hiker_connect/services/google_events_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -20,8 +23,9 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   bool _isChecking = false;
   bool _obscurePassword = true;
-  String _errorMessage = '';
+  String? _errorMessage;
   bool _isTestingConnection = false;
+  bool _showSuccessMessage = false;
 
   @override
   void initState() {
@@ -40,6 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() {
       _isTestingConnection = true;
+      _errorMessage = null;
     });
 
     try {
@@ -57,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
       // Only show the error message if we have a specific issue
       if (e.toString().contains('network')) {
         setState(() {
-          _errorMessage = 'Firebase connection issue: Network error. Please check your internet connection.';
+          _errorMessage = 'Network error. Please check your internet connection.';
         });
       } else if (e.toString().contains('app-check')) {
         setState(() {
@@ -75,6 +80,43 @@ class _LoginScreenState extends State<LoginScreen> {
           _isTestingConnection = false;
         });
       }
+    }
+  }
+
+  // Add the diagnostic test method
+  Future<String> _runGoogleDiagnostics() async {
+    try {
+      final googleEventsService = Provider.of<GoogleEventsService>(context, listen: false);
+      await googleEventsService.debugSignInProcess();
+
+      // Get device info
+      String diagnostics = '';
+
+      // Platform info
+      diagnostics += 'Platform: ${Platform.operatingSystem} ${Platform.operatingSystemVersion}\n';
+
+      // Use a simpler version info approach since we don't have package_info_plus
+      diagnostics += 'Flutter: ${Theme.of(context).platform}\n\n';
+
+      // Connection status
+      final connectivity = await Connectivity().checkConnectivity();
+      diagnostics += 'Network: $connectivity\n\n';
+
+      // Auth status
+      final isAuthenticated = await googleEventsService.isAuthenticated();
+      diagnostics += 'Authenticated: $isAuthenticated\n';
+
+      // Firebase check
+      try {
+        await FirebaseAuth.instance.fetchSignInMethodsForEmail('test@example.com');
+        diagnostics += 'Firebase connection: OK\n';
+      } catch (e) {
+        diagnostics += 'Firebase connection: Failed ($e)\n';
+      }
+
+      return diagnostics;
+    } catch (e) {
+      return 'Error running diagnostics: $e';
     }
   }
 
@@ -109,23 +151,33 @@ class _LoginScreenState extends State<LoginScreen> {
     final authService = context.read<AuthService>();
 
     if (_emailController.text.isEmpty) {
-      setState(() => _errorMessage = 'Please enter your email first');
+      setState(() {
+        _errorMessage = 'Please enter your email first';
+        _showSuccessMessage = false;
+      });
       return;
     }
 
     setState(() {
       _isLoading = true;
-      _errorMessage = '';
+      _errorMessage = null;
+      _showSuccessMessage = false;
     });
 
     try {
       await authService.resetPassword(_emailController.text.trim());
       if (mounted) {
-        setState(() => _errorMessage = 'Password reset email sent. Please check your inbox.');
+        setState(() {
+          _showSuccessMessage = true;
+          _errorMessage = 'Password reset email sent. Please check your inbox.';
+        });
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _errorMessage = e is String ? e : 'Failed to send password reset email. Please try again.');
+        setState(() {
+          _showSuccessMessage = false;
+          _errorMessage = e is String ? e : 'Failed to send password reset email. Please try again.';
+        });
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -137,11 +189,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() {
       _isLoading = true;
-      _errorMessage = '';
+      _errorMessage = null;
+      _showSuccessMessage = false;
     });
 
     try {
       developer.log('Starting Google sign-in flow', name: 'LoginScreen');
+
+      // Add delay to ensure UI updates
+      await Future.delayed(const Duration(milliseconds: 500));
+
       final userModel = await authService.signInWithGoogle();
 
       if (userModel == null && mounted) {
@@ -163,9 +220,14 @@ class _LoginScreenState extends State<LoginScreen> {
             _errorMessage = 'Network error. Please check your internet connection.';
           } else if (e.toString().contains('credential')) {
             _errorMessage = 'Google sign-in failed. Invalid credentials.';
+          } else if (e.toString().contains('canceled')) {
+            _errorMessage = 'Google sign-in was canceled.';
+          } else if (e.toString().contains('popup_closed')) {
+            _errorMessage = 'Google sign-in popup was closed. Please try again.';
           } else {
-            _errorMessage = e is String ? e : 'Failed to sign in with Google. Please try again.';
+            _errorMessage = 'Failed to sign in with Google. Please try again.';
           }
+          _showSuccessMessage = false;
         });
       }
     } finally {
@@ -177,18 +239,24 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final authService = context.read<AuthService>();
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
 
     setState(() {
       _isLoading = true;
-      _errorMessage = '';
+      _errorMessage = null;
+      _showSuccessMessage = false;
     });
 
     try {
-      developer.log('Attempting email/password login', name: 'LoginScreen');
+      developer.log('Attempting login with email: $email', name: 'LoginScreen');
+
+      // Add a brief delay to ensure UI updates properly
+      await Future.delayed(const Duration(milliseconds: 200));
 
       final userModel = await authService.signInWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text,
+        email: email,
+        password: password,
       );
 
       if (userModel != null && mounted) {
@@ -196,15 +264,41 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.of(context).pushReplacementNamed('/home');
       } else if (mounted) {
         developer.log('Login resulted in null user model', name: 'LoginScreen');
-        setState(() => _errorMessage = 'Failed to login. Please try again.');
+        setState(() {
+          _errorMessage = 'Authentication failed. Please check your credentials.';
+        });
       }
     } catch (e) {
       developer.log('Login error: $e', name: 'LoginScreen', error: e);
+
       if (mounted) {
-        setState(() => _errorMessage = e is String ? e : 'An error occurred during login. Please try again.');
+        setState(() {
+          // Specific error messages for different Firebase errors
+          if (e.toString().contains('user-not-found')) {
+            _errorMessage = 'No account found with this email address.';
+          } else if (e.toString().contains('wrong-password')) {
+            _errorMessage = 'Incorrect password. Please try again.';
+          } else if (e.toString().contains('invalid-email')) {
+            _errorMessage = 'Please enter a valid email address.';
+          } else if (e.toString().contains('network-request-failed')) {
+            _errorMessage = 'Network error. Please check your connection and try again.';
+          } else if (e.toString().contains('too-many-requests')) {
+            _errorMessage = 'Too many failed login attempts. Please try again later or reset your password.';
+          } else if (e.toString().contains('INVALID_LOGIN_CREDENTIALS')) {
+            _errorMessage = 'Invalid login credentials. Please check your email and password.';
+          } else {
+            // Log the full error message for debugging
+            developer.log('Detailed login error: $e', name: 'LoginScreen');
+            _errorMessage = 'Login failed: ${e.toString()}';
+          }
+        });
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -250,17 +344,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 32),
 
                 // App Logo
-                Container(
-                  height: 100,
-                  width: 100,
-                  decoration: BoxDecoration(
-                    color: Colors.deepPurple.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.hiking,
-                    size: 60,
-                    color: Colors.deepPurple,
+                Hero(
+                  tag: 'app-logo',
+                  child: Container(
+                    height: 100,
+                    width: 100,
+                    decoration: BoxDecoration(
+                      color: Colors.deepPurple.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.hiking,
+                      size: 60,
+                      color: Colors.deepPurple,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -300,6 +397,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       hintText: 'Enter your email',
                     ),
                     keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
                     validator: (value) {
                       if (value?.isEmpty ?? true) return 'Please enter your email';
                       if (!value!.contains('@')) return 'Please enter a valid email';
@@ -341,7 +439,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     obscureText: _obscurePassword,
+                    textInputAction: TextInputAction.done,
                     validator: (value) => value?.isEmpty ?? true ? 'Please enter your password' : null,
+                    onFieldSubmitted: (_) => _login(),
                   ),
                 ),
 
@@ -360,13 +460,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                // Error Message
-                if (_errorMessage.isNotEmpty)
+                // Error or Success Message
+                if (_errorMessage != null)
                   Container(
                     margin: const EdgeInsets.only(top: 8, bottom: 16),
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: _errorMessage.contains('sent')
+                      color: _showSuccessMessage
                           ? Colors.green.withOpacity(0.1)
                           : Colors.red.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(8),
@@ -374,14 +474,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                       children: [
                         Text(
-                          _errorMessage,
+                          _errorMessage!,
                           style: TextStyle(
-                            color: _errorMessage.contains('sent') ? Colors.green : Colors.red,
+                            color: _showSuccessMessage ? Colors.green : Colors.red,
                             fontWeight: FontWeight.w500,
                           ),
                           textAlign: TextAlign.center,
                         ),
-                        if (_errorMessage.contains('Network') || _errorMessage.contains('connection') || _errorMessage.contains('emulator'))
+                        if (_errorMessage!.contains('Network') || _errorMessage!.contains('connection') || _errorMessage!.contains('emulator'))
                           TextButton(
                             onPressed: _retryConnection,
                             child: const Text('Retry Connection'),
@@ -434,8 +534,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       elevation: 2,
+                      disabledBackgroundColor: Colors.deepPurple.withOpacity(0.6),
                     ),
-                    child: _isLoading
+                    child: _isLoading && !_isTestingConnection
                         ? const SizedBox(
                       height: 20,
                       width: 20,
@@ -483,40 +584,105 @@ class _LoginScreenState extends State<LoginScreen> {
 
                 const SizedBox(height: 20),
 
-                // Google Sign In Button
+                // Google Sign In Button with Long Press for Diagnostics
                 SizedBox(
                   width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _isLoading ? null : _signInWithGoogle,
-                    icon: Container(
-                      height: 24,
-                      width: 24,
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Center(
-                        child: Text(
-                          'G',
-                          style: TextStyle(
-                            color: Colors.deepPurple,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
+                  child: GestureDetector(
+                    onLongPress: () async {
+                      // Show diagnostics dialog
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title: const Text('Google Sign-in Diagnostics'),
+                          content: FutureBuilder<String>(
+                            future: _runGoogleDiagnostics(),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                return const SizedBox(
+                                  height: 200,
+                                  child: Center(child: CircularProgressIndicator()),
+                                );
+                              }
+                              return SingleChildScrollView(
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Text('Diagnostics Report:',
+                                      style: TextStyle(fontWeight: FontWeight.bold),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade100,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: SelectableText(
+                                        snapshot.data ?? 'No diagnostic data',
+                                        style: const TextStyle(fontFamily: 'monospace', fontSize: 12),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 16),
+                                    const Text(
+                                      'Copy this information when reporting issues with Google Sign-in.',
+                                      style: TextStyle(fontStyle: FontStyle.italic, fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).pop(),
+                              child: const Text('Close'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    child: ElevatedButton.icon(
+                      onPressed: _isLoading ? null : _signInWithGoogle,
+                      icon: Container(
+                        height: 24,
+                        width: 24,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'G',
+                            style: TextStyle(
+                              color: Colors.deepPurple,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 16,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    label: const Text('Sign in with Google'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Colors.deepPurple,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        side: BorderSide(color: Colors.deepPurple.withOpacity(0.3)),
+                      label: const Text('Sign in with Google'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.deepPurple,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          side: BorderSide(color: Colors.deepPurple.withOpacity(0.3)),
+                        ),
+                        elevation: 0,
+                        disabledForegroundColor: Colors.deepPurple.withOpacity(0.38),
+                        disabledBackgroundColor: Colors.grey.shade100,
                       ),
-                      elevation: 0,
                     ),
+                  ),
+                ),
+                const Padding(
+                  padding: EdgeInsets.only(top: 4),
+                  child: Text(
+                    'Long press for diagnostics',
+                    style: TextStyle(fontSize: 10, color: Colors.grey),
                   ),
                 ),
 

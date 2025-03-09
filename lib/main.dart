@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:hiker_connect/screens/common/initialization_screen.dart';
 import 'package:hiker_connect/screens/trails/trail_list_screen.dart';
 import 'package:hiker_connect/screens/trails/events_list_screen.dart';
 import 'package:provider/provider.dart';
@@ -14,9 +15,11 @@ import 'package:hiker_connect/models/trail_data.dart';
 import 'package:hiker_connect/models/user_model.dart';
 import 'package:hiker_connect/models/duration_adapter.dart';
 import 'package:hiker_connect/models/event_data.dart';
+import 'package:hiker_connect/models/event_filter.dart';
 import 'package:hiker_connect/services/databaseservice.dart';
-import 'package:hiker_connect/services/eventbrite_service.dart';
+import 'package:hiker_connect/services/google_events_service.dart'; // New import for Google Events
 import 'package:hiker_connect/providers/events_provider.dart';
+import 'package:hiker_connect/providers/event_browsing_provider.dart';
 import 'dart:async'; // Add this for runZonedGuarded
 import 'dart:developer' as developer;
 import 'dart:io' show Directory, HttpClient, Platform;
@@ -31,6 +34,7 @@ ErrorSummary;
 import 'package:flutter/src/foundation/binding.dart' show BindingBase;
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:firebase_performance/firebase_performance.dart'; // Add for performance monitoring
 
 // Import screens and services
 import 'package:hiker_connect/services/firebase_auth.dart';
@@ -39,26 +43,212 @@ import 'package:hiker_connect/screens/auth/signup_screen.dart';
 import 'package:hiker_connect/screens/auth/forgot_password_screen.dart';
 import 'package:hiker_connect/screens/profile/profile_screen.dart';
 import 'package:hiker_connect/screens/home_screen.dart';
+import 'package:hiker_connect/screens/events/events_browsing_screen.dart';
 import 'firebase_options.dart';
+import 'package:hiker_connect/screens/events/event_form_screen.dart';
+
+// Adapter classes for Hive
+class EventPreferencesAdapter extends TypeAdapter<EventPreferences> {
+  @override
+  final int typeId = 6;
+
+  @override
+  EventPreferences read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return EventPreferences(
+      preferredCategories: (fields[0] as List?)?.cast<String>() ?? [],
+      preferredDifficulty: fields[1] as int?,
+      maxDistance: fields[2] as double?,
+      notifyNewEvents: fields[3] as bool? ?? true,
+      notifyEventChanges: fields[4] as bool? ?? true,
+      notifyEventReminders: fields[5] as bool? ?? true,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, EventPreferences obj) {
+    writer
+      ..writeByte(6)
+      ..writeByte(0)
+      ..write(obj.preferredCategories)
+      ..writeByte(1)
+      ..write(obj.preferredDifficulty)
+      ..writeByte(2)
+      ..write(obj.maxDistance)
+      ..writeByte(3)
+      ..write(obj.notifyNewEvents)
+      ..writeByte(4)
+      ..write(obj.notifyEventChanges)
+      ..writeByte(5)
+      ..write(obj.notifyEventReminders);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+          other is EventPreferencesAdapter &&
+              runtimeType == other.runtimeType &&
+              typeId == other.typeId;
+}
+
+class EventFilterAdapter extends TypeAdapter<EventFilter> {
+  @override
+  final int typeId = 7;
+
+  @override
+  EventFilter read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return EventFilter(
+      startDate: fields[0] as DateTime?,
+      endDate: fields[1] as DateTime?,
+      categories: (fields[2] as List?)?.cast<String>() ?? [],
+      minDifficulty: fields[3] as int?,
+      maxDifficulty: fields[4] as int?,
+      location: fields[5] as String?,
+      maxDistance: fields[6] as double?,
+      userLatitude: fields[7] as double?,
+      userLongitude: fields[8] as double?,
+      favoritesOnly: fields[9] as bool? ?? false,
+      showOnlyFavorites: fields[10] as bool? ?? false,
+      searchQuery: fields[11] as String?,
+      category: fields[12] as String?,
+      difficultyLevel: fields[13] as int?,
+      locationQuery: fields[14] as String?,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, EventFilter obj) {
+    writer
+      ..writeByte(15)
+      ..writeByte(0)
+      ..write(obj.startDate)
+      ..writeByte(1)
+      ..write(obj.endDate)
+      ..writeByte(2)
+      ..write(obj.categories)
+      ..writeByte(3)
+      ..write(obj.minDifficulty)
+      ..writeByte(4)
+      ..write(obj.maxDifficulty)
+      ..writeByte(5)
+      ..write(obj.location)
+      ..writeByte(6)
+      ..write(obj.maxDistance)
+      ..writeByte(7)
+      ..write(obj.userLatitude)
+      ..writeByte(8)
+      ..write(obj.userLongitude)
+      ..writeByte(9)
+      ..write(obj.favoritesOnly)
+      ..writeByte(10)
+      ..write(obj.showOnlyFavorites)
+      ..writeByte(11)
+      ..write(obj.searchQuery)
+      ..writeByte(12)
+      ..write(obj.category)
+      ..writeByte(13)
+      ..write(obj.difficultyLevel)
+      ..writeByte(14)
+      ..write(obj.locationQuery);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+          other is EventFilterAdapter &&
+              runtimeType == other.runtimeType &&
+              typeId == other.typeId;
+}
+
+/// Performance monitoring service for the app
+class PerformanceMonitoringService {
+  final FirebasePerformance _performance = FirebasePerformance.instance;
+
+  PerformanceMonitoringService() {
+    // Enable performance collection (can be toggled based on user preferences)
+    _performance.setPerformanceCollectionEnabled(true);
+  }
+
+  // Create a trace for a specific operation
+  Trace newTrace(String name) {
+    return _performance.newTrace(name);
+  }
+
+  // Trace a network request
+  HttpMetric newHttpMetric(String url, HttpMethod method) {
+    return _performance.newHttpMetric(url, method);
+  }
+
+  // Helper method to trace event loading
+  Future<T> traceEventOperation<T>({
+    required String traceName,
+    required Future<T> Function() operation,
+    Map<String, String>? attributes,
+  }) async {
+    final trace = _performance.newTrace(traceName);
+    await trace.start();
+
+    try {
+      final result = await operation();
+
+      // Add success attribute
+      trace.putAttribute('success', 'true');
+
+      // Add custom attributes
+      if (attributes != null) {
+        attributes.forEach((key, value) {
+          trace.putAttribute(key, value);
+        });
+      }
+
+      return result;
+    } catch (e) {
+      // Record error
+      trace.putAttribute('success', 'false');
+      trace.putAttribute('error', e.toString().substring(0, min(100, e.toString().length)));
+      rethrow;
+    } finally {
+      await trace.stop();
+    }
+  }
+
+  int min(int a, int b) => a < b ? a : b;
+}
 
 /// Handles the initialization of all app dependencies
 class AppInitializer {
   /// Initialize all services and return them for use in the app
-  static Future<(DatabaseService, EventBriteService, AuthService)> initialize() async {
+  static Future<(DatabaseService, GoogleEventsService, AuthService, PerformanceMonitoringService)> initialize() async {
     // Configure error handling
     _setupErrorHandling();
 
     // Initialize Firebase first
     await _initializeFirebase();
 
+    // Initialize Firebase Performance Monitoring
+    final performanceService = PerformanceMonitoringService();
+
     // Initialize services in the correct order
     final dbService = await _initializeDatabaseService();
-    final eventbriteService = await _initializeEventBriteService();
+    final googleEventsService = await _initializeGoogleEventsService();
 
     // Initialize auth service after Firebase is ready
     final authService = AuthService();
 
-    return (dbService, eventbriteService, authService);
+    return (dbService, googleEventsService, authService, performanceService);
   }
 
   /// Set up global error handling
@@ -143,6 +333,8 @@ class AppInitializer {
     _safeRegisterAdapter<UserModel>(UserModelAdapter(), 3, 'UserModelAdapter');
     _safeRegisterAdapter<EventData>(EventDataAdapter(), 4, 'EventDataAdapter');
     _safeRegisterAdapter<Duration>(DurationAdapter(), 5, 'DurationAdapter');
+    _safeRegisterAdapter<EventPreferences>(EventPreferencesAdapter(), 6, 'EventPreferencesAdapter');
+    _safeRegisterAdapter<EventFilter>(EventFilterAdapter(), 7, 'EventFilterAdapter');
   }
 
   /// Register a Hive adapter with error handling and explicit type parameter
@@ -159,59 +351,33 @@ class AppInitializer {
     }
   }
 
-  /// Initialize the EventBrite service with enhanced error handling and connectivity check
-  static Future<EventBriteService> _initializeEventBriteService() async {
+  /// Initialize the Google Events service
+  static Future<GoogleEventsService> _initializeGoogleEventsService() async {
     try {
-      developer.log('Initializing EventBrite service...', name: 'App Setup');
+      developer.log('Initializing Google Events service...', name: 'App Setup');
 
       // Check for internet connectivity
       final connectivityResult = await Connectivity().checkConnectivity();
       final hasConnectivity = connectivityResult != ConnectivityResult.none;
 
       if (!hasConnectivity) {
-        developer.log('No internet connectivity detected. EventBrite API may not work.',
+        developer.log('No internet connectivity detected. Google Events API may not work.',
             name: 'App Setup');
       }
 
-      // Get tokens from .env with fallback - not logging token values for security
-      final privateToken = dotenv.env['EVENTBRITE_PRIVATE_TOKEN'];
-      final clientSecret = dotenv.env['EVENTBRITE_CLIENT_SECRET'];
+      // Create Google Events service
+      final googleEventsService = GoogleEventsService();
 
-      developer.log(
-          'EventBrite tokens from ${dotenv.isInitialized ? '.env file' : 'defaults'} will be stored securely',
-          name: 'App Setup'
-      );
+      // Initialize the service
+      await googleEventsService.initialize();
 
-      // Create EventBrite service with secure token handling
-      final eventbriteService = EventBriteService(
-          privateToken: privateToken,
-          clientSecret: clientSecret
-      );
-
-      developer.log('EventBrite service initialized securely', name: 'App Setup');
-
-      // Validate tokens if we have connectivity, but don't expose token values
-      if (hasConnectivity) {
-        try {
-          final isValid = await eventbriteService.validateToken();
-          developer.log('EventBrite token validation result: ${isValid ? 'Valid' : 'Invalid'}',
-              name: 'App Setup');
-
-          if (!isValid) {
-            developer.log('WARNING: EventBrite token appears to be invalid. Event fetching may fail.',
-                name: 'App Setup');
-          }
-        } catch (e) {
-          developer.log('Failed to validate EventBrite token: $e', name: 'App Setup');
-        }
-      }
-
-      return eventbriteService;
+      developer.log('Google Events service initialized successfully', name: 'App Setup');
+      return googleEventsService;
     } catch (e) {
-      developer.log('Error initializing EventBrite service: $e', name: 'App Setup');
+      developer.log('Error initializing Google Events service: $e', name: 'App Setup');
 
-      // Return a service without hardcoded tokens - it will use secure storage or fallback to samples
-      return EventBriteService();
+      // Return a new instance even if initialization failed - it will use local data
+      return GoogleEventsService();
     }
   }
 
@@ -354,6 +520,23 @@ class AppInitializer {
       // Continue without App Check rather than failing the app startup
     }
   }
+
+  /// Initialize Google Maps
+  static Future<void> _initializeGoogleMaps() async {
+    try {
+      // Here you would initialize any Google Maps specific settings
+      // such as custom styles, initial configuration, etc.
+      if (Platform.isAndroid) {
+        developer.log('Initializing Google Maps for Android', name: 'App Setup');
+        // Platform-specific setup would go here
+      }
+
+      developer.log('Google Maps initialized successfully', name: 'App Setup');
+    } catch (e) {
+      developer.log('Google Maps initialization error: $e', name: 'App Setup', error: e);
+      // Continue without failing app startup
+    }
+  }
 }
 
 /// App entry point
@@ -396,12 +579,13 @@ void main() {
 
     try {
       // Initialize all app dependencies
-      final (dbService, eventbriteService, authService) = await AppInitializer.initialize();
+      final (dbService, googleEventsService, authService, performanceService) = await AppInitializer.initialize();
 
       // Run app with providers
       runApp(
         MultiProvider(
           providers: [
+            // Auth providers
             ChangeNotifierProvider<AuthService>.value(value: authService),
             StreamProvider<User?>.value(
               value: authService.authStateChanges,
@@ -415,10 +599,25 @@ void main() {
                 return null;
               },
             ),
+
+            // Database provider
             Provider<DatabaseService>.value(value: dbService),
-            Provider<EventBriteService>.value(value: eventbriteService),
-            ChangeNotifierProvider<EventBriteProvider>(
-              create: (_) => EventBriteProvider(eventbriteService: eventbriteService),
+
+            // Google Events provider
+            Provider<GoogleEventsService>.value(value: googleEventsService),
+
+            // Performance monitoring provider
+            Provider<PerformanceMonitoringService>.value(value: performanceService),
+
+            // Events provider (using Google Events)
+            ChangeNotifierProvider<EventsProvider>(
+              create: (_) => EventsProvider(googleEventsService: googleEventsService),
+              lazy: true,
+            ),
+
+            // Event browsing provider
+            ChangeNotifierProvider<EventBrowsingProvider>(
+              create: (_) => EventBrowsingProvider(databaseService: dbService),
               lazy: false,
             ),
           ],
@@ -482,8 +681,33 @@ class ErrorApp extends StatelessWidget {
 }
 
 /// Handles conditional rendering based on authentication state
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize provider outside of build
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final eventsProvider = Provider.of<EventsProvider>(context, listen: false);
+        final performanceService = Provider.of<PerformanceMonitoringService>(context, listen: false);
+
+        if (!eventsProvider.initialized) {
+          // Use performance monitoring to trace initialization
+          performanceService.traceEventOperation(
+            traceName: 'events_initialization',
+            operation: () => eventsProvider.initialize(),
+          );
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -492,48 +716,50 @@ class AuthWrapper extends StatelessWidget {
   }
 }
 
-/// Main application widget
 class App extends StatelessWidget {
   const App({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Hiker Connect',
-      debugShowCheckedModeBanner: false,
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [Locale('en', 'US')],
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
-          brightness: Brightness.light,
-        ),
-        useMaterial3: true,
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          elevation: 0,
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            // Changed from Size.fromHeight to fixed height without infinite width
-            padding: const EdgeInsets.symmetric(vertical: 16),
+    return InitializationScreen(
+      child: MaterialApp(
+        title: 'Hiker Connect',
+        debugShowCheckedModeBanner: false,
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('en', 'US')],
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.green,
+            brightness: Brightness.light,
+          ),
+          useMaterial3: true,
+          appBarTheme: const AppBarTheme(
+            centerTitle: true,
+            elevation: 0,
+          ),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
           ),
         ),
+        home: const AuthWrapper(),
+        routes: {
+          '/login': (context) => const LoginScreen(),
+          '/signup': (context) => const SignUpScreen(),
+          '/home': (context) => const HomeScreen(),
+          '/profile': (context) => const ProfileScreen(),
+          '/events': (context) => const EventsListScreen(),
+          '/events-browse': (context) => const EventsBrowsingScreen(),
+          '/trails': (context) => const TrailListScreen(),
+          '/forgot-password': (context) => const ForgotPasswordScreen(),
+          '/event-form': (context) => const EventFormScreen(),
+        },
       ),
-      home: const AuthWrapper(),
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/signup': (context) => const SignUpScreen(),
-        '/home': (context) => const HomeScreen(),
-        '/profile': (context) => const ProfileScreen(),
-        '/events': (context) => const EventsListScreen(),
-        '/trails': (context) => const TrailListScreen(),
-        '/forgot-password': (context) => const ForgotPasswordScreen(),
-      },
     );
   }
 }

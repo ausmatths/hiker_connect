@@ -4,19 +4,21 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i7;
-import 'dart:typed_data' as _i12;
+import 'dart:typed_data' as _i14;
 
 import 'package:cloud_firestore/cloud_firestore.dart' as _i6;
 import 'package:firebase_auth/firebase_auth.dart' as _i4;
 import 'package:firebase_core/firebase_core.dart' as _i3;
+import 'package:hiker_connect/models/event_data.dart' as _i10;
+import 'package:hiker_connect/models/event_filter.dart' as _i12;
 import 'package:hiker_connect/models/trail_data.dart' as _i9;
 import 'package:hiker_connect/services/databaseservice.dart' as _i8;
 import 'package:hive/hive.dart' as _i2;
-import 'package:image_picker/image_picker.dart' as _i11;
+import 'package:image_picker/image_picker.dart' as _i13;
 import 'package:image_picker_platform_interface/image_picker_platform_interface.dart'
     as _i5;
 import 'package:mockito/mockito.dart' as _i1;
-import 'package:mockito/src/dummies.dart' as _i10;
+import 'package:mockito/src/dummies.dart' as _i11;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -246,6 +248,37 @@ class MockDatabaseService extends _i1.Mock implements _i8.DatabaseService {
       ) as _i7.Future<_i2.Box<_i9.TrailData>>);
 
   @override
+  _i7.Future<_i2.Box<_i10.EventData>> getEventBox() => (super.noSuchMethod(
+        Invocation.method(
+          #getEventBox,
+          [],
+        ),
+        returnValue: _i7.Future<_i2.Box<_i10.EventData>>.value(
+            _FakeBox_0<_i10.EventData>(
+          this,
+          Invocation.method(
+            #getEventBox,
+            [],
+          ),
+        )),
+      ) as _i7.Future<_i2.Box<_i10.EventData>>);
+
+  @override
+  _i7.Future<_i2.Box<String>> getFavoritesBox() => (super.noSuchMethod(
+        Invocation.method(
+          #getFavoritesBox,
+          [],
+        ),
+        returnValue: _i7.Future<_i2.Box<String>>.value(_FakeBox_0<String>(
+          this,
+          Invocation.method(
+            #getFavoritesBox,
+            [],
+          ),
+        )),
+      ) as _i7.Future<_i2.Box<String>>);
+
+  @override
   _i7.Future<void> init() => (super.noSuchMethod(
         Invocation.method(
           #init,
@@ -351,6 +384,100 @@ class MockDatabaseService extends _i1.Mock implements _i8.DatabaseService {
         returnValue: _i7.Future<void>.value(),
         returnValueForMissingStub: _i7.Future<void>.value(),
       ) as _i7.Future<void>);
+
+  @override
+  _i7.Future<List<_i10.EventData>> getAllEvents() => (super.noSuchMethod(
+        Invocation.method(
+          #getAllEvents,
+          [],
+        ),
+        returnValue: _i7.Future<List<_i10.EventData>>.value(<_i10.EventData>[]),
+      ) as _i7.Future<List<_i10.EventData>>);
+
+  @override
+  _i7.Future<String> createEvent(_i10.EventData? event) => (super.noSuchMethod(
+        Invocation.method(
+          #createEvent,
+          [event],
+        ),
+        returnValue: _i7.Future<String>.value(_i11.dummyValue<String>(
+          this,
+          Invocation.method(
+            #createEvent,
+            [event],
+          ),
+        )),
+      ) as _i7.Future<String>);
+
+  @override
+  _i7.Future<_i10.EventData?> getEvent(String? eventId) => (super.noSuchMethod(
+        Invocation.method(
+          #getEvent,
+          [eventId],
+        ),
+        returnValue: _i7.Future<_i10.EventData?>.value(),
+      ) as _i7.Future<_i10.EventData?>);
+
+  @override
+  _i7.Future<void> updateEvent(_i10.EventData? event) => (super.noSuchMethod(
+        Invocation.method(
+          #updateEvent,
+          [event],
+        ),
+        returnValue: _i7.Future<void>.value(),
+        returnValueForMissingStub: _i7.Future<void>.value(),
+      ) as _i7.Future<void>);
+
+  @override
+  _i7.Future<void> deleteEvent(String? eventId) => (super.noSuchMethod(
+        Invocation.method(
+          #deleteEvent,
+          [eventId],
+        ),
+        returnValue: _i7.Future<void>.value(),
+        returnValueForMissingStub: _i7.Future<void>.value(),
+      ) as _i7.Future<void>);
+
+  @override
+  _i7.Future<List<String>> getUserFavoriteEvents() => (super.noSuchMethod(
+        Invocation.method(
+          #getUserFavoriteEvents,
+          [],
+        ),
+        returnValue: _i7.Future<List<String>>.value(<String>[]),
+      ) as _i7.Future<List<String>>);
+
+  @override
+  _i7.Future<void> addEventToFavorites(String? eventId) => (super.noSuchMethod(
+        Invocation.method(
+          #addEventToFavorites,
+          [eventId],
+        ),
+        returnValue: _i7.Future<void>.value(),
+        returnValueForMissingStub: _i7.Future<void>.value(),
+      ) as _i7.Future<void>);
+
+  @override
+  _i7.Future<void> removeEventFromFavorites(String? eventId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #removeEventFromFavorites,
+          [eventId],
+        ),
+        returnValue: _i7.Future<void>.value(),
+        returnValueForMissingStub: _i7.Future<void>.value(),
+      ) as _i7.Future<void>);
+
+  @override
+  _i7.Future<List<_i10.EventData>> getEventsByFilter(
+          _i12.EventFilter? filter) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getEventsByFilter,
+          [filter],
+        ),
+        returnValue: _i7.Future<List<_i10.EventData>>.value(<_i10.EventData>[]),
+      ) as _i7.Future<List<_i10.EventData>>);
 }
 
 /// A class which mocks [FirebaseAuth].
@@ -825,7 +952,7 @@ class MockFirebaseAuth extends _i1.Mock implements _i4.FirebaseAuth {
           #verifyPasswordResetCode,
           [code],
         ),
-        returnValue: _i7.Future<String>.value(_i10.dummyValue<String>(
+        returnValue: _i7.Future<String>.value(_i11.dummyValue<String>(
           this,
           Invocation.method(
             #verifyPasswordResetCode,
@@ -919,7 +1046,7 @@ class MockUser extends _i1.Mock implements _i4.User {
   @override
   String get uid => (super.noSuchMethod(
         Invocation.getter(#uid),
-        returnValue: _i10.dummyValue<String>(
+        returnValue: _i11.dummyValue<String>(
           this,
           Invocation.getter(#uid),
         ),
@@ -1248,7 +1375,7 @@ class MockUser extends _i1.Mock implements _i4.User {
 /// A class which mocks [ImagePicker].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockImagePicker extends _i1.Mock implements _i11.ImagePicker {
+class MockImagePicker extends _i1.Mock implements _i13.ImagePicker {
   MockImagePicker() {
     _i1.throwOnMissingStub(this);
   }
@@ -1419,7 +1546,7 @@ class MockFirebaseFirestore extends _i1.Mock implements _i6.FirebaseFirestore {
   @override
   String get databaseURL => (super.noSuchMethod(
         Invocation.getter(#databaseURL),
-        returnValue: _i10.dummyValue<String>(
+        returnValue: _i11.dummyValue<String>(
           this,
           Invocation.getter(#databaseURL),
         ),
@@ -1437,7 +1564,7 @@ class MockFirebaseFirestore extends _i1.Mock implements _i6.FirebaseFirestore {
   @override
   String get databaseId => (super.noSuchMethod(
         Invocation.getter(#databaseId),
-        returnValue: _i10.dummyValue<String>(
+        returnValue: _i11.dummyValue<String>(
           this,
           Invocation.getter(#databaseId),
         ),
@@ -1531,7 +1658,7 @@ class MockFirebaseFirestore extends _i1.Mock implements _i6.FirebaseFirestore {
       ) as _i7.Future<void>);
 
   @override
-  _i6.LoadBundleTask loadBundle(_i12.Uint8List? bundle) => (super.noSuchMethod(
+  _i6.LoadBundleTask loadBundle(_i14.Uint8List? bundle) => (super.noSuchMethod(
         Invocation.method(
           #loadBundle,
           [bundle],
@@ -1697,8 +1824,8 @@ class MockFirebaseFirestore extends _i1.Mock implements _i6.FirebaseFirestore {
             #maxAttempts: maxAttempts,
           },
         ),
-        returnValue: _i10.ifNotNull(
-              _i10.dummyValueOrNull<T>(
+        returnValue: _i11.ifNotNull(
+              _i11.dummyValueOrNull<T>(
                 this,
                 Invocation.method(
                   #runTransaction,

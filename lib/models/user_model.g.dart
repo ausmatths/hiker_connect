@@ -83,6 +83,55 @@ class EmergencyContactAdapter extends TypeAdapter<EmergencyContact> {
           typeId == other.typeId;
 }
 
+class EventPreferencesAdapter extends TypeAdapter<EventPreferences> {
+  @override
+  final int typeId = 4;
+
+  @override
+  EventPreferences read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return EventPreferences(
+      preferredCategories: (fields[0] as List).cast<String>(),
+      preferredDifficulty: fields[1] as int?,
+      maxDistance: fields[2] as double?,
+      notifyNewEvents: fields[3] as bool,
+      notifyEventChanges: fields[4] as bool,
+      notifyEventReminders: fields[5] as bool,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, EventPreferences obj) {
+    writer
+      ..writeByte(6)
+      ..writeByte(0)
+      ..write(obj.preferredCategories)
+      ..writeByte(1)
+      ..write(obj.preferredDifficulty)
+      ..writeByte(2)
+      ..write(obj.maxDistance)
+      ..writeByte(3)
+      ..write(obj.notifyNewEvents)
+      ..writeByte(4)
+      ..write(obj.notifyEventChanges)
+      ..writeByte(5)
+      ..write(obj.notifyEventReminders);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is EventPreferencesAdapter &&
+          runtimeType == other.runtimeType &&
+          typeId == other.typeId;
+}
+
 class UserModelAdapter extends TypeAdapter<UserModel> {
   @override
   final int typeId = 3;
@@ -119,13 +168,18 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       weight: fields[22] as double?,
       preferredLanguage: fields[23] as String?,
       socialLinks: (fields[24] as Map?)?.cast<String, String>(),
+      favoriteEvents: (fields[25] as List).cast<String>(),
+      registeredEvents: (fields[26] as List).cast<String>(),
+      eventPreferences: fields[27] as EventPreferences?,
+      eventReminders: (fields[28] as Map?)?.cast<String, DateTime>(),
+      lastViewedFilters: (fields[29] as Map?)?.cast<String, dynamic>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, UserModel obj) {
     writer
-      ..writeByte(25)
+      ..writeByte(30)
       ..writeByte(0)
       ..write(obj.uid)
       ..writeByte(1)
@@ -175,7 +229,17 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       ..writeByte(23)
       ..write(obj.preferredLanguage)
       ..writeByte(24)
-      ..write(obj.socialLinks);
+      ..write(obj.socialLinks)
+      ..writeByte(25)
+      ..write(obj.favoriteEvents)
+      ..writeByte(26)
+      ..write(obj.registeredEvents)
+      ..writeByte(27)
+      ..write(obj.eventPreferences)
+      ..writeByte(28)
+      ..write(obj.eventReminders)
+      ..writeByte(29)
+      ..write(obj.lastViewedFilters);
   }
 
   @override

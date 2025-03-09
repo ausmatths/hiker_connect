@@ -72,6 +72,10 @@
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>Hiker Connect needs access to your location to provide trail and hiking recommendations.</string>
 
+    <!-- Calendar Permissions for Google Calendar API -->
+    <key>NSCalendarsUsageDescription</key>
+    <string>Hiker Connect needs access to your calendar to find hiking events and help you manage your outdoor activities.</string>
+
     <!-- Camera and Photo Library Permissions -->
     <key>NSCameraUsageDescription</key>
     <string>Hiker Connect needs camera access to upload profile pictures and trail photos.</string>

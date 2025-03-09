@@ -5,10 +5,13 @@
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i4;
 
+import 'package:hiker_connect/models/event_data.dart' as _i6;
+import 'package:hiker_connect/models/event_filter.dart' as _i8;
 import 'package:hiker_connect/models/trail_data.dart' as _i5;
 import 'package:hiker_connect/services/databaseservice.dart' as _i3;
 import 'package:hive/hive.dart' as _i2;
 import 'package:mockito/mockito.dart' as _i1;
+import 'package:mockito/src/dummies.dart' as _i7;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -57,6 +60,37 @@ class MockDatabaseService extends _i1.Mock implements _i3.DatabaseService {
           ),
         )),
       ) as _i4.Future<_i2.Box<_i5.TrailData>>);
+
+  @override
+  _i4.Future<_i2.Box<_i6.EventData>> getEventBox() => (super.noSuchMethod(
+        Invocation.method(
+          #getEventBox,
+          [],
+        ),
+        returnValue:
+            _i4.Future<_i2.Box<_i6.EventData>>.value(_FakeBox_0<_i6.EventData>(
+          this,
+          Invocation.method(
+            #getEventBox,
+            [],
+          ),
+        )),
+      ) as _i4.Future<_i2.Box<_i6.EventData>>);
+
+  @override
+  _i4.Future<_i2.Box<String>> getFavoritesBox() => (super.noSuchMethod(
+        Invocation.method(
+          #getFavoritesBox,
+          [],
+        ),
+        returnValue: _i4.Future<_i2.Box<String>>.value(_FakeBox_0<String>(
+          this,
+          Invocation.method(
+            #getFavoritesBox,
+            [],
+          ),
+        )),
+      ) as _i4.Future<_i2.Box<String>>);
 
   @override
   _i4.Future<void> init() => (super.noSuchMethod(
@@ -164,4 +198,97 @@ class MockDatabaseService extends _i1.Mock implements _i3.DatabaseService {
         returnValue: _i4.Future<void>.value(),
         returnValueForMissingStub: _i4.Future<void>.value(),
       ) as _i4.Future<void>);
+
+  @override
+  _i4.Future<List<_i6.EventData>> getAllEvents() => (super.noSuchMethod(
+        Invocation.method(
+          #getAllEvents,
+          [],
+        ),
+        returnValue: _i4.Future<List<_i6.EventData>>.value(<_i6.EventData>[]),
+      ) as _i4.Future<List<_i6.EventData>>);
+
+  @override
+  _i4.Future<String> createEvent(_i6.EventData? event) => (super.noSuchMethod(
+        Invocation.method(
+          #createEvent,
+          [event],
+        ),
+        returnValue: _i4.Future<String>.value(_i7.dummyValue<String>(
+          this,
+          Invocation.method(
+            #createEvent,
+            [event],
+          ),
+        )),
+      ) as _i4.Future<String>);
+
+  @override
+  _i4.Future<_i6.EventData?> getEvent(String? eventId) => (super.noSuchMethod(
+        Invocation.method(
+          #getEvent,
+          [eventId],
+        ),
+        returnValue: _i4.Future<_i6.EventData?>.value(),
+      ) as _i4.Future<_i6.EventData?>);
+
+  @override
+  _i4.Future<void> updateEvent(_i6.EventData? event) => (super.noSuchMethod(
+        Invocation.method(
+          #updateEvent,
+          [event],
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> deleteEvent(String? eventId) => (super.noSuchMethod(
+        Invocation.method(
+          #deleteEvent,
+          [eventId],
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
+
+  @override
+  _i4.Future<List<String>> getUserFavoriteEvents() => (super.noSuchMethod(
+        Invocation.method(
+          #getUserFavoriteEvents,
+          [],
+        ),
+        returnValue: _i4.Future<List<String>>.value(<String>[]),
+      ) as _i4.Future<List<String>>);
+
+  @override
+  _i4.Future<void> addEventToFavorites(String? eventId) => (super.noSuchMethod(
+        Invocation.method(
+          #addEventToFavorites,
+          [eventId],
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
+
+  @override
+  _i4.Future<void> removeEventFromFavorites(String? eventId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #removeEventFromFavorites,
+          [eventId],
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
+
+  @override
+  _i4.Future<List<_i6.EventData>> getEventsByFilter(_i8.EventFilter? filter) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getEventsByFilter,
+          [filter],
+        ),
+        returnValue: _i4.Future<List<_i6.EventData>>.value(<_i6.EventData>[]),
+      ) as _i4.Future<List<_i6.EventData>>);
 }

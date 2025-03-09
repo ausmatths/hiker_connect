@@ -7,6 +7,7 @@ import '../../providers/events_provider.dart';
 import 'traileventform_screen.dart' as create_screen;
 import 'event_edit_screen.dart';
 import 'event_detail_screen.dart';
+import 'package:hiker_connect/screens/events/events_browsing_screen.dart';
 
 class EventsListScreen extends StatefulWidget {
   const EventsListScreen({super.key});
@@ -17,12 +18,12 @@ class EventsListScreen extends StatefulWidget {
 
 class EventsListScreenState extends State<EventsListScreen> {
   List<TrailData> localEvents = [];
-  final Set<EventData> joinedEvents = {};
+  final Set<String> joinedEventIds = {};
   bool _isLoadingLocal = true;
   String _errorMessage = '';
   String _selectedEventType = 'All'; // Variable to filter events
   late DatabaseService dbService;
-  late EventBriteProvider eventProvider;
+  late EventsProvider eventsProvider;
   bool _isInitialized = false;
 
   @override
@@ -38,7 +39,12 @@ class EventsListScreenState extends State<EventsListScreen> {
     if (!_isInitialized) {
       _isInitialized = true;
       dbService = Provider.of<DatabaseService>(context, listen: false);
-      eventProvider = Provider.of<EventBriteProvider>(context, listen: false);
+      eventsProvider = Provider.of<EventsProvider>(context, listen: false);
+
+      // Initialize the events provider if not already initialized
+      if (!eventsProvider.initialized) {
+        eventsProvider.initialize();
+      }
 
       // Load local events without triggering a build during initialization
       Future.microtask(() => _loadLocalEvents());
@@ -141,7 +147,7 @@ class EventsListScreenState extends State<EventsListScreen> {
 
   void _refreshAll() {
     _loadLocalEvents();
-    eventProvider.refresh(); // Use the safe refresh method
+    eventsProvider.refresh(); // Use the refresh method of the new provider
   }
 
   @override
@@ -157,6 +163,26 @@ class EventsListScreenState extends State<EventsListScreen> {
               onPressed: _refreshAll,
               tooltip: 'Refresh events',
             ),
+            // Add sign-in button if not authenticated
+            if (!eventsProvider.isAuthenticated)
+              IconButton(
+                icon: const Icon(Icons.login),
+                onPressed: () async {
+                  await eventsProvider.signIn();
+                  if (mounted) setState(() {});
+                },
+                tooltip: 'Sign in with Google',
+              ),
+            // Add sign-out button if authenticated
+            if (eventsProvider.isAuthenticated)
+              IconButton(
+                icon: const Icon(Icons.logout),
+                onPressed: () async {
+                  await eventsProvider.signOut();
+                  if (mounted) setState(() {});
+                },
+                tooltip: 'Sign out',
+              ),
           ],
           bottom: const TabBar(
             tabs: [
@@ -167,8 +193,8 @@ class EventsListScreenState extends State<EventsListScreen> {
         ),
         body: TabBarView(
           children: [
-            // External events from Eventbrite
-            _buildEventbriteEventsTab(),
+            // External events from Google Events API
+            _buildGoogleEventsTab(),
 
             // Local events tab
             _buildLocalEventsTab(),
@@ -194,9 +220,10 @@ class EventsListScreenState extends State<EventsListScreen> {
     );
   }
 
-  Widget _buildEventbriteEventsTab() {
-    return Consumer<EventBriteProvider>(
-      builder: (context, provider, child) {
+  Widget _buildGoogleEventsTab() {
+    // Here, we'll use our new events browsing screen instead of the previous Eventbrite tab
+    return Consumer<EventsProvider>(
+      builder: (context, provider, _) {
         if (provider.isLoading) {
           return const Center(child: CircularProgressIndicator());
         }
@@ -207,8 +234,7 @@ class EventsListScreenState extends State<EventsListScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  provider.isUsingLocalData ? Icons.wifi_off : Icons
-                      .error_outline,
+                  provider.isUsingLocalData ? Icons.wifi_off : Icons.error_outline,
                   color: Colors.red,
                   size: 48,
                 ),
@@ -219,6 +245,12 @@ class EventsListScreenState extends State<EventsListScreen> {
                   onPressed: () => provider.refresh(),
                   child: const Text('Try Again'),
                 ),
+                if (!provider.isAuthenticated)
+                  ElevatedButton.icon(
+                    onPressed: () => provider.signIn(),
+                    icon: const Icon(Icons.login),
+                    label: const Text('Sign in with Google'),
+                  ),
               ],
             ),
           );
@@ -226,134 +258,182 @@ class EventsListScreenState extends State<EventsListScreen> {
 
         if (provider.events.isEmpty) {
           return const Center(
-            child: Text('No external events found'),
+            child: Text('No events found'),
           );
         }
 
-        return ListView.builder(
-          padding: const EdgeInsets.all(10),
-          itemCount: provider.events.length,
-          itemBuilder: (context, index) {
-            final event = provider.events[index];
-            bool isJoined = joinedEvents.contains(event);
+        return NotificationListener<ScrollNotification>(
+          onNotification: (ScrollNotification scrollInfo) {
+            // Check if we're near the bottom of the list (90% scrolled)
+            if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent * 0.9) {
+              // Check if we have more events and aren't already loading
+              if (provider.hasMoreEvents && !provider.isLoadingMore) {
+                // Load more events
+                provider.fetchEvents(loadMore: true);
+              }
+            }
+            return true;
+          },
+          child: ListView.builder(
+            padding: const EdgeInsets.all(10),
+            // Add 1 to the item count if we have more events to show a loading indicator
+            itemCount: provider.events.length + (provider.hasMoreEvents ? 1 : 0),
+            itemBuilder: (context, index) {
+              // If we're at the end of the list and have more events, show a loading indicator
+              if (index == provider.events.length) {
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16.0),
+                  child: Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              }
 
-            return Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
-              ),
-              elevation: 3,
-              margin: const EdgeInsets.symmetric(vertical: 8),
-              child: InkWell(
-                onTap: () {
-                  // Navigate to event details - use Future.microtask to avoid build-time issues
-                  Future.microtask(() {
+              final event = provider.events[index];
+              final isJoined = provider.isRegisteredForEvent(event.id);
+
+              return Card(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                elevation: 3,
+                margin: const EdgeInsets.symmetric(vertical: 8),
+                child: InkWell(
+                  onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                            EventDetailScreen(eventId: event.id),
+                        builder: (context) => EventDetailScreen(eventId: event.id),
                       ),
                     );
-                  });
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Event Image if available
-                      if (event.imageUrl != null && event.imageUrl!.isNotEmpty)
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.network(
-                            event.imageUrl!,
-                            height: 120,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                height: 120,
-                                width: double.infinity,
-                                color: Colors.grey[300],
-                                child: const Icon(
-                                    Icons.image_not_supported, size: 40),
-                              );
-                            },
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Event Image if available
+                        if (event.imageUrl != null && event.imageUrl!.isNotEmpty)
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              event.imageUrl!,
+                              height: 120,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  height: 120,
+                                  width: double.infinity,
+                                  color: Colors.grey[300],
+                                  child: const Icon(Icons.image_not_supported, size: 40),
+                                );
+                              },
+                            ),
                           ),
+
+                        const SizedBox(height: 10),
+
+                        // Event Name
+                        Text(
+                          event.title,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                         ),
+                        const SizedBox(height: 5),
 
-                      const SizedBox(height: 10),
-
-                      // Event Name
-                      Text(
-                        event.title,
-                        style: const TextStyle(fontSize: 18,
-                            fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 5),
-
-                      // Event Date
-                      if (event.startDate != null)
+                        // Event Date
                         Row(
                           children: [
                             const Icon(Icons.calendar_today, size: 16),
                             const SizedBox(width: 4),
                             Text(
-                              event.getFormattedStartDate(),
+                              '${event.eventDate.year}-${event.eventDate.month.toString().padLeft(2, '0')}-${event.eventDate.day.toString().padLeft(2, '0')} at ${event.eventDate.hour.toString().padLeft(2, '0')}:${event.eventDate.minute.toString().padLeft(2, '0')}',
                               style: const TextStyle(fontSize: 14),
                             ),
                           ],
                         ),
 
-                      const SizedBox(height: 5),
+                        const SizedBox(height: 5),
 
-                      // Event Location
-                      if (event.location != null && event.location!.isNotEmpty)
-                        Row(
-                          children: [
-                            const Icon(Icons.location_on, size: 16),
-                            const SizedBox(width: 4),
-                            Expanded(
-                              child: Text(
-                                event.location!,
-                                style: const TextStyle(fontSize: 14),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                        // Event Location
+                        if (event.location != null && event.location!.isNotEmpty)
+                          Row(
+                            children: [
+                              const Icon(Icons.location_on, size: 16),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  event.location!,
+                                  style: const TextStyle(fontSize: 14),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
+                            ],
+                          ),
+
+                        const SizedBox(height: 10),
+
+                        // Join/Unjoin Button
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            // Category and Difficulty
+                            Row(
+                              children: [
+                                if (event.category != null)
+                                  Chip(
+                                    label: Text(event.category!),
+                                    backgroundColor: Colors.blue[50],
+                                    labelStyle: TextStyle(color: Colors.blue[800]),
+                                  ),
+                                const SizedBox(width: 8),
+                                if (event.difficulty != null)
+                                  Chip(
+                                    label: Text('Difficulty: ${event.difficulty}'),
+                                    backgroundColor: Colors.orange[50],
+                                    labelStyle: TextStyle(color: Colors.orange[800]),
+                                  ),
+                              ],
+                            ),
+
+                            // Favorite button
+                            Row(
+                              children: [
+                                IconButton(
+                                  icon: Icon(
+                                    provider.isFavorite(event.id)
+                                        ? Icons.favorite
+                                        : Icons.favorite_border,
+                                    color: Colors.red,
+                                  ),
+                                  onPressed: () => provider.toggleFavorite(event.id),
+                                ),
+                                ElevatedButton.icon(
+                                  onPressed: () => isJoined
+                                      ? provider.unregisterFromEvent(event.id)
+                                      : provider.registerForEvent(event.id),
+                                  icon: Icon(
+                                    isJoined ? Icons.remove_circle : Icons.event_available,
+                                    color: isJoined ? Colors.red : Colors.green,
+                                  ),
+                                  label: Text(isJoined ? 'Unjoin' : 'Join'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: isJoined ? Colors.red[50] : Colors.green[50],
+                                    foregroundColor: isJoined ? Colors.red : Colors.green,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-
-                      const SizedBox(height: 10),
-
-                      // Join/Unjoin Button
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          ElevatedButton.icon(
-                            onPressed: () => _toggleJoinEventbrite(event),
-                            icon: Icon(
-                              isJoined ? Icons.remove_circle : Icons
-                                  .event_available,
-                              color: isJoined ? Colors.red : Colors.green,
-                            ),
-                            label: Text(isJoined ? 'Unjoin' : 'Join'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: isJoined
-                                  ? Colors.red[50]
-                                  : Colors.green[50],
-                              foregroundColor: isJoined ? Colors.red : Colors
-                                  .green,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         );
       },
     );
@@ -509,14 +589,14 @@ class EventsListScreenState extends State<EventsListScreen> {
     );
   }
 
-  void _toggleJoinEventbrite(EventData event) {
+  void _toggleJoinEvent(String eventId) {
     // Safely update state if widget is still mounted
     if (mounted) {
       setState(() {
-        if (joinedEvents.contains(event)) {
-          joinedEvents.remove(event);
+        if (joinedEventIds.contains(eventId)) {
+          joinedEventIds.remove(eventId);
         } else {
-          joinedEvents.add(event);
+          joinedEventIds.add(eventId);
         }
       });
     }

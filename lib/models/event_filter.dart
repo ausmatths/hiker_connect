@@ -1,0 +1,161 @@
+import 'package:hive/hive.dart';
+
+@HiveType(typeId: 7)
+class EventFilter {
+  @HiveField(0)
+  final DateTime? startDate;
+
+  @HiveField(1)
+  final DateTime? endDate;
+
+  @HiveField(2)
+  final List<String> categories;
+
+  @HiveField(3)
+  final int? minDifficulty;
+
+  @HiveField(4)
+  final int? maxDifficulty;
+
+  @HiveField(5)
+  final String? location;
+
+  @HiveField(6)
+  final double? maxDistance; // in kilometers
+
+  @HiveField(7)
+  final double? userLatitude;
+
+  @HiveField(8)
+  final double? userLongitude;
+
+  @HiveField(9)
+  final bool favoritesOnly;
+
+  @HiveField(10)
+  final bool showOnlyFavorites;
+
+  @HiveField(11)
+  final String? searchQuery;
+
+  @HiveField(12)
+  final String? category;
+
+  @HiveField(13)
+  final int? difficultyLevel;
+
+  @HiveField(14)
+  final String? locationQuery;
+
+  EventFilter({
+    this.searchQuery,
+    this.startDate,
+    this.endDate,
+    this.categories = const [],
+    this.minDifficulty,
+    this.maxDifficulty,
+    this.location,
+    this.maxDistance,
+    this.userLatitude,
+    this.userLongitude,
+    this.favoritesOnly = false,
+    this.showOnlyFavorites = false,
+    this.category,
+    this.difficultyLevel,
+    this.locationQuery,
+  });
+
+  // Create a copy of the filter with some modified fields
+  EventFilter copyWith({
+    String? searchQuery,
+    DateTime? startDate,
+    DateTime? endDate,
+    List<String>? categories,
+    int? minDifficulty,
+    int? maxDifficulty,
+    String? location,
+    double? maxDistance,
+    double? userLatitude,
+    double? userLongitude,
+    bool? favoritesOnly,
+    bool? showOnlyFavorites,
+    String? category,
+    int? difficultyLevel,
+    String? locationQuery,
+  }) {
+    return EventFilter(
+      searchQuery: searchQuery ?? this.searchQuery,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      categories: categories ?? this.categories,
+      minDifficulty: minDifficulty ?? this.minDifficulty,
+      maxDifficulty: maxDifficulty ?? this.maxDifficulty,
+      location: location ?? this.location,
+      maxDistance: maxDistance ?? this.maxDistance,
+      userLatitude: userLatitude ?? this.userLatitude,
+      userLongitude: userLongitude ?? this.userLongitude,
+      favoritesOnly: favoritesOnly ?? this.favoritesOnly,
+      showOnlyFavorites: showOnlyFavorites ?? this.showOnlyFavorites,
+      category: category ?? this.category,
+      difficultyLevel: difficultyLevel ?? this.difficultyLevel,
+      locationQuery: locationQuery ?? this.locationQuery,
+    );
+  }
+
+  // Reset all filters to default values
+  EventFilter resetFilters() {
+    return EventFilter();
+  }
+
+  // Manual serialization methods instead of using json_annotation
+  factory EventFilter.fromMap(Map<String, dynamic> map) {
+    return EventFilter(
+      searchQuery: map['searchQuery'] as String?,
+      startDate: map['startDate'] != null
+          ? DateTime.parse(map['startDate'] as String)
+          : null,
+      endDate: map['endDate'] != null
+          ? DateTime.parse(map['endDate'] as String)
+          : null,
+      categories: map['categories'] != null
+          ? List<String>.from(map['categories'] as List)
+          : [],
+      minDifficulty: map['minDifficulty'] as int?,
+      maxDifficulty: map['maxDifficulty'] as int?,
+      location: map['location'] as String?,
+      maxDistance: map['maxDistance'] as double?,
+      userLatitude: map['userLatitude'] as double?,
+      userLongitude: map['userLongitude'] as double?,
+      favoritesOnly: map['favoritesOnly'] as bool? ?? false,
+      showOnlyFavorites: map['showOnlyFavorites'] as bool? ?? false,
+      category: map['category'] as String?,
+      difficultyLevel: map['difficultyLevel'] as int?,
+      locationQuery: map['locationQuery'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'searchQuery': searchQuery,
+      'startDate': startDate?.toIso8601String(),
+      'endDate': endDate?.toIso8601String(),
+      'categories': categories,
+      'minDifficulty': minDifficulty,
+      'maxDifficulty': maxDifficulty,
+      'location': location,
+      'maxDistance': maxDistance,
+      'userLatitude': userLatitude,
+      'userLongitude': userLongitude,
+      'favoritesOnly': favoritesOnly,
+      'showOnlyFavorites': showOnlyFavorites,
+      'category': category,
+      'difficultyLevel': difficultyLevel,
+      'locationQuery': locationQuery,
+    };
+  }
+
+  @override
+  String toString() {
+    return 'EventFilter{searchQuery: $searchQuery, startDate: $startDate, endDate: $endDate, categories: $categories, minDifficulty: $minDifficulty, maxDifficulty: $maxDifficulty, location: $location, maxDistance: $maxDistance, userLatitude: $userLatitude, userLongitude: $userLongitude, favoritesOnly: $favoritesOnly, showOnlyFavorites: $showOnlyFavorites, category: $category, difficultyLevel: $difficultyLevel, locationQuery: $locationQuery}';
+  }
+}

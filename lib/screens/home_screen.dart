@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:hiker_connect/screens/profile/profile_screen.dart';
 import 'package:hiker_connect/screens/trails/trail_list_screen.dart';
-import 'package:hiker_connect/screens/trails/events_list_screen.dart';
+import 'package:hiker_connect/screens/events/events_browsing_screen.dart';
+import 'package:provider/provider.dart';
+import 'package:hiker_connect/providers/events_provider.dart';
+import 'package:hiker_connect/models/events_view_type.dart';
 import 'dart:developer' as developer;
-
-// Import our new EventBrite feed screen
-import 'eventbrite_feed_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -16,64 +16,132 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
-
-  // Update to use our new EventBriteFeedScreen instead of the placeholder
   late final List<Widget> _screens;
+  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
-    developer.log('Initializing HomeScreen with EventBrite feed', name: 'HomeScreen');
-    _screens = [
-      const EventBriteFeedScreen(),
-      const TrailListScreen(),
-      const EventsListScreen(),
-      const ProfileScreen(),
-    ];
+    developer.log('Initializing HomeScreen with Google Events integration', name: 'HomeScreen');
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    // Initialize the events provider if not already initialized
+    final eventsProvider = Provider.of<EventsProvider>(context, listen: false);
+    if (!eventsProvider.initialized) {
+      eventsProvider.initialize();
+    }
   }
 
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
       developer.log('Navigation tab changed to index: $index', name: 'HomeScreen');
+
+      // Refresh events data when navigating to events tab
+      if (index == 0 || index == 2) {
+        final eventsProvider = Provider.of<EventsProvider>(context, listen: false);
+        eventsProvider.refresh();
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    // Initialize screens here instead of initState to avoid constant issues
+    if (!_initialized) {
+      _screens = [
+        // Home/Discover tab - Grid view
+        EventsBrowsingScreen(
+          initialViewType: EventsViewType.grid,
+          showAppBar: false,
+        ),
+        // Trails tab
+        const TrailListScreen(),
+        // Events tab - List view
+        EventsBrowsingScreen(
+            initialViewType: EventsViewType.list
+        ),
+        // Profile tab
+        const ProfileScreen(),
+      ];
+      _initialized = true;
+    }
 
-    return Scaffold(
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: _onItemTapped,
-        destinations: const <NavigationDestination>[
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Feed',
-            tooltip: 'Discover hiking events',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.terrain_outlined),
-            selectedIcon: Icon(Icons.terrain),
-            label: 'Trail',
-            tooltip: 'Browse trails',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.event_outlined),
-            selectedIcon: Icon(Icons.event),
-            label: 'Events',
-            tooltip: 'My hiking events',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
-            tooltip: 'View profile',
-          ),
-        ],
+    // Use a Theme override to customize the bottom navigation appearance
+    return Theme(
+      data: Theme.of(context).copyWith(
+        navigationBarTheme: NavigationBarThemeData(
+          backgroundColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.7),
+          indicatorColor: Theme.of(context).colorScheme.primaryContainer,
+          labelTextStyle: MaterialStateProperty.resolveWith((states) {
+            if (states.contains(MaterialState.selected)) {
+              return TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Theme.of(context).colorScheme.primary,
+              );
+            }
+            return const TextStyle(fontSize: 12);
+          }),
+        ),
+      ),
+      child: Scaffold(
+        extendBody: true, // Makes bottom nav bar transparent
+        body: IndexedStack(
+          index: _selectedIndex,
+          children: _screens,
+        ),
+        // Only show FAB on Discover and Events tabs
+        floatingActionButton: (_selectedIndex == 0 || _selectedIndex == 2)
+            ? FloatingActionButton(
+          heroTag: 'mainFAB',
+          onPressed: () {
+            Navigator.of(context).pushNamed('/event-form');
+          },
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          elevation: 4,
+          tooltip: 'Create new event',
+          child: const Icon(Icons.add),
+        )
+            : null,
+        floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _selectedIndex,
+          onDestinationSelected: _onItemTapped,
+          height: 65, // Slightly reduced height
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          destinations: const <NavigationDestination>[
+            NavigationDestination(
+              icon: Icon(Icons.dashboard_outlined),
+              selectedIcon: Icon(Icons.dashboard),
+              label: 'Discover',
+              tooltip: 'Discover hiking events',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.terrain_outlined),
+              selectedIcon: Icon(Icons.terrain),
+              label: 'Trails',
+              tooltip: 'Browse trails',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.explore_outlined),
+              selectedIcon: Icon(Icons.explore),
+              label: 'Events',
+              tooltip: 'Browse hiking events',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person),
+              label: 'Profile',
+              tooltip: 'View profile',
+            ),
+          ],
+        ),
       ),
     );
   }

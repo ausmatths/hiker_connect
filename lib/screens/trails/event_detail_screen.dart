@@ -39,7 +39,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     });
 
     try {
-      final eventsProvider = Provider.of<EventBriteProvider>(context, listen: false);
+      final eventsProvider = Provider.of<EventsProvider>(context, listen: false);
       final event = await eventsProvider.getEventDetails(widget.eventId);
 
       setState(() {
@@ -356,7 +356,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   child: ElevatedButton.icon(
                     onPressed: () => _launchUrl(_event!.url),
                     icon: const Icon(Icons.open_in_new),
-                    label: const Text('View on EventBrite'),
+                    label: const Text('View Event Details'),
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       foregroundColor: theme.colorScheme.onPrimary,

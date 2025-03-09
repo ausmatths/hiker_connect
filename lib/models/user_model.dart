@@ -76,6 +76,101 @@ Map<String, dynamic> _convertToStringKeyMap(dynamic map) {
   return {};
 }
 
+@HiveType(typeId: 4)
+class EventPreferences {
+  @HiveField(0)
+  final List<String> preferredCategories;
+
+  @HiveField(1)
+  final int? preferredDifficulty;
+
+  @HiveField(2)
+  final double? maxDistance;
+
+  @HiveField(3)
+  final bool notifyNewEvents;
+
+  @HiveField(4)
+  final bool notifyEventChanges;
+
+  @HiveField(5)
+  final bool notifyEventReminders;
+
+  EventPreferences({
+    this.preferredCategories = const [],
+    this.preferredDifficulty,
+    this.maxDistance,
+    this.notifyNewEvents = true,
+    this.notifyEventChanges = true,
+    this.notifyEventReminders = true,
+  });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'preferredCategories': preferredCategories,
+      'preferredDifficulty': preferredDifficulty,
+      'maxDistance': maxDistance,
+      'notifyNewEvents': notifyNewEvents,
+      'notifyEventChanges': notifyEventChanges,
+      'notifyEventReminders': notifyEventReminders,
+    };
+  }
+
+  factory EventPreferences.fromMap(dynamic map) {
+    if (map == null) return EventPreferences();
+    final safeMap = _convertToStringKeyMap(map);
+    return EventPreferences(
+      preferredCategories: _safeGetStringList(safeMap, 'preferredCategories'),
+      preferredDifficulty: _safeGetInt(safeMap, 'preferredDifficulty'),
+      maxDistance: _safeGetDouble(safeMap, 'maxDistance'),
+      notifyNewEvents: _safeGetBool(safeMap, 'notifyNewEvents', defaultValue: true),
+      notifyEventChanges: _safeGetBool(safeMap, 'notifyEventChanges', defaultValue: true),
+      notifyEventReminders: _safeGetBool(safeMap, 'notifyEventReminders', defaultValue: true),
+    );
+  }
+
+  static List<String> _safeGetStringList(Map<String, dynamic> data, String key) {
+    final value = data[key];
+    if (value == null) return [];
+    if (value is List) {
+      return value.map((e) => e?.toString() ?? '').whereType<String>().toList();
+    }
+    return [];
+  }
+
+  static int? _safeGetInt(Map<String, dynamic> data, String key) {
+    final value = data[key];
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) {
+      return int.tryParse(value);
+    }
+    return null;
+  }
+
+  static double? _safeGetDouble(Map<String, dynamic> data, String key) {
+    final value = data[key];
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is num) return value.toDouble();
+    if (value is String) {
+      return double.tryParse(value);
+    }
+    return null;
+  }
+
+  static bool _safeGetBool(Map<String, dynamic> data, String key, {bool defaultValue = false}) {
+    final value = data[key];
+    if (value == null) return defaultValue;
+    if (value is bool) return value;
+    if (value is String) {
+      return value.toLowerCase() == 'true';
+    }
+    return defaultValue;
+  }
+}
+
 @HiveType(typeId: 3)
 class UserModel {
   @HiveField(0)
@@ -153,6 +248,21 @@ class UserModel {
   @HiveField(24)
   final Map<String, String>? socialLinks;
 
+  @HiveField(25)
+  final List<String> favoriteEvents;
+
+  @HiveField(26)
+  final List<String> registeredEvents;
+
+  @HiveField(27)
+  final EventPreferences eventPreferences;
+
+  @HiveField(28)
+  final Map<String, DateTime>? eventReminders;
+
+  @HiveField(29)
+  final Map<String, dynamic>? lastViewedFilters;
+
   UserModel({
     required this.uid,
     required this.email,
@@ -179,7 +289,126 @@ class UserModel {
     this.weight,
     this.preferredLanguage,
     this.socialLinks,
-  }) : photoUrl = photoUrl ?? ''; // Provide a default empty string
+    this.favoriteEvents = const [],
+    this.registeredEvents = const [],
+    EventPreferences? eventPreferences,
+    this.eventReminders,
+    this.lastViewedFilters,
+  }) : photoUrl = photoUrl ?? '',
+        eventPreferences = eventPreferences ?? EventPreferences(); // Provide a default empty string
+
+  // Create a copy of the user with some modified fields
+  UserModel copyWith({
+    String? uid,
+    String? email,
+    String? displayName,
+    String? photoUrl,
+    String? bio,
+    List<String>? interests,
+    DateTime? createdAt,
+    DateTime? lastActive,
+    bool? isEmailVerified,
+    List<String>? following,
+    List<String>? followers,
+    String? phoneNumber,
+    UserLocation? location,
+    List<EmergencyContact>? emergencyContacts,
+    String? bloodType,
+    List<String>? medicalConditions,
+    List<String>? medications,
+    String? insuranceInfo,
+    String? allergies,
+    DateTime? dateOfBirth,
+    String? gender,
+    double? height,
+    double? weight,
+    String? preferredLanguage,
+    Map<String, String>? socialLinks,
+    List<String>? favoriteEvents,
+    List<String>? registeredEvents,
+    EventPreferences? eventPreferences,
+    Map<String, DateTime>? eventReminders,
+    Map<String, dynamic>? lastViewedFilters,
+  }) {
+    return UserModel(
+      uid: uid ?? this.uid,
+      email: email ?? this.email,
+      displayName: displayName ?? this.displayName,
+      photoUrl: photoUrl ?? this.photoUrl,
+      bio: bio ?? this.bio,
+      interests: interests ?? this.interests,
+      createdAt: createdAt ?? this.createdAt,
+      lastActive: lastActive ?? this.lastActive,
+      isEmailVerified: isEmailVerified ?? this.isEmailVerified,
+      following: following ?? this.following,
+      followers: followers ?? this.followers,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      location: location ?? this.location,
+      emergencyContacts: emergencyContacts ?? this.emergencyContacts,
+      bloodType: bloodType ?? this.bloodType,
+      medicalConditions: medicalConditions ?? this.medicalConditions,
+      medications: medications ?? this.medications,
+      insuranceInfo: insuranceInfo ?? this.insuranceInfo,
+      allergies: allergies ?? this.allergies,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      gender: gender ?? this.gender,
+      height: height ?? this.height,
+      weight: weight ?? this.weight,
+      preferredLanguage: preferredLanguage ?? this.preferredLanguage,
+      socialLinks: socialLinks ?? this.socialLinks,
+      favoriteEvents: favoriteEvents ?? this.favoriteEvents,
+      registeredEvents: registeredEvents ?? this.registeredEvents,
+      eventPreferences: eventPreferences ?? this.eventPreferences,
+      eventReminders: eventReminders ?? this.eventReminders,
+      lastViewedFilters: lastViewedFilters ?? this.lastViewedFilters,
+    );
+  }
+
+  // Helper methods for favorite events
+  bool hasEventInFavorites(String eventId) {
+    return favoriteEvents.contains(eventId);
+  }
+
+  UserModel addFavoriteEvent(String eventId) {
+    if (favoriteEvents.contains(eventId)) {
+      return this;
+    }
+    return copyWith(
+      favoriteEvents: [...favoriteEvents, eventId],
+    );
+  }
+
+  UserModel removeFavoriteEvent(String eventId) {
+    if (!favoriteEvents.contains(eventId)) {
+      return this;
+    }
+    return copyWith(
+      favoriteEvents: favoriteEvents.where((id) => id != eventId).toList(),
+    );
+  }
+
+  // Helper methods for registered events
+  bool isRegisteredForEvent(String eventId) {
+    return registeredEvents.contains(eventId);
+  }
+
+  UserModel registerForEvent(String eventId) {
+    if (registeredEvents.contains(eventId)) {
+      return this;
+    }
+    return copyWith(
+      registeredEvents: [...registeredEvents, eventId],
+    );
+  }
+
+  UserModel unregisterFromEvent(String eventId) {
+    if (!registeredEvents.contains(eventId)) {
+      return this;
+    }
+    return copyWith(
+      registeredEvents: registeredEvents.where((id) => id != eventId).toList(),
+    );
+  }
 
   Map<String, dynamic> toMap() {
     return {
@@ -208,6 +437,13 @@ class UserModel {
       'weight': weight,
       'preferredLanguage': preferredLanguage,
       'socialLinks': socialLinks,
+      'favoriteEvents': favoriteEvents,
+      'registeredEvents': registeredEvents,
+      'eventPreferences': eventPreferences.toMap(),
+      'eventReminders': eventReminders != null
+          ? eventReminders!.map((key, value) => MapEntry(key, Timestamp.fromDate(value)))
+          : null,
+      'lastViewedFilters': lastViewedFilters,
     };
   }
 
@@ -244,6 +480,13 @@ class UserModel {
       weight: _safeGetDouble(data, 'weight'),
       preferredLanguage: _safeGetString(data, 'preferredLanguage'),
       socialLinks: _safeGetSocialLinks(data, 'socialLinks'),
+      favoriteEvents: _safeGetStringList(data, 'favoriteEvents'),
+      registeredEvents: _safeGetStringList(data, 'registeredEvents'),
+      eventPreferences: data['eventPreferences'] != null
+          ? EventPreferences.fromMap(data['eventPreferences'])
+          : null,
+      eventReminders: _safeGetEventReminders(data, 'eventReminders'),
+      lastViewedFilters: _safeGetMap(data, 'lastViewedFilters'),
     );
   }
 
@@ -303,6 +546,44 @@ class UserModel {
         return links.map((key, value) =>
             MapEntry(key.toString(), value?.toString() ?? '')
         );
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Map<String, DateTime>? _safeGetEventReminders(Map<String, dynamic> data, String key) {
+    final reminders = data[key];
+    if (reminders == null) return null;
+
+    try {
+      if (reminders is Map) {
+        final result = <String, DateTime>{};
+        reminders.forEach((eventId, timestamp) {
+          if (eventId != null) {
+            if (timestamp is Timestamp) {
+              result[eventId.toString()] = timestamp.toDate();
+            } else if (timestamp is DateTime) {
+              result[eventId.toString()] = timestamp;
+            }
+          }
+        });
+        return result;
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  static Map<String, dynamic>? _safeGetMap(Map<String, dynamic> data, String key) {
+    final map = data[key];
+    if (map == null) return null;
+
+    try {
+      if (map is Map) {
+        return map.map((key, value) => MapEntry(key.toString(), value));
       }
       return null;
     } catch (e) {
