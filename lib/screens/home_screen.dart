@@ -58,12 +58,14 @@ class _HomeScreenState extends State<HomeScreen> {
         EventsBrowsingScreen(
           initialViewType: EventsViewType.grid,
           showAppBar: false,
+          showFAB: false, // Don't show FAB on Discover tab
         ),
         // Trails tab
         const TrailListScreen(),
         // Events tab - List view
         EventsBrowsingScreen(
-            initialViewType: EventsViewType.list
+          initialViewType: EventsViewType.list,
+          showFAB: false, // Don't show FAB on Events screen itself
         ),
         // Profile tab
         const ProfileScreen(),
@@ -95,18 +97,25 @@ class _HomeScreenState extends State<HomeScreen> {
           index: _selectedIndex,
           children: _screens,
         ),
-        // Only show FAB on Discover and Events tabs
-        floatingActionButton: (_selectedIndex == 0 || _selectedIndex == 2)
-            ? FloatingActionButton(
-          heroTag: 'mainFAB',
-          onPressed: () {
-            Navigator.of(context).pushNamed('/event-form');
-          },
-          backgroundColor: Theme.of(context).colorScheme.primary,
-          foregroundColor: Theme.of(context).colorScheme.onPrimary,
-          elevation: 4,
-          tooltip: 'Create new event',
-          child: const Icon(Icons.add),
+        // Show FAB on Events tab (index 2) and Trails tab (index 1)
+        floatingActionButton: (_selectedIndex == 1 || _selectedIndex == 2)
+            ? Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).padding.bottom + 90, // Increased padding to avoid overlap
+          ),
+          child: FloatingActionButton(
+            heroTag: _selectedIndex == 1 ? 'trailFAB' : 'eventFAB',
+            onPressed: () {
+              // For Trails tab (index 1), navigate to trail form
+              // For Events tab (index 2), navigate to event form
+              Navigator.of(context).pushNamed('/event-form');
+            },
+            backgroundColor: Theme.of(context).colorScheme.primary,
+            foregroundColor: Theme.of(context).colorScheme.onPrimary,
+            elevation: 4,
+            tooltip: _selectedIndex == 1 ? 'Create New Trail' : 'Create New Event',
+            child: const Icon(Icons.add),
+          ),
         )
             : null,
         floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,

@@ -10,6 +10,13 @@ import 'event_edit_screen.dart';
 import 'traileventform_screen.dart' as create_screen;
 import 'package:provider/provider.dart';
 
+// Create an enum for trail view types similar to events
+enum TrailViewType {
+  list,
+  grid,
+  map,
+}
+
 class TrailListScreen extends StatefulWidget {
   const TrailListScreen({super.key});
 
@@ -24,6 +31,10 @@ class TrailListScreenState extends State<TrailListScreen> with AutomaticKeepAliv
   bool _isLoading = true;
   String _errorMessage = '';
   late DatabaseService dbService;
+
+  // Search and filter related variables
+  final TextEditingController _searchController = TextEditingController();
+  TrailViewType _currentViewType = TrailViewType.list;
 
   // Filter related variables
   String _selectedDifficulty = 'All';
@@ -43,6 +54,12 @@ class TrailListScreenState extends State<TrailListScreen> with AutomaticKeepAliv
     _calendarPlugin = DeviceCalendarPlugin();
     _checkAndRequestCalendarPermissions();
     _getAvailableCalendars();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _checkAndRequestCalendarPermissions() async {
@@ -120,6 +137,72 @@ class TrailListScreenState extends State<TrailListScreen> with AutomaticKeepAliv
     }
   }
 
+  void _handleSearchSubmit(String query) {
+    if (!mounted) return;
+
+    setState(() {
+      if (query.isEmpty) {
+        // If query is empty, reset to original filter
+        _applyFilter();
+      } else {
+        // Apply search filter on top of difficulty filter
+        filteredEvents = events
+            .where((event) =>
+        (_selectedDifficulty == 'All' || event.trailDifficulty == _selectedDifficulty) &&
+            (event.trailName.toLowerCase().contains(query.toLowerCase()) ||
+                event.trailDescription.toLowerCase().contains(query.toLowerCase()) ||
+                event.trailLocation.toLowerCase().contains(query.toLowerCase())))
+            .toList();
+      }
+    });
+  }
+
+  Future<void> _openFilterScreen() async {
+    // This would be implemented similar to events filter
+    // For now, we'll just use a simple dialog
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Filter Trails'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: _difficultyOptions.map((difficulty) {
+              return RadioListTile<String>(
+                title: Text(
+                  difficulty,
+                  style: TextStyle(
+                    color: _getColorForDifficulty(difficulty),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                value: difficulty,
+                groupValue: _selectedDifficulty,
+                onChanged: (value) {
+                  Navigator.pop(context, value);
+                },
+              );
+            }).toList(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && mounted) {
+      setState(() {
+        _selectedDifficulty = result;
+        _applyFilter();
+      });
+    }
+  }
+
   void _applyFilter() {
     if (!mounted) return;
 
@@ -128,7 +211,18 @@ class TrailListScreenState extends State<TrailListScreen> with AutomaticKeepAliv
           ? List.from(events)
           : events.where((event) => event.trailDifficulty == _selectedDifficulty).toList();
 
-      print("TRAIL SCREEN: After difficulty filtering, showing ${filteredEvents.length} trails");
+      // If there's text in search, apply search filter too
+      if (_searchController.text.isNotEmpty) {
+        final query = _searchController.text.toLowerCase();
+        filteredEvents = filteredEvents
+            .where((event) =>
+        event.trailName.toLowerCase().contains(query) ||
+            event.trailDescription.toLowerCase().contains(query) ||
+            event.trailLocation.toLowerCase().contains(query))
+            .toList();
+      }
+
+      print("TRAIL SCREEN: After filtering, showing ${filteredEvents.length} trails");
     });
   }
 
@@ -305,22 +399,6 @@ class TrailListScreenState extends State<TrailListScreen> with AutomaticKeepAliv
     });
   }
 
-  void _navigateToEventForm() {
-    Navigator.push<TrailData>(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const create_screen.EventFormScreen(),
-      ),
-    ).then((newEvent) {
-      if (newEvent != null && newEvent.trailName.isNotEmpty && mounted) {
-        setState(() {
-          events.add(newEvent);
-          _applyFilter();
-        });
-      }
-    });
-  }
-
   void _navigateToEventEdit(TrailData event) {
     Navigator.push(
       context,
@@ -484,220 +562,413 @@ class TrailListScreenState extends State<TrailListScreen> with AutomaticKeepAliv
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Trails'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadEvents,
-            tooltip: 'Refresh trails',
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Difficulty dropdown filter
-          Padding(
-            padding: const EdgeInsets.all(12.0),
+  Widget _buildTrailList() {
+    return RefreshIndicator(
+      onRefresh: _loadEvents,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(10),
+        itemCount: filteredEvents.length,
+        itemBuilder: (context, index) {
+          final event = filteredEvents[index];
+          return GestureDetector(
+            onTap: () => _navigateToEventEdit(event),
             child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              elevation: 3,
+              margin: const EdgeInsets.symmetric(vertical: 8),
               child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Row(
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Filter by Difficulty: ',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade400),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: DropdownButton<String>(
-                          value: _selectedDifficulty,
-                          isExpanded: true,
-                          underline: Container(), // Remove the default underline
-                          icon: const Icon(Icons.arrow_drop_down),
-                          elevation: 16,
-                          style: TextStyle(
-                            color: _getColorForDifficulty(_selectedDifficulty),
-                            fontWeight: FontWeight.bold,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            event.trailName.isNotEmpty ? event.trailName : "Untitled Trail",
+                            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                           ),
-                          onChanged: (String? newValue) {
-                            if (newValue != null && mounted) {
-                              setState(() {
-                                _selectedDifficulty = newValue;
-                                _applyFilter();
-                              });
-                            }
-                          },
-                          items: _difficultyOptions
-                              .map<DropdownMenuItem<String>>((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(
-                                value,
-                                style: TextStyle(
-                                  color: _getColorForDifficulty(value),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            );
-                          }).toList(),
                         ),
+                        IconButton(
+                          icon: const Icon(Icons.share, color: Colors.blue),
+                          onPressed: () => _shareTrail(event),
+                          tooltip: 'Share Trail',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    if (event.trailDescription.isNotEmpty)
+                      Text(event.trailDescription, style: const TextStyle(fontSize: 16)),
+                    const SizedBox(height: 5),
+                    Text('Location: ${event.trailLocation}', style: const TextStyle(fontSize: 14)),
+                    const SizedBox(height: 5),
+                    Text('Type: ${event.trailType}', style: const TextStyle(fontSize: 14)),
+                    const SizedBox(height: 5),
+                    Text(
+                      'Difficulty: ${event.trailDifficulty}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: _getColorForDifficulty(event.trailDifficulty),
                       ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text('Notice: ${event.trailNotice}', style: const TextStyle(fontSize: 14)),
+                    const SizedBox(height: 5),
+                    Text('Date: ${event.trailDate.toString().split(' ')[0]}', style: const TextStyle(fontSize: 14)),
+                    const SizedBox(height: 5),
+                    Text('Participants: ${event.trailParticipantNumber}', style: const TextStyle(fontSize: 14)),
+                    const SizedBox(height: 5),
+                    Text('Duration: ${event.trailDuration.inHours}h ${event.trailDuration.inMinutes % 60}m',
+                        style: const TextStyle(fontSize: 14)),
+                    const SizedBox(height: 5),
+                    // Add Join/Unjoin button
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => _toggleJoinEvent(event),
+                          child: Text(
+                            joinedEvents.contains(event) ? 'Unjoin' : 'Join',
+                            style: TextStyle(
+                              color: joinedEvents.contains(event) ? Colors.red : Colors.blue,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
             ),
-          ),
+          );
+        },
+      ),
+    );
+  }
 
-          // Trail list
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _errorMessage.isNotEmpty
-                ? Center(child: Text(_errorMessage, style: const TextStyle(fontSize: 16)))
-                : filteredEvents.isEmpty
-                ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                      _selectedDifficulty == 'All'
-                          ? 'No trails yet'
-                          : 'No $_selectedDifficulty trails found',
-                      style: const TextStyle(fontSize: 18)
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _loadEvents,
-                    child: const Text('Try Again'),
-                  ),
-                ],
+  Widget _buildTrailGrid() {
+    return RefreshIndicator(
+      onRefresh: _loadEvents,
+      child: GridView.builder(
+        padding: const EdgeInsets.all(10),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          childAspectRatio: 0.75,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+        ),
+        itemCount: filteredEvents.length,
+        itemBuilder: (context, index) {
+          final event = filteredEvents[index];
+          return GestureDetector(
+            onTap: () => _navigateToEventEdit(event),
+            child: Card(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
               ),
-            )
-                : RefreshIndicator(
-              onRefresh: _loadEvents,
-              child: ListView.builder(
-                padding: const EdgeInsets.all(10),
-                itemCount: filteredEvents.length,
-                itemBuilder: (context, index) {
-                  final event = filteredEvents[index];
-                  return GestureDetector(
-                    onTap: () => _navigateToEventEdit(event),
-                    child: Card(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      elevation: 3,
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      child: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    event.trailName.isNotEmpty ? event.trailName : "Untitled Trail",
-                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                                IconButton(
-                                  icon: const Icon(Icons.share, color: Colors.blue),
-                                  onPressed: () => _shareTrail(event),
-                                  tooltip: 'Share Trail',
-                                ),
-                              ],
+              elevation: 3,
+              child: Padding(
+                padding: const EdgeInsets.all(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            event.trailName.isNotEmpty ? event.trailName : "Untitled",
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
                             ),
-                            const SizedBox(height: 5),
-                            if (event.trailDescription.isNotEmpty)
-                              Text(event.trailDescription, style: const TextStyle(fontSize: 16)),
-                            const SizedBox(height: 5),
-                            Text('Location: ${event.trailLocation}', style: const TextStyle(fontSize: 14)),
-                            const SizedBox(height: 5),
-                            Text('Type: ${event.trailType}', style: const TextStyle(fontSize: 14)),
-                            const SizedBox(height: 5),
-                            Text(
-                              'Difficulty: ${event.trailDifficulty}',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: _getColorForDifficulty(event.trailDifficulty),
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            Text('Notice: ${event.trailNotice}', style: const TextStyle(fontSize: 14)),
-                            const SizedBox(height: 5),
-                            Text('Date: ${event.trailDate.toString().split(' ')[0]}', style: const TextStyle(fontSize: 14)),
-                            const SizedBox(height: 5),
-                            Text('Participants: ${event.trailParticipantNumber}', style: const TextStyle(fontSize: 14)),
-                            const SizedBox(height: 5),
-                            Text('Duration: ${event.trailDuration.inHours}h ${event.trailDuration.inMinutes % 60}m',
-                                style: const TextStyle(fontSize: 14)),
-                            const SizedBox(height: 5),
-                            // Add Join/Unjoin button
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                TextButton(
-                                  onPressed: () => _toggleJoinEvent(event),
-                                  child: Text(
-                                    joinedEvents.contains(event) ? 'Unjoin' : 'Join',
-                                    style: TextStyle(
-                                      color: joinedEvents.contains(event) ? Colors.red : Colors.blue,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
+                        IconButton(
+                          icon: const Icon(Icons.share, color: Colors.blue, size: 18),
+                          onPressed: () => _shareTrail(event),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          tooltip: 'Share Trail',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Location: ${event.trailLocation}',
+                      style: const TextStyle(fontSize: 12),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Difficulty: ${event.trailDifficulty}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: _getColorForDifficulty(event.trailDifficulty),
                       ),
                     ),
-                  );
-                },
+                    const SizedBox(height: 4),
+                    Text(
+                      'Date: ${event.trailDate.toString().split(' ')[0]}',
+                      style: const TextStyle(fontSize: 12),
+                      maxLines: 1,
+                    ),
+                    const Spacer(),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${event.trailParticipantNumber} participants',
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        TextButton(
+                          onPressed: () => _toggleJoinEvent(event),
+                          child: Text(
+                            joinedEvents.contains(event) ? 'Unjoin' : 'Join',
+                            style: TextStyle(
+                              color: joinedEvents.contains(event) ? Colors.red : Colors.blue,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            minimumSize: Size.zero,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          );
+        },
       ),
-      // Two floating action buttons: Add and Join
-      floatingActionButton: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
+    );
+  }
+
+  Widget _buildTrailMap() {
+    // This would be a map view of trails
+    // For now, just show a placeholder
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Join button
-          FloatingActionButton(
-            heroTag: 'joinBtn',
-            onPressed: _showJoinDialog,
-            backgroundColor: Colors.blue,
-            child: const Icon(Icons.group_add),
-            tooltip: 'Join a Trail with URL',
-          ),
+          const Icon(Icons.map, size: 64, color: Colors.grey),
           const SizedBox(height: 16),
-          // Add button
-          FloatingActionButton(
-            heroTag: 'addBtn',
-            onPressed: _navigateToEventForm,
-            child: const Icon(Icons.add),
-            tooltip: 'Create New Trail',
+          const Text(
+            'Map View Coming Soon',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'We\'re working on showing ${filteredEvents.length} trails on a map',
+            style: const TextStyle(color: Colors.grey),
+            textAlign: TextAlign.center,
           ),
         ],
       ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+    );
+  }
+
+  Widget _buildCurrentView() {
+    switch (_currentViewType) {
+      case TrailViewType.grid:
+        return _buildTrailGrid();
+      case TrailViewType.map:
+        return _buildTrailMap();
+      case TrailViewType.list:
+      default:
+        return _buildTrailList();
+    }
+  }
+
+  Widget _buildFilterChip(BuildContext context, String label) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8.0),
+      child: Chip(
+        label: Text(label, style: const TextStyle(fontSize: 12)),
+        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+        visualDensity: VisualDensity.compact,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // Required for AutomaticKeepAliveClientMixin
+
+    return Scaffold(
+        appBar: AppBar(
+          // Centered title for a better appearance
+          centerTitle: true,
+          // Add join button on the left side of the app bar
+          leading: IconButton(
+            icon: const Icon(Icons.add_link),
+            tooltip: 'Join Trail',
+            onPressed: _showJoinDialog,
+          ),
+          title: const Text('Trails'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: _loadEvents,
+              tooltip: 'Refresh trails',
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: Column(
+              children: [
+          // Search bar and filter button
+          Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    hintText: 'Search trails...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8.0),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 0.0),
+                  ),
+                  onSubmitted: _handleSearchSubmit,
+                ),
+              ),
+              const SizedBox(width: 8.0),
+              IconButton(
+                icon: const Icon(Icons.filter_list),
+                onPressed: _openFilterScreen,
+                tooltip: 'Filter trails',
+              ),
+            ],
+          ),
+        ),
+
+        // Trail count and view type toggle
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('${filteredEvents.length} trails found'),
+              // View type toggle
+              SegmentedButton<TrailViewType>(
+                segments: const [
+                  ButtonSegment<TrailViewType>(
+                    value: TrailViewType.list,
+                    icon: Icon(Icons.list),
+                  ),
+                  ButtonSegment<TrailViewType>(
+                    value: TrailViewType.grid,
+                    icon: Icon(Icons.grid_view),
+                  ),
+                  ButtonSegment<TrailViewType>(
+                    value: TrailViewType.map,
+                    icon: Icon(Icons.map),
+                  ),
+                ],
+                selected: {_currentViewType},
+                onSelectionChanged: (newSelection) {
+                  setState(() {
+                    _currentViewType = newSelection.first;
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 8.0),
+
+        // Active filters display
+        if (_selectedDifficulty != 'All' || _searchController.text.isNotEmpty)
+    Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Row(
+      children: [
+      Expanded(
+      child: SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          if (_selectedDifficulty != 'All')
+            _buildFilterChip(context, 'Difficulty: $_selectedDifficulty'),
+          if (_searchController.text.isNotEmpty)
+            _buildFilterChip(context, 'Search: ${_searchController.text}'),
+        ],
+      ),
+    ),
+    ),
+        TextButton(
+          onPressed: () {
+            setState(() {
+              _selectedDifficulty = 'All';
+              _searchController.clear();
+              _applyFilter();
+            });
+          },
+          child: const Text('Clear All'),
+        ),
+      ],
+      ),
+    ),
+
+                const Divider(),
+
+                // Main content area
+                Expanded(
+                  child: _isLoading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _errorMessage.isNotEmpty
+                      ? Center(child: Text(_errorMessage, style: const TextStyle(fontSize: 16)))
+                      : filteredEvents.isEmpty
+                      ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.search_off, size: 48, color: Colors.grey),
+                        const SizedBox(height: 16),
+                        Text(
+                          _selectedDifficulty == 'All'
+                              ? 'No trails found'
+                              : 'No $_selectedDifficulty trails found',
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Try changing your search or filters',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                        const SizedBox(height: 16),
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Refresh'),
+                          onPressed: _loadEvents,
+                        ),
+                      ],
+                    ),
+                  )
+                      : _buildCurrentView(),
+                ),
+              ],
+          ),
+        ),
+      // No floating action button - it's managed by HomeScreen
     );
   }
 
