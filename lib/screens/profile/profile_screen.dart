@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hiker_connect/models/user_model.dart';
 import 'package:hiker_connect/services/firebase_auth.dart';
 import 'package:hiker_connect/screens/profile/edit_profile_screen.dart';
+import 'package:hiker_connect/screens/profile/profile_photo_gallery.dart';
 import 'package:hiker_connect/utils/async_context_handler.dart';
 import 'package:hiker_connect/utils/logger.dart';
 import 'package:provider/provider.dart';
@@ -18,15 +19,28 @@ class ProfileScreen extends StatefulWidget {
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProviderStateMixin {
   static const double _avatarRadius = 50.0;
   late Future<UserModel?> _userFuture;
   bool _isCurrentUser = false;
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 5, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        setState(() {});
+      }
+    });
     _userFuture = Future.value(null);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
   }
 
   @override
@@ -143,112 +157,306 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 4,
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          title: const Text(
-            'Profile',
-            style: TextStyle(color: Colors.black),
-          ),
-          centerTitle: true,
-          actions: [
-            if (_isCurrentUser) ...[
-              IconButton(
-                icon: const Icon(Icons.edit, color: Colors.black),
-                onPressed: () async {
-                  final user = await _userFuture;
-                  if (user != null) {
-                    await _editProfile(user);
-                  }
-                },
-              ),
-              IconButton(
-                icon: const Icon(Icons.logout, color: Colors.black),
-                onPressed: _handleSignOut,
-              ),
-            ],
-          ],
-          bottom: const TabBar(
-            labelColor: Colors.black,
-            unselectedLabelColor: Colors.grey,
-            indicatorColor: Colors.deepPurple,
-            tabs: [
-              Tab(key: ValueKey('info_tab'), text: 'Info'),
-              Tab(key: ValueKey('medical_tab'), text: 'Medical'),
-              Tab(key: ValueKey('emergency_tab'), text: 'Emergency'),
-              Tab(key: ValueKey('social_tab'), text: 'Social'),
-            ],
-          ),
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          'Profile',
+          style: TextStyle(color: Colors.white),
         ),
-        body: SafeArea(
-          child: FutureBuilder<UserModel?>(
-            future: _userFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.deepPurple),
-                  ),
-                );
-              }
+        centerTitle: true,
+        actions: [
+          if (_isCurrentUser) ...[
+            IconButton(
+              icon: const Icon(Icons.edit, color: Colors.white),
+              onPressed: () async {
+                final user = await _userFuture;
+                if (user != null) {
+                  await _editProfile(user);
+                }
+              },
+            ),
+            IconButton(
+              icon: const Icon(Icons.logout, color: Colors.white),
+              onPressed: _handleSignOut,
+            ),
+          ],
+        ],
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: Colors.green,
+          tabs: const [
+            Tab(key: ValueKey('feed_tab'), text: 'Feed'),
+            Tab(key: ValueKey('photos_tab'), text: 'Photos'),
+            Tab(key: ValueKey('reviews_tab'), text: 'Reviews'),
+            Tab(key: ValueKey('activities_tab'), text: 'Activities'),
+            Tab(key: ValueKey('more_tab'), text: 'More'),
+          ],
+        ),
+      ),
+      body: SafeArea(
+        child: FutureBuilder<UserModel?>(
+          future: _userFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(
+                child: CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                ),
+              );
+            }
 
-              if (snapshot.hasError) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+            if (snapshot.hasError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      color: Colors.red,
+                      size: 60,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error loading profile',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      snapshot.error.toString(),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.grey[400]),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        final authService = context.read<AuthService>();
+                        _retryLoadUserData(authService);
+                      },
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            final user = snapshot.data;
+            if (user == null) {
+              return const Center(
+                child: Text('User not found', style: TextStyle(color: Colors.white)),
+              );
+            }
+
+            return Column(
+              children: [
+                _buildProfileHeader(user),
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
                     children: [
-                      const Icon(
-                        Icons.error_outline,
-                        color: Colors.red,
-                        size: 60,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Error loading profile',
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        snapshot.error.toString(),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () {
-                          final authService = context.read<AuthService>();
-                          // Use _retryLoadUserData method
-                          _retryLoadUserData(authService);
-                        },
-                        child: const Text('Retry'),
-                      ),
+                      _buildFeedTab(),
+                      ProfilePhotoGallery(userId: user.uid ?? widget.userId ?? ''),
+                      _buildReviewsTab(),
+                      _buildActivitiesTab(),
+                      _buildMoreTabContent(user),
                     ],
                   ),
-                );
-              }
-
-              final user = snapshot.data;
-              if (user == null) {
-                return const Center(
-                  child: Text('User not found'),
-                );
-              }
-
-              return TabBarView(
-                children: [
-                  _buildBasicInfoTab(user),
-                  _buildMedicalInfoTab(user),
-                  _buildEmergencyContactsTab(user),
-                  _buildSocialTab(user),
-                ],
-              );
-            },
-          ),
+                ),
+              ],
+            );
+          },
         ),
+      ),
+    );
+  }
+
+  Widget _buildProfileHeader(UserModel user) {
+    return Container(
+      color: Colors.black,
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          CircleAvatar(
+            radius: _avatarRadius,
+            backgroundColor: Colors.grey[800],
+            backgroundImage: user.photoUrl.isNotEmpty
+                ? NetworkImage(user.photoUrl)
+                : null,
+            onBackgroundImageError: user.photoUrl.isNotEmpty
+                ? (exception, stackTrace) {
+              debugPrint('Error loading profile image: $exception');
+            }
+                : null,
+            child: user.photoUrl.isEmpty
+                ? Text(
+              user.displayName.isNotEmpty
+                  ? user.displayName[0].toUpperCase()
+                  : '?',
+              style: const TextStyle(
+                fontSize: 32,
+                color: Colors.white,
+              ),
+            )
+                : null,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            user.displayName,
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              color: Colors.white,
+            ),
+          ),
+          if (user.location?.address?.isNotEmpty == true)
+            Text(
+              user.location!.address ?? '',
+              style: TextStyle(color: Colors.grey[400]),
+            ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _buildStatColumn('Followers', user.followers.length),
+              Container(width: 1, height: 40, color: Colors.grey[800]),
+              _buildStatColumn('Following', user.following.length),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // Stats card similar to the screenshot
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1E2D1A),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      '2025 Stats',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.white,
+                      ),
+                    ),
+                    Icon(Icons.arrow_forward, color: Colors.white70),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        children: const [
+                          Text(
+                            '0',
+                            style: TextStyle(
+                              fontSize: 40,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            'Activities',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      height: 70,
+                      width: 1,
+                      color: Colors.white24,
+                    ),
+                    Expanded(
+                      child: Column(
+                        children: const [
+                          Text(
+                            '0',
+                            style: TextStyle(
+                              fontSize: 40,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          Text(
+                            'Miles',
+                            style: TextStyle(color: Colors.white70),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFeedTab() {
+    return const Center(
+      child: Text(
+        'Feed content will be displayed here',
+        style: TextStyle(color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildReviewsTab() {
+    return const Center(
+      child: Text(
+        'Reviews will be displayed here',
+        style: TextStyle(color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildActivitiesTab() {
+    return const Center(
+      child: Text(
+        'Activities will be displayed here',
+        style: TextStyle(color: Colors.white),
+      ),
+    );
+  }
+
+  Widget _buildMoreTabContent(UserModel user) {
+    return DefaultTabController(
+      length: 4,
+      child: Column(
+        children: [
+          TabBar(
+            labelColor: Colors.white,
+            unselectedLabelColor: Colors.grey,
+            indicatorColor: Colors.green,
+            tabs: const [
+              Tab(text: 'Info'),
+              Tab(text: 'Medical'),
+              Tab(text: 'Emergency'),
+              Tab(text: 'Social'),
+            ],
+          ),
+          Expanded(
+            child: TabBarView(
+              children: [
+                _buildBasicInfoTab(user),
+                _buildMedicalInfoTab(user),
+                _buildEmergencyContactsTab(user),
+                _buildSocialTab(user),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -259,50 +467,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Center(
-            child: Column(
-              children: [
-                CircleAvatar(
-                  radius: _avatarRadius,
-                  backgroundColor: Colors.deepPurple.shade50,
-                  backgroundImage: user.photoUrl.isNotEmpty
-                      ? NetworkImage(user.photoUrl)
-                      : null,
-                  onBackgroundImageError: user.photoUrl.isNotEmpty
-                      ? (exception, stackTrace) {
-                    debugPrint('Error loading profile image: $exception');
-                  }
-                      : null,
-                  child: user.photoUrl.isEmpty
-                      ? Text(
-                    user.displayName.isNotEmpty
-                        ? user.displayName[0].toUpperCase()
-                        : '?',
-                    style: const TextStyle(
-                      fontSize: 32,
-                      color: Colors.deepPurple,
-                    ),
-                  )
-                      : null,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  user.displayName,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildStatColumn('Followers', user.followers.length),
-                    _buildStatColumn('Following', user.following.length),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 24),
-
           _buildSection('Bio', user.bio),
           _buildSection('Phone', user.phoneNumber),
           if (user.location != null)
@@ -325,6 +489,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
+                color: Colors.white,
               ),
             ),
             const SizedBox(height: 8),
@@ -334,7 +499,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: user.interests.map((interest) {
                 return Chip(
                   label: Text(interest),
-                  backgroundColor: Colors.deepPurple.shade50,
+                  backgroundColor: Colors.green.shade900,
+                  labelStyle: const TextStyle(color: Colors.white),
                 );
               }).toList(),
             ),
@@ -360,7 +526,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (hasNoMedicalInfo) {
       return const Center(
-        child: Text('No medical information available'),
+        child: Text('No medical information available', style: TextStyle(color: Colors.white)),
       );
     }
 
@@ -390,7 +556,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return Center(
         child: Text(
           'No emergency contacts added',
-          style: TextStyle(color: Colors.grey[600]),
+          style: TextStyle(color: Colors.grey[400]),
         ),
       );
     }
@@ -401,21 +567,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
       itemBuilder: (context, index) {
         final contact = emergencyContacts[index];
         return Card(
+          color: Colors.grey[900],
           elevation: 2,
           margin: const EdgeInsets.only(bottom: 12),
           child: ListTile(
-            leading: const CircleAvatar(
-              child: Icon(Icons.person),
+            leading: CircleAvatar(
+              backgroundColor: Colors.green.shade900,
+              child: const Icon(Icons.person, color: Colors.white),
             ),
             title: Text(
               contact.name,
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
             ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(contact.relationship),
-                Text(contact.phoneNumber),
+                Text(contact.relationship, style: TextStyle(color: Colors.grey[400])),
+                Text(contact.phoneNumber, style: TextStyle(color: Colors.grey[400])),
               ],
             ),
           ),
@@ -429,7 +597,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (socialLinks.isEmpty) {
       return const Center(
-        child: Text('No social links added'),
+        child: Text('No social links added', style: TextStyle(color: Colors.white)),
       );
     }
 
@@ -440,10 +608,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         final platform = socialLinks.keys.elementAt(index);
         final link = socialLinks[platform];
         return Card(
+          color: Colors.grey[900],
           child: ListTile(
-            leading: Icon(_getSocialIcon(platform)),
-            title: Text(platform),
-            subtitle: Text(link ?? ''),
+            leading: Icon(_getSocialIcon(platform), color: Colors.green),
+            title: Text(platform, style: const TextStyle(color: Colors.white)),
+            subtitle: Text(link ?? '', style: TextStyle(color: Colors.grey[400])),
           ),
         );
       },
@@ -460,10 +629,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
         ),
         const SizedBox(height: 4),
-        Text(content),
+        Text(content, style: TextStyle(color: Colors.grey[300])),
         const SizedBox(height: 16),
       ],
     );
@@ -478,6 +648,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,
+            color: Colors.white,
           ),
         ),
         const SizedBox(height: 8),
@@ -485,10 +656,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         items.length > 10
             ? ListView.builder(
           shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
           itemCount: items.length,
           itemBuilder: (context, index) => Chip(
             label: Text(items[index]),
-            backgroundColor: Colors.deepPurple.shade50,
+            backgroundColor: Colors.green.shade900,
+            labelStyle: const TextStyle(color: Colors.white),
           ),
         )
             : Wrap(
@@ -496,7 +669,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           runSpacing: 8,
           children: items.map((item) => Chip(
             label: Text(item),
-            backgroundColor: Colors.deepPurple.shade50,
+            backgroundColor: Colors.green.shade900,
+            labelStyle: const TextStyle(color: Colors.white),
           )).toList(),
         ),
         const SizedBox(height: 16),
@@ -509,11 +683,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         Text(
           count.toString(),
-          style: Theme.of(context).textTheme.titleLarge,
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(color: Colors.white),
         ),
         Text(
           label,
-          style: Theme.of(context).textTheme.bodyMedium,
+          style: TextStyle(color: Colors.grey[400]),
         ),
       ],
     );

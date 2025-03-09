@@ -16,6 +16,7 @@ import 'package:hiker_connect/models/user_model.dart';
 import 'package:hiker_connect/models/duration_adapter.dart';
 import 'package:hiker_connect/models/event_data.dart';
 import 'package:hiker_connect/models/event_filter.dart';
+import 'package:hiker_connect/models/photo_data.dart'; // Add this import
 import 'package:hiker_connect/services/databaseservice.dart';
 import 'package:hiker_connect/services/google_events_service.dart'; // New import for Google Events
 import 'package:hiker_connect/providers/events_provider.dart';
@@ -42,6 +43,8 @@ import 'package:hiker_connect/screens/auth/login_screen.dart';
 import 'package:hiker_connect/screens/auth/signup_screen.dart';
 import 'package:hiker_connect/screens/auth/forgot_password_screen.dart';
 import 'package:hiker_connect/screens/profile/profile_screen.dart';
+import 'package:hiker_connect/screens/profile/profile_photo_gallery.dart'; // Add this import
+import 'package:hiker_connect/screens/photos/photo_detail_screen.dart'; // Add this import
 import 'package:hiker_connect/screens/home_screen.dart';
 import 'package:hiker_connect/screens/events/events_browsing_screen.dart';
 import 'firebase_options.dart';
@@ -169,6 +172,62 @@ class EventFilterAdapter extends TypeAdapter<EventFilter> {
   bool operator ==(Object other) =>
       identical(this, other) ||
           other is EventFilterAdapter &&
+              runtimeType == other.runtimeType &&
+              typeId == other.typeId;
+}
+
+// PhotoData adapter for Hive
+class PhotoDataAdapter extends TypeAdapter<PhotoData> {
+  @override
+  final int typeId = 8; // Use a unique type ID
+
+  @override
+  PhotoData read(BinaryReader reader) {
+    final numOfFields = reader.readByte();
+    final fields = <int, dynamic>{
+      for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
+    };
+    return PhotoData(
+      id: fields[0] as String,
+      url: fields[1] as String,
+      thumbnailUrl: fields[2] as String?,
+      uploaderId: fields[3] as String,
+      trailId: fields[4] as String?,
+      eventId: fields[5] as String?,
+      uploadDate: fields[6] as DateTime,
+      caption: fields[7] as String?,
+    );
+  }
+
+  @override
+  void write(BinaryWriter writer, PhotoData obj) {
+    writer
+      ..writeByte(8)
+      ..writeByte(0)
+      ..write(obj.id)
+      ..writeByte(1)
+      ..write(obj.url)
+      ..writeByte(2)
+      ..write(obj.thumbnailUrl)
+      ..writeByte(3)
+      ..write(obj.uploaderId)
+      ..writeByte(4)
+      ..write(obj.trailId)
+      ..writeByte(5)
+      ..write(obj.eventId)
+      ..writeByte(6)
+      ..write(obj.uploadDate)
+      ..writeByte(7)
+      ..write(obj.caption);
+  }
+
+  @override
+  int get hashCode => typeId.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+          other is PhotoDataAdapter &&
               runtimeType == other.runtimeType &&
               typeId == other.typeId;
 }
@@ -317,12 +376,50 @@ class AppInitializer {
     // Register Hive adapters
     _registerHiveAdapters();
 
+    // Initialize Hive boxes
+    await _initializeHiveBoxes();
+
     // Initialize Database Service
     final dbService = DatabaseService();
     await dbService.init();
     developer.log('Database service initialized successfully', name: 'App Setup');
 
     return dbService;
+  }
+
+  /// Initialize all required Hive boxes
+  static Future<void> _initializeHiveBoxes() async {
+    try {
+      // Open all required Hive boxes
+      await Hive.openBox('settings');
+      await Hive.openBox<TrailData>('trailBox');
+      await Hive.openBox<EventData>('eventBox');
+      await Hive.openBox<String>('favoritesBox');
+
+      // Specifically handle photoBox
+      try {
+        if (!Hive.isBoxOpen('photoBox')) {
+          await Hive.openBox<PhotoData>('photoBox');
+          developer.log('Opened photoBox successfully', name: 'App Setup');
+        }
+      } catch (e) {
+        developer.log('Error opening photoBox: $e', name: 'App Setup');
+
+        try {
+          // Attempt recovery
+          if (await Hive.boxExists('photoBox')) {
+            await Hive.deleteBoxFromDisk('photoBox');
+            developer.log('Deleted problematic photoBox', name: 'App Setup');
+          }
+          await Hive.openBox<PhotoData>('photoBox');
+          developer.log('Recreated photoBox successfully', name: 'App Setup');
+        } catch (recovery) {
+          developer.log('Could not recover photoBox: $recovery', name: 'App Setup');
+        }
+      }
+    } catch (e) {
+      developer.log('Error initializing Hive boxes: $e', name: 'App Setup');
+    }
   }
 
   /// Register all Hive type adapters with proper type parameters
@@ -335,6 +432,7 @@ class AppInitializer {
     _safeRegisterAdapter<Duration>(DurationAdapter(), 5, 'DurationAdapter');
     _safeRegisterAdapter<EventPreferences>(EventPreferencesAdapter(), 6, 'EventPreferencesAdapter');
     _safeRegisterAdapter<EventFilter>(EventFilterAdapter(), 7, 'EventFilterAdapter');
+    _safeRegisterAdapter<PhotoData>(PhotoDataAdapter(), 8, 'PhotoDataAdapter'); // Register PhotoData adapter
   }
 
   /// Register a Hive adapter with error handling and explicit type parameter
@@ -722,44 +820,60 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InitializationScreen(
-      child: MaterialApp(
+        child: MaterialApp(
         title: 'Hiker Connect',
         debugShowCheckedModeBanner: false,
         localizationsDelegates: const [
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: const [Locale('en', 'US')],
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.green,
-            brightness: Brightness.light,
-          ),
-          useMaterial3: true,
-          appBarTheme: const AppBarTheme(
-            centerTitle: true,
-            elevation: 0,
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-          ),
+    theme: ThemeData(
+    colorScheme: ColorScheme.fromSeed(
+    seedColor: Colors.green,
+    brightness: Brightness.light,
+    ),
+    useMaterial3: true,
+    appBarTheme: const AppBarTheme(
+    centerTitle: true,
+    elevation: 0,
+    ),
+    elevatedButtonTheme: ElevatedButtonThemeData(
+    style: ElevatedButton.styleFrom(
+    padding: const EdgeInsets.symmetric(vertical: 16),
+    ),
+    ),
+    ),
+    darkTheme: ThemeData(
+    colorScheme: ColorScheme.fromSeed(
+    seedColor: Colors.green,
+    brightness: Brightness.dark,
+    ),
+    useMaterial3: true,
+    scaffoldBackgroundColor: Colors.black,
+    appBarTheme: const AppBarTheme(
+    backgroundColor: Colors.black,
+    foregroundColor: Colors.white,
+    centerTitle: true,
+    elevation: 0,
+    ),
+    ),
+          themeMode: ThemeMode.dark, // Set default to dark theme for the photo gallery appearance
+          home: const AuthWrapper(),
+          routes: {
+            '/login': (context) => const LoginScreen(),
+            '/signup': (context) => const SignUpScreen(),
+            '/home': (context) => const HomeScreen(),
+            '/profile': (context) => const ProfileScreen(),
+            '/events': (context) => const EventsListScreen(),
+            '/events-browse': (context) => const EventsBrowsingScreen(),
+            '/trails': (context) => const TrailListScreen(),
+            '/forgot-password': (context) => const ForgotPasswordScreen(),
+            '/event-form': (context) => const EventFormScreen(),
+            // Removed problematic PhotoDetailScreen route
+          },
         ),
-        home: const AuthWrapper(),
-        routes: {
-          '/login': (context) => const LoginScreen(),
-          '/signup': (context) => const SignUpScreen(),
-          '/home': (context) => const HomeScreen(),
-          '/profile': (context) => const ProfileScreen(),
-          '/events': (context) => const EventsListScreen(),
-          '/events-browse': (context) => const EventsBrowsingScreen(),
-          '/trails': (context) => const TrailListScreen(),
-          '/forgot-password': (context) => const ForgotPasswordScreen(),
-          '/event-form': (context) => const EventFormScreen(),
-        },
-      ),
     );
   }
 }

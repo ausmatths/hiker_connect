@@ -1,9 +1,12 @@
 import 'package:hive/hive.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
 import 'package:hiker_connect/models/trail_data.dart';
 import 'package:hiker_connect/models/event_data.dart';
 import 'package:hiker_connect/models/event_filter.dart';
+import 'package:hiker_connect/models/photo_data.dart';
 import 'package:hiker_connect/utils/logger.dart'; // Using AppLogger directly
 
 class DatabaseService {
@@ -11,8 +14,10 @@ class DatabaseService {
   static Box<TrailData>? _trailBox;
   static Box<EventData>? _eventBox;
   static Box<String>? _favoritesBox;
+  static Box<PhotoData>? _photoBox;
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
   final FirebaseAuth _auth;
 
   factory DatabaseService({FirebaseAuth? auth}) {
@@ -36,12 +41,37 @@ class DatabaseService {
     return _favoritesBox ?? await Hive.openBox<String>('favoritesBox');
   }
 
+  Future<Box<PhotoData>> getPhotoBox() async {
+    try {
+      if (!Hive.isBoxOpen('photoBox')) {
+        _photoBox = await Hive.openBox<PhotoData>('photoBox');
+        return _photoBox!;
+      }
+      return _photoBox ?? await Hive.openBox<PhotoData>('photoBox');
+    } catch (e) {
+      // If there's an error opening the box, try to delete and recreate it
+      AppLogger.error('Error opening photoBox: $e');
+      try {
+        if (Hive.isBoxOpen('photoBox')) {
+          await Hive.box<PhotoData>('photoBox').close();
+        }
+        await Hive.deleteBoxFromDisk('photoBox');
+        _photoBox = await Hive.openBox<PhotoData>('photoBox');
+        return _photoBox!;
+      } catch (e2) {
+        AppLogger.error('Failed to recreate photoBox: $e2');
+        throw e2;
+      }
+    }
+  }
+
   // In DatabaseService
   Future<void> init() async {
     try {
       // Open Hive boxes
       await Hive.openBox<EventData>('events');
       await Hive.openBox<String>('favoriteEvents');
+      await Hive.openBox<PhotoData>('photoBox');
 
       // Create sample events if box is empty
       final eventsBox = Hive.box<EventData>('events');
@@ -63,7 +93,7 @@ class DatabaseService {
     AppLogger.info('Created ${sampleEvents.length} sample events');
   }
 
-// Update getAllEvents method
+  // Update getAllEvents method
   Future<List<EventData>> getAllEvents() async {
     try {
       // Make sure the box is opened first
@@ -330,6 +360,9 @@ class DatabaseService {
 
       // 2. Delete from Firestore
       await deleteTrailFromFirestore(trailId);
+
+      // 3. Clean up associated photos
+      await deletePhotosForTrail(trailId.toString());
 
     } catch (e) {
       AppLogger.error('Failed to delete trail: $trailId - ${e.toString()}');
@@ -616,6 +649,9 @@ class DatabaseService {
           });
         }
       });
+
+      // Clean up associated photos
+      await deletePhotosForEvent(eventId);
     } catch (e) {
       AppLogger.error('Error deleting event: $e');
       rethrow;
@@ -839,6 +875,478 @@ class DatabaseService {
     } catch (e) {
       AppLogger.error('Error applying filters: $e');
       rethrow;
+    }
+  }
+
+  Future<PhotoData> uploadPhoto(File file, {
+    String? caption,
+    String? trailId,
+    String? eventId,
+    bool generateThumbnail = true
+  }) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        throw Exception('User not authenticated');
+      }
+
+      // Generate a unique filename
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final filename = 'photo_$timestamp.jpg';
+
+      // Get the root storage reference
+      final storageRef = FirebaseStorage.instance.ref();
+
+      // Create a simple path without excessive nesting
+      String path;
+      if (trailId != null) {
+        path = 'trail_photos/$filename';
+      } else if (eventId != null) {
+        path = 'event_photos/$filename';
+      } else {
+        path = 'user_photos/$filename';
+      }
+
+      final fileRef = storageRef.child(path);
+      print('Attempting to upload to path: ${fileRef.fullPath}');
+
+      // Upload metadata
+      final metadata = SettableMetadata(
+        contentType: 'image/jpeg',
+        customMetadata: {
+          'userId': user.uid,
+          'timestamp': timestamp.toString(),
+          'trailId': trailId ?? '',
+          'eventId': eventId ?? ''
+        },
+      );
+
+      try {
+        // Execute upload and wait for completion
+        final uploadTask = fileRef.putFile(file, metadata);
+        await uploadTask.whenComplete(() => null);
+
+        // Get download URL
+        final url = await fileRef.getDownloadURL();
+        print('Photo upload successful, URL: $url');
+
+        // Create photo document
+        final id = _firestore.collection('photos').doc().id;
+        final now = DateTime.now();
+
+        final photoData = PhotoData(
+          id: id,
+          url: url,
+          thumbnailUrl: url,
+          uploaderId: user.uid,
+          trailId: trailId,
+          eventId: eventId,
+          uploadDate: now,
+          caption: caption,
+        );
+
+        // Save to Firestore first
+        await _firestore.collection('photos').doc(id).set(photoData.toJson());
+
+        // Then try to save to Hive box, but don't fail if it doesn't work
+        try {
+          // Ensure box is open
+          Box<PhotoData> box;
+          if (!Hive.isBoxOpen('photoBox')) {
+            box = await Hive.openBox<PhotoData>('photoBox');
+          } else {
+            box = Hive.box<PhotoData>('photoBox');
+          }
+          await box.add(photoData);
+        } catch (hiveError) {
+          AppLogger.error('Error saving to Hive (non-fatal): $hiveError');
+          // Continue execution - this is non-fatal
+        }
+
+        AppLogger.info('Photo uploaded successfully with ID: $id');
+        return photoData;
+
+      } catch (storageError) {
+        AppLogger.error('Firebase Storage error: $storageError');
+        throw storageError;
+      }
+    } catch (e) {
+      AppLogger.error('Error uploading photo: $e');
+      rethrow;
+    }
+  }
+
+  // Get photos for a trail
+  Future<List<PhotoData>> getPhotosForTrail(String trailId) async {
+    try {
+      // Try cache first
+      final box = await getPhotoBox();
+      final List<PhotoData> cachedPhotos = [];
+
+      for (var i = 0; i < box.length; i++) {
+        final photo = box.getAt(i);
+        if (photo != null && photo.trailId == trailId) {
+          cachedPhotos.add(photo);
+        }
+      }
+
+      // If cache has items and they're recent (1 hour), use them
+      final now = DateTime.now();
+      final cacheKey = 'trailPhotosLastFetched_$trailId';
+      final lastFetchString = await Hive.box('settings').get(cacheKey);
+      DateTime? lastFetch;
+
+      if (lastFetchString != null) {
+        lastFetch = DateTime.tryParse(lastFetchString);
+      }
+
+      if (cachedPhotos.isNotEmpty &&
+          lastFetch != null &&
+          now.difference(lastFetch).inHours < 1) {
+        return cachedPhotos;
+      }
+
+      // Fetch from Firestore
+      final snapshot = await _firestore.collection('photos')
+          .where('trailId', isEqualTo: trailId)
+          .orderBy('uploadDate', descending: true)
+          .get();
+
+      // Process results
+      final List<PhotoData> photos = [];
+      for (var doc in snapshot.docs) {
+        try {
+          final data = doc.data();
+
+          // Convert Firestore Timestamp to DateTime
+          if (data['uploadDate'] is Timestamp) {
+            data['uploadDate'] = (data['uploadDate'] as Timestamp).toDate();
+          }
+
+          // Parse photo data
+          final photo = PhotoData.fromJson(data);
+          photos.add(photo);
+
+          // Save to cache
+          await box.add(photo);
+        } catch (e) {
+          AppLogger.error('Error processing photo doc ${doc.id}: $e');
+        }
+      }
+
+      // Update last fetch time
+      await Hive.box('settings').put(cacheKey, now.toIso8601String());
+
+      return photos;
+    } catch (e) {
+      AppLogger.error('Error fetching photos for trail $trailId: $e');
+      return [];
+    }
+  }
+
+  // Get photos for an event
+  Future<List<PhotoData>> getPhotosForEvent(String eventId) async {
+    try {
+      // Try cache first
+      final box = await getPhotoBox();
+      final List<PhotoData> cachedPhotos = [];
+
+      for (var i = 0; i < box.length; i++) {
+        final photo = box.getAt(i);
+        if (photo != null && photo.eventId == eventId) {
+          cachedPhotos.add(photo);
+        }
+      }
+
+      // If cache has items and they're recent (1 hour), use them
+      final now = DateTime.now();
+      final cacheKey = 'eventPhotosLastFetched_$eventId';
+      final lastFetchString = await Hive.box('settings').get(cacheKey);
+      DateTime? lastFetch;
+
+      if (lastFetchString != null) {
+        lastFetch = DateTime.tryParse(lastFetchString);
+      }
+
+      if (cachedPhotos.isNotEmpty &&
+          lastFetch != null &&
+          now.difference(lastFetch).inHours < 1) {
+        return cachedPhotos;
+      }
+
+      // Fetch from Firestore
+      final snapshot = await _firestore.collection('photos')
+          .where('eventId', isEqualTo: eventId)
+          .orderBy('uploadDate', descending: true)
+          .get();
+
+      // Process results
+      final List<PhotoData> photos = [];
+      for (var doc in snapshot.docs) {
+        try {
+          final data = doc.data();
+
+          // Convert Firestore Timestamp to DateTime
+          if (data['uploadDate'] is Timestamp) {
+            data['uploadDate'] = (data['uploadDate'] as Timestamp).toDate();
+          }
+
+          // Parse photo data
+          final photo = PhotoData.fromJson(data);
+          photos.add(photo);
+
+          // Save to cache
+          await box.add(photo);
+        } catch (e) {
+          AppLogger.error('Error processing photo doc ${doc.id}: $e');
+        }
+      }
+
+      // Update last fetch time
+      await Hive.box('settings').put(cacheKey, now.toIso8601String());
+
+      return photos;
+    } catch (e) {
+      AppLogger.error('Error fetching photos for event $eventId: $e');
+      return [];
+    }
+  }
+
+  // Get user's uploaded photos
+  Future<List<PhotoData>> getUserPhotos(String? userId) async {
+    try {
+      final String targetUserId = userId ?? _auth.currentUser?.uid ?? '';
+
+      if (targetUserId.isEmpty) {
+        throw Exception('User ID is required');
+      }
+
+      // Try cache first
+      final box = await getPhotoBox();
+      final List<PhotoData> cachedPhotos = [];
+
+      for (var i = 0; i < box.length; i++) {
+        final photo = box.getAt(i);
+        if (photo != null && photo.uploaderId == targetUserId) {
+          cachedPhotos.add(photo);
+        }
+      }
+
+      // If cache has items and they're recent (1 hour), use them
+      final now = DateTime.now();
+      final cacheKey = 'userPhotosLastFetched_$targetUserId';
+      final lastFetchString = await Hive.box('settings').get(cacheKey);
+      DateTime? lastFetch;
+
+      if (lastFetchString != null) {
+        lastFetch = DateTime.tryParse(lastFetchString);
+      }
+
+      if (cachedPhotos.isNotEmpty &&
+          lastFetch != null &&
+          now.difference(lastFetch).inHours < 1) {
+        return cachedPhotos;
+      }
+
+      // Fetch from Firestore
+      final snapshot = await _firestore.collection('photos')
+          .where('uploaderId', isEqualTo: targetUserId)
+          .orderBy('uploadDate', descending: true)
+          .get();
+
+      // Process results
+      final List<PhotoData> photos = [];
+      for (var doc in snapshot.docs) {
+        try {
+          final data = doc.data();
+
+          // Convert Firestore Timestamp to DateTime
+          if (data['uploadDate'] is Timestamp) {
+            data['uploadDate'] = (data['uploadDate'] as Timestamp).toDate();
+          }
+
+          // Parse photo data
+          final photo = PhotoData.fromJson(data);
+          photos.add(photo);
+
+          // Save to cache
+          await box.add(photo);
+        } catch (e) {
+          AppLogger.error('Error processing photo doc ${doc.id}: $e');
+        }
+      }
+
+      // Update last fetch time
+      await Hive.box('settings').put(cacheKey, now.toIso8601String());
+
+      return photos;
+    } catch (e) {
+      AppLogger.error('Error fetching user photos: $e');
+      return [];
+    }
+  }
+
+  // Delete a photo
+  Future<void> deletePhoto(String photoId) async {
+    try {
+      // Get the photo document first
+      final photoDoc = await _firestore.collection('photos').doc(photoId).get();
+
+      if (!photoDoc.exists) {
+        throw Exception('Photo not found');
+      }
+
+      final data = photoDoc.data()!;
+      final url = data['url'] as String;
+
+      // Delete from Firebase Storage
+      // Extract the path from the URL
+      final uri = Uri.parse(url);
+      final pathSegments = uri.pathSegments;
+      if (pathSegments.length >= 2) {
+        final storageRef = _storage.refFromURL(url);
+        await storageRef.delete();
+      }
+
+      // Delete thumbnail if it exists and is different from main image
+      final thumbnailUrl = data['thumbnailUrl'] as String?;
+      if (thumbnailUrl != null && thumbnailUrl != url) {
+        final thumbnailRef = _storage.refFromURL(thumbnailUrl);
+        await thumbnailRef.delete();
+      }
+
+      // Delete from Firestore
+      await _firestore.collection('photos').doc(photoId).delete();
+
+      // Delete from cache
+      final box = await getPhotoBox();
+      int? keyToDelete;
+
+      for (var i = 0; i < box.length; i++) {
+        final photo = box.getAt(i);
+        if (photo != null && photo.id == photoId) {
+          keyToDelete = box.keyAt(i);
+          break;
+        }
+      }
+
+      if (keyToDelete != null) {
+        await box.delete(keyToDelete);
+      }
+
+      AppLogger.info('Photo deleted successfully: $photoId');
+    } catch (e) {
+      AppLogger.error('Error deleting photo: $e');
+      rethrow;
+    }
+  }
+
+  // Delete all photos for a trail
+  Future<void> deletePhotosForTrail(String trailId) async {
+    try {
+      // Get all photos for this trail
+      final photos = await getPhotosForTrail(trailId);
+
+      // Delete each photo
+      for (var photo in photos) {
+        await deletePhoto(photo.id);
+      }
+
+      AppLogger.info('Deleted ${photos.length} photos for trail $trailId');
+    } catch (e) {
+      AppLogger.error('Error deleting photos for trail $trailId: $e');
+      // Continue with other operations
+    }
+  }
+
+  // Delete all photos for an event
+  Future<void> deletePhotosForEvent(String eventId) async {
+    try {
+      // Get all photos for this event
+      final photos = await getPhotosForEvent(eventId);
+
+      // Delete each photo
+      for (var photo in photos) {
+        await deletePhoto(photo.id);
+      }
+
+      AppLogger.info('Deleted ${photos.length} photos for event $eventId');
+    } catch (e) {
+      AppLogger.error('Error deleting photos for event $eventId: $e');
+      // Continue with other operations
+    }
+  }
+
+  // Update photo caption
+  Future<void> updatePhotoCaption(String photoId, String caption) async {
+    try {
+      // Update in Firestore
+      await _firestore.collection('photos').doc(photoId).update({
+        'caption': caption,
+      });
+
+      // Update in cache
+      final box = await getPhotoBox();
+
+      for (var i = 0; i < box.length; i++) {
+        final photo = box.getAt(i);
+        if (photo != null && photo.id == photoId) {
+          final keyToUpdate = box.keyAt(i);
+          await box.put(keyToUpdate, photo.copyWith(caption: caption));
+          break;
+        }
+      }
+
+      AppLogger.info('Photo caption updated successfully: $photoId');
+    } catch (e) {
+      AppLogger.error('Error updating photo caption: $e');
+      rethrow;
+    }
+  }
+
+  // Get a single photo by ID
+  Future<PhotoData?> getPhoto(String photoId) async {
+    try {
+      // Check cache first
+      final box = await getPhotoBox();
+      PhotoData? cachedPhoto;
+
+      for (var i = 0; i < box.length; i++) {
+        final photo = box.getAt(i);
+        if (photo != null && photo.id == photoId) {
+          cachedPhoto = photo;
+          break;
+        }
+      }
+
+      if (cachedPhoto != null) {
+        return cachedPhoto;
+      }
+
+      // Fetch from Firestore
+      final doc = await _firestore.collection('photos').doc(photoId).get();
+
+      if (!doc.exists) {
+        return null;
+      }
+
+      final data = doc.data()!;
+
+      // Convert Timestamp to DateTime
+      if (data['uploadDate'] is Timestamp) {
+        data['uploadDate'] = (data['uploadDate'] as Timestamp).toDate();
+      }
+
+      // Create photo object
+      final photo = PhotoData.fromJson(data);
+
+      // Save to cache
+      await box.add(photo);
+
+      return photo;
+    } catch (e) {
+      AppLogger.error('Error getting photo $photoId: $e');
+      return null;
     }
   }
 

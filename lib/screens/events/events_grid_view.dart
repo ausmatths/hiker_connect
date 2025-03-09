@@ -158,116 +158,126 @@ class EventsGridView extends StatelessWidget {
                   ),
                   Expanded(
                     child: Padding(
-                      padding: const EdgeInsets.all(10.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Event title with Hero animation
-                          Hero(
-                            tag: 'event-title-${event.id}',
-                            child: Material(
-                              color: Colors.transparent,
-                              child: Text(
-                                event.title,
-                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontSize: 14, // Smaller font size
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 4.0),
-                          // Event date
-                          Row(
+                      padding: const EdgeInsets.all(8.0), // Reduced padding
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          // Use LayoutBuilder to ensure content fits available space
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                Icons.calendar_today,
-                                size: 12.0,
-                                color: Theme.of(context).colorScheme.secondary,
+                              // Event title with Hero animation
+                              Hero(
+                                tag: 'event-title-${event.id}',
+                                child: Material(
+                                  color: Colors.transparent,
+                                  child: Text(
+                                    event.title,
+                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      fontSize: 13, // Smaller font size
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
                               ),
-                              const SizedBox(width: 4.0),
-                              Expanded(
-                                child: Text(
-                                  dateFormat.format(event.eventDate),
-                                  style: TextStyle(
-                                    fontSize: 12.0,
+                              const SizedBox(height: 2.0), // Reduced spacing
+                              // Event date
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.calendar_today,
+                                    size: 10.0, // Smaller icon
                                     color: Theme.of(context).colorScheme.secondary,
                                   ),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 4.0),
-                          // Event location - Fixed overflowing issue
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.location_on_outlined,
-                                size: 12.0,
-                                color: Theme.of(context).colorScheme.secondary,
-                              ),
-                              const SizedBox(width: 4.0),
-                              Expanded(
-                                child: Hero(
-                                  tag: 'event-location-${event.id}',
-                                  child: Material(
-                                    color: Colors.transparent,
+                                  const SizedBox(width: 2.0), // Reduced spacing
+                                  Expanded(
                                     child: Text(
-                                      _truncateLocation(event.location ?? 'No location specified'),
+                                      dateFormat.format(event.eventDate),
                                       style: TextStyle(
-                                        fontSize: 12.0,
+                                        fontSize: 10.0, // Smaller text
                                         color: Theme.of(context).colorScheme.secondary,
                                       ),
                                       maxLines: 1,
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                ),
+                                ],
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 4.0),
-                          // Display difficulty if available
-                          if (event.difficulty != null)
-                            _buildDifficultyIndicator(context, event.difficulty!),
-
-                          const Spacer(),
-                          // Attendees count
-                          Row(
-                            children: [
-                              const Icon(Icons.people_outline, size: 12.0), // Smaller icon
-                              const SizedBox(width: 4.0),
-                              Text(
-                                '${event.attendees?.length ?? 0} attending',
-                                style: const TextStyle(fontSize: 12.0),
-                              ),
-                              if (event.isFree != null && event.isFree!)
-                                Expanded(
-                                  child: Align(
-                                    alignment: Alignment.centerRight,
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: Colors.green.withOpacity(0.2),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: const Text(
-                                        'FREE',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          color: Colors.green,
-                                          fontWeight: FontWeight.bold,
+                              const SizedBox(height: 2.0), // Reduced spacing
+                              // Event location
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.location_on_outlined,
+                                    size: 10.0, // Smaller icon
+                                    color: Theme.of(context).colorScheme.secondary,
+                                  ),
+                                  const SizedBox(width: 2.0), // Reduced spacing
+                                  Expanded(
+                                    child: Hero(
+                                      tag: 'event-location-${event.id}',
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: Text(
+                                          _truncateLocation(event.location ?? 'No location specified'),
+                                          style: TextStyle(
+                                            fontSize: 10.0, // Smaller text
+                                            color: Theme.of(context).colorScheme.secondary,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
                                     ),
                                   ),
-                                ),
+                                ],
+                              ),
+                              if (event.difficulty != null) ...[
+                                const SizedBox(height: 2.0), // Reduced spacing
+                                _buildDifficultyIndicator(context, event.difficulty!),
+                              ],
+
+                              const Spacer(flex: 1), // Use flexible spacer
+
+                              // Attendees count - make this row as small as possible
+                              Row(
+                                mainAxisSize: MainAxisSize.min, // Important - prevent overflow
+                                children: [
+                                  const Icon(Icons.people_outline, size: 10.0), // Smaller icon
+                                  const SizedBox(width: 2.0), // Reduced spacing
+                                  Text(
+                                    '${event.attendees?.length ?? 0}',
+                                    style: const TextStyle(fontSize: 10.0), // Smaller text
+                                  ),
+                                  if (event.isFree != null && event.isFree!)
+                                    Expanded(
+                                      child: Align(
+                                        alignment: Alignment.centerRight,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                          decoration: BoxDecoration(
+                                            color: Colors.green.withOpacity(0.2),
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: const Text(
+                                            'FREE',
+                                            style: TextStyle(
+                                              fontSize: 8, // Even smaller text
+                                              color: Colors.green,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ],
-                          ),
-                        ],
+                          );
+                        },
                       ),
                     ),
                   ),
@@ -282,8 +292,8 @@ class EventsGridView extends StatelessWidget {
 
   // Helper to truncate location text to prevent overflow
   String _truncateLocation(String location) {
-    if (location.length > 30) {
-      return location.substring(0, 28) + '...';
+    if (location.length > 25) { // Reduced character limit
+      return location.substring(0, 22) + '...';
     }
     return location;
   }
@@ -305,9 +315,9 @@ class EventsGridView extends StatelessWidget {
       mainAxisSize: MainAxisSize.min, // Take only needed space
       children: [
         Text(
-          'Difficulty: ',
+          'Diff:',  // Shortened text
           style: TextStyle(
-            fontSize: 10.0,
+            fontSize: 9.0, // Smaller text
             color: Theme.of(context).colorScheme.secondary,
           ),
         ),
@@ -315,7 +325,7 @@ class EventsGridView extends StatelessWidget {
           5,
               (index) => Icon(
             Icons.circle,
-            size: 6.0, // Smaller circles
+            size: 5.0, // Even smaller circles
             color: index < difficulty ? color : Colors.grey[300],
           ),
         ),

@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 
 class ShimmerLoading extends StatefulWidget {
   final Widget child;
+  final Color baseColor;
+  final Color highlightColor;
 
   const ShimmerLoading({
     Key? key,
     required this.child,
+    this.baseColor = Colors.grey,
+    this.highlightColor = Colors.white,
   }) : super(key: key);
 
   @override
@@ -45,9 +49,9 @@ class _ShimmerLoadingState extends State<ShimmerLoading> with SingleTickerProvid
               begin: Alignment(_animation.value, 0),
               end: Alignment(_animation.value + 1, 0),
               colors: [
-                Colors.grey.shade200,
-                Colors.grey.shade100,
-                Colors.grey.shade200,
+                widget.baseColor,
+                widget.highlightColor,
+                widget.baseColor,
               ],
               stops: const [0.0, 0.5, 1.0],
             ).createShader(bounds);
@@ -59,4 +63,3 @@ class _ShimmerLoadingState extends State<ShimmerLoading> with SingleTickerProvid
     );
   }
 }
-

@@ -48,6 +48,8 @@ dependencies:
   geolocator: ^9.0.2
   googleapis: ^11.4.0
   googleapis_auth: ^1.4.1
+  photo_view: ^0.14.0
+
 
   # Firebase dependencies
   firebase_core: ^3.12.1
@@ -94,9 +96,6 @@ flutter_icons:
   adaptive_icon_background: "#FFFFFF"
   adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
 
-
-dependency_overrides:
-  test_api: ^0.7.0
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
