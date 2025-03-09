@@ -180,10 +180,15 @@ class AuthService extends ChangeNotifier implements IAuthService {
 
   /// Password validation method
   bool _isValidPassword(String password) {
-    return password.length >= 8 &&
-        password.contains(RegExp(r'[A-Z]')) &&
-        password.contains(RegExp(r'[a-z]')) &&
-        password.contains(RegExp(r'[0-9]'));
+    // In production, enforce strong passwords
+    if (!_isEmulatorMode) {
+      return password.length >= 8 &&
+          password.contains(RegExp(r'[A-Z]')) &&
+          password.contains(RegExp(r'[a-z]')) &&
+          password.contains(RegExp(r'[0-9]'));
+    }
+    // In development mode, accept any non-empty password
+    return password.isNotEmpty;
   }
 
   Future<UserModel> _createOrGetUserDocument(User firebaseUser, String email) async {
@@ -255,74 +260,44 @@ class AuthService extends ChangeNotifier implements IAuthService {
       }
 
       final trimmedEmail = email.trim();
-      final trimmedPassword = password; // Don't trim password as it might contain intentional spaces
 
-      // Log sign-in attempt with more details
+      // Don't trim password as it might contain intentional spaces
+      final trimmedPassword = password;
+
+      // Log sign-in attempt
       developer.log(
         'Attempting sign in for: $trimmedEmail',
         name: 'AuthService',
       );
 
-      // Check Firebase Auth is properly initialized
-      if (_auth == null) {
-        developer.log(
-          'Firebase Auth is null! This is a critical error.',
-          name: 'AuthService',
-          error: 'FirebaseAuth instance is null',
-        );
-        throw Exception('Authentication service unavailable');
-      }
-
-      // Debug current auth state
-      developer.log(
-        'Current auth state before signin: isSignedIn=${_auth.currentUser != null}',
-        name: 'AuthService',
-      );
-
-      // Perform authentication with explicit error handling
-      UserCredential? userCredential;
       try {
-        developer.log('Calling Firebase signInWithEmailAndPassword', name: 'AuthService');
-
-        userCredential = await _auth.signInWithEmailAndPassword(
+        // Try authentication with Firebase
+        final userCredential = await _auth.signInWithEmailAndPassword(
           email: trimmedEmail,
           password: trimmedPassword,
         );
 
+        final firebaseUser = userCredential.user;
+        if (firebaseUser == null) {
+          developer.log('Firebase returned null user after sign in', name: 'AuthService');
+          throw Exception('Authentication failed');
+        }
+
         developer.log(
-          'Firebase auth call completed successfully',
+          'Successfully authenticated user: ${firebaseUser.uid}',
           name: 'AuthService',
         );
-      } on FirebaseAuthException catch (authException) {
+
+        // Retrieve or create user document
+        return await _createOrGetUserDocument(firebaseUser, trimmedEmail);
+      } on FirebaseAuthException catch (e) {
         developer.log(
-          'FirebaseAuthException details: ${authException.code}, ${authException.message}',
-          name: 'AuthService',
-        );
-        throw _handleAuthException(authException);
-      } catch (e) {
-        developer.log(
-          'Unexpected authentication error: $e',
+          'FirebaseAuthException during login: ${e.code} - ${e.message}',
           name: 'AuthService',
           error: e,
         );
-        rethrow;
+        throw _handleAuthException(e);
       }
-
-      // Explicit null and type checks
-      final User? firebaseUser = userCredential.user;
-      if (firebaseUser == null) {
-        developer.log('No user found after authentication', name: 'AuthService');
-        return null;
-      }
-
-      developer.log(
-        'Successfully authenticated user: ${firebaseUser.uid}',
-        name: 'AuthService',
-      );
-
-      // Retrieve or create user document
-      return await _createOrGetUserDocument(firebaseUser, trimmedEmail);
-
     } catch (e, stackTrace) {
       developer.log(
         'Comprehensive sign-in error',
@@ -339,7 +314,15 @@ class AuthService extends ChangeNotifier implements IAuthService {
         throw e.message.toString();
       }
 
-      throw Exception('An unexpected error occurred during login. Please try again.');
+      // Added full error message for debugging
+      developer.log(
+        'Unexpected error type: ${e.runtimeType}',
+        name: 'AuthService',
+        error: e.toString(),
+        stackTrace: stackTrace,
+      );
+
+      throw 'Login failed: ${e.toString()}';
     }
   }
 
@@ -511,7 +494,6 @@ class AuthService extends ChangeNotifier implements IAuthService {
     }
   }
 
-  /// Handle Firebase Auth exceptions with more detailed error messages
   String _handleAuthException(FirebaseAuthException e) {
     developer.log(
       'Authentication Error: ${e.code}',
@@ -529,7 +511,8 @@ class AuthService extends ChangeNotifier implements IAuthService {
       'too-many-requests': 'Too many login attempts. Please try again later.',
       'user-disabled': 'This account has been disabled.',
       'operation-not-allowed': 'This login method is not enabled.',
-      'invalid-credential': 'The credential is malformed or has expired.',
+      'invalid-credential': 'Your login information appears to be invalid. Please try resetting your password.',
+      'INVALID_LOGIN_CREDENTIALS': 'The email or password is incorrect. Please try again.',
       'account-exists-with-different-credential': 'An account already exists with the same email address but different sign-in credentials.',
     };
 
