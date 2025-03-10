@@ -185,7 +185,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           pinned: true,
           actions: [
             IconButton(
-              icon: const Icon(Icons.share),
+              icon: Icon(Icons.share,color: theme.colorScheme.onSecondaryFixed),
+              iconSize: 30,
               onPressed: _shareEvent,
               tooltip: 'Share Event',
             ),
@@ -384,8 +385,10 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: _shareEvent,
-                        icon: const Icon(Icons.share),
-                        label: const Text('Share'),
+                        icon: const Icon(
+                          Icons.reviews,
+                        ),
+                        label: const Text('Write a Review'),
                       ),
                     ),
                   ],
