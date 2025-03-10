@@ -267,7 +267,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                                 ),
                                 const SizedBox(width: 8),
                                 Text(
-                                  'Posted on ${DateFormat('MMMM d, yyyy').format(review.timestamp)}',
+                                  'Posted on ${DateFormat('MMMM, d yyyy').format(review.timestamp)}',
                                   style: const TextStyle(fontSize: 14),
                                 ),
                               ],
