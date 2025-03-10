@@ -571,24 +571,31 @@ class MockDatabaseService extends _i1.Mock implements _i9.DatabaseService {
       ) as _i8.Future<List<_i3.PhotoData>>);
 
   @override
-  _i8.Future<List<_i3.PhotoData>> getUserPhotos(String? userId) =>
+  _i8.Future<List<_i3.PhotoData>> getUserPhotos(
+    String? userId, {
+    int? limit = 20,
+    _i3.PhotoData? lastPhoto,
+  }) =>
       (super.noSuchMethod(
         Invocation.method(
           #getUserPhotos,
           [userId],
+          {
+            #limit: limit,
+            #lastPhoto: lastPhoto,
+          },
         ),
         returnValue: _i8.Future<List<_i3.PhotoData>>.value(<_i3.PhotoData>[]),
       ) as _i8.Future<List<_i3.PhotoData>>);
 
   @override
-  _i8.Future<void> deletePhoto(String? photoId) => (super.noSuchMethod(
+  _i8.Future<bool> deletePhoto(String? photoId) => (super.noSuchMethod(
         Invocation.method(
           #deletePhoto,
           [photoId],
         ),
-        returnValue: _i8.Future<void>.value(),
-        returnValueForMissingStub: _i8.Future<void>.value(),
-      ) as _i8.Future<void>);
+        returnValue: _i8.Future<bool>.value(false),
+      ) as _i8.Future<bool>);
 
   @override
   _i8.Future<void> deletePhotosForTrail(String? trailId) => (super.noSuchMethod(
@@ -611,7 +618,27 @@ class MockDatabaseService extends _i1.Mock implements _i9.DatabaseService {
       ) as _i8.Future<void>);
 
   @override
-  _i8.Future<void> updatePhotoCaption(
+  _i8.Future<bool> updatePhotoMetadata(
+    String? photoId, {
+    String? caption,
+    String? trailId,
+    String? eventId,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #updatePhotoMetadata,
+          [photoId],
+          {
+            #caption: caption,
+            #trailId: trailId,
+            #eventId: eventId,
+          },
+        ),
+        returnValue: _i8.Future<bool>.value(false),
+      ) as _i8.Future<bool>);
+
+  @override
+  _i8.Future<bool> updatePhotoCaption(
     String? photoId,
     String? caption,
   ) =>
@@ -623,18 +650,38 @@ class MockDatabaseService extends _i1.Mock implements _i9.DatabaseService {
             caption,
           ],
         ),
+        returnValue: _i8.Future<bool>.value(false),
+      ) as _i8.Future<bool>);
+
+  @override
+  _i8.Future<_i3.PhotoData?> getPhotoById(String? photoId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getPhotoById,
+          [photoId],
+        ),
+        returnValue: _i8.Future<_i3.PhotoData?>.value(),
+      ) as _i8.Future<_i3.PhotoData?>);
+
+  @override
+  _i8.Future<void> ensurePhotoIndexExists() => (super.noSuchMethod(
+        Invocation.method(
+          #ensurePhotoIndexExists,
+          [],
+        ),
         returnValue: _i8.Future<void>.value(),
         returnValueForMissingStub: _i8.Future<void>.value(),
       ) as _i8.Future<void>);
 
   @override
-  _i8.Future<_i3.PhotoData?> getPhoto(String? photoId) => (super.noSuchMethod(
+  _i8.Future<void> recoverUnsyncedPhotos() => (super.noSuchMethod(
         Invocation.method(
-          #getPhoto,
-          [photoId],
+          #recoverUnsyncedPhotos,
+          [],
         ),
-        returnValue: _i8.Future<_i3.PhotoData?>.value(),
-      ) as _i8.Future<_i3.PhotoData?>);
+        returnValue: _i8.Future<void>.value(),
+        returnValueForMissingStub: _i8.Future<void>.value(),
+      ) as _i8.Future<void>);
 }
 
 /// A class which mocks [FirebaseAuth].

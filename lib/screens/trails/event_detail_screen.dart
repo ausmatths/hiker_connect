@@ -307,28 +307,30 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 floating: false,
                 pinned: true,
                 actions: [
-                  IconButton(
-                    icon: Icon(
-                        Icons.share, color: theme.colorScheme.onSecondaryFixed),
-                    iconSize: 30,
-                    onPressed: _shareEvent,
-                    tooltip: 'Share Event',
-                  ),
+                  // Keep existing actions
                 ],
-                flexibleSpace: FlexibleSpaceBar(
-                  background: _event!.imageUrl != null &&
-                      _event!.imageUrl!.isNotEmpty
-                      ? Image.network(
-                    _event!.imageUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      developer.log('Error loading image: $error',
-                          name: 'EventDetailScreen');
-                      return Container(color: theme.colorScheme.surfaceVariant);
-                    },
-                  )
-                      : Container(color: theme.colorScheme.surfaceVariant),
+            flexibleSpace: FlexibleSpaceBar(
+              background: _event!.imageUrl != null && _event!.imageUrl!.isNotEmpty
+                  ? Image.network(
+                _event!.imageUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  print('Failed to load image: $error');
+                  return Container(
+                    color: theme.colorScheme.surfaceVariant,
+                    child: const Center(
+                      child: Icon(Icons.image_not_supported, size: 50),
+                    ),
+                  );
+                },
+              )
+                  : Container(
+                color: theme.colorScheme.surfaceVariant,
+                child: const Center(
+                  child: Icon(Icons.photo_library, size: 50),
                 ),
+              ),
+            ),
               ),
 
               // Event Details

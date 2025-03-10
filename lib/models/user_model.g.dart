@@ -168,6 +168,7 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       weight: fields[22] as double?,
       preferredLanguage: fields[23] as String?,
       socialLinks: (fields[24] as Map?)?.cast<String, String>(),
+      galleryImageUrls: (fields[30] as List).cast<String>(),
       favoriteEvents: (fields[25] as List).cast<String>(),
       registeredEvents: (fields[26] as List).cast<String>(),
       eventPreferences: fields[27] as EventPreferences?,
@@ -179,7 +180,7 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
   @override
   void write(BinaryWriter writer, UserModel obj) {
     writer
-      ..writeByte(30)
+      ..writeByte(31)
       ..writeByte(0)
       ..write(obj.uid)
       ..writeByte(1)
@@ -239,7 +240,9 @@ class UserModelAdapter extends TypeAdapter<UserModel> {
       ..writeByte(28)
       ..write(obj.eventReminders)
       ..writeByte(29)
-      ..write(obj.lastViewedFilters);
+      ..write(obj.lastViewedFilters)
+      ..writeByte(30)
+      ..write(obj.galleryImageUrls);
   }
 
   @override
