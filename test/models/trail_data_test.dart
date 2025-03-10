@@ -55,10 +55,10 @@ void main() {
 
         expect(map['trailId'], 1);
         expect(map['trailName'], 'Mountain Trek');
-        expect(map['description'], 'A beautiful mountain trail');
+        expect(map['trailDescription'], 'A beautiful mountain trail');
         expect(map['trailDifficulty'], 'Moderate');
         expect(map['trailNotice'], 'Watch for wildlife');
-        expect(map['trailImages'], 'image1.jpg,image2.jpg');
+        expect(map['trailImages'], testImages);
         expect(map['trailDate'], testDate.toIso8601String());
         expect(map['trailLocation'], 'Rocky Mountains');
         expect(map['trailParticipantNumber'], 10);
@@ -81,7 +81,7 @@ void main() {
         );
 
         final map = trailData.toMap();
-        expect(map['trailImages'], '');
+        expect(map['trailImages'], []);
       });
     });
 
@@ -295,16 +295,10 @@ void main() {
           trailParticipantNumber: 10,
           trailDuration: Duration(minutes: 120),
           trailType: 'Trail'
-
       );
 
       final map = originalData.toMap();
-
-      final correctedMap = Map<String, dynamic>.from(map);
-      correctedMap['trailDescription'] = correctedMap['description'];
-      correctedMap['trailImages'] = correctedMap['trailImages'].split(',');
-
-      final recreatedData = TrailData.fromMap(correctedMap);
+      final recreatedData = TrailData.fromMap(map);
 
       expect(recreatedData.trailId, originalData.trailId);
       expect(recreatedData.trailName, originalData.trailName);

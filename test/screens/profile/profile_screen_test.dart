@@ -1,9 +1,8 @@
-// test/screens/profile/profile_screen_test.dart
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:provider/provider.dart';
 import 'package:hiker_connect/models/user_model.dart';
 import 'package:hiker_connect/screens/profile/profile_screen.dart';
@@ -27,39 +26,24 @@ void main() {
   late MockAuthService mockAuthService;
   late UserModel testUser;
   late User mockUser;
-  late FirebaseFirestore mockFirestore;
+  late MockFirebaseFirestore mockFirestore;
+  late MockFirebaseStorage mockStorage;
 
-  // Set up platform channel for Firebase Auth
-  const MethodChannel channel = MethodChannel('plugins.flutter.io/firebase_auth');
+  setUp(() async {
+    // Setup Firebase for tests - this handles all the method channel mocking
+    await setupFirebaseForTests();
 
-  setUp(() {
-    // Setup Firebase for tests
-    setupFirebaseForTests();
-
-    // Set up platform channel mock
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(channel, (MethodCall methodCall) async {
-      switch (methodCall.method) {
-        case 'signInWithCredential':
-          return {'user': {'uid': 'test-uid'}};
-        case 'getIdToken':
-          return 'mock_token';
-        default:
-          return null;
-      }
-    });
-
-    // Use MockUser from firebase_test_utils.dart - don't try to mock the uid property
+    // Set up mock objects
     mockUser = MockUser();
-    mockFirestore = MockFirebaseFirestore();
-    // Remove the when() call - MockUser already provides uid property
+    mockFirestore = getMockFirestore(); // Use the getter function
+    mockStorage = getMockStorage();   // Use the getter function
 
     testUser = UserModel(
       uid: 'test-uid',
       email: 'test@example.com',
       displayName: 'Test User',
       bio: 'Test bio',
-      photoUrl: null,
+      photoUrl: '',
       location: UserLocation(
         geoPoint: const GeoPoint(0, 0),
         address: '123 Test St',
@@ -88,12 +72,6 @@ void main() {
     );
   });
 
-  tearDown(() {
-    // Clear platform channel mock
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(channel, null);
-  });
-
   Widget createTestableWidget(Widget child) {
     return MaterialApp(
       home: MultiProvider(
@@ -103,6 +81,9 @@ void main() {
           ),
           Provider<FirebaseFirestore>.value(
             value: mockFirestore,
+          ),
+          Provider<FirebaseStorage>.value(
+            value: mockStorage,
           ),
         ],
         child: child,
@@ -114,27 +95,73 @@ void main() {
     testWidgets('ProfileScreen shows loading indicator when user data is null',
             (WidgetTester tester) async {
           mockAuthService.updateMockData(userData: null, user: mockUser);
+
+          // Pre-pump a frame to allow the test to create the MaterialApp
           await tester.pumpWidget(createTestableWidget(const ProfileScreen()));
+
+          // Now find the CircularProgressIndicator
           expect(find.byType(CircularProgressIndicator), findsOneWidget);
-          await tester.pumpAndSettle();
         });
 
     testWidgets('ProfileScreen loads and displays user data',
             (WidgetTester tester) async {
           mockAuthService.updateMockData(userData: testUser, user: mockUser);
-          await tester.pumpWidget(createTestableWidget(const ProfileScreen()));
+
+          // Create a completed future with the test user
+          final testUserFuture = Future.value(testUser);
+
+          // Build the widget with the testUserFuture
+          await tester.pumpWidget(createTestableWidget(
+              ProfileScreen(testUserFuture: testUserFuture)
+          ));
+
+          // Wait for the UI to render
           await tester.pumpAndSettle();
+
+          // Verify the username is displayed
           expect(find.text('Test User'), findsOneWidget);
+
+          // Navigate to where the bio is displayed - first tap "More" tab
+          await tester.tap(find.text('More'));
+          await tester.pumpAndSettle();
+
+          // The "Info" tab should be selected by default in the nested TabBar
+          // Now we should see the bio
           expect(find.text('Test bio'), findsOneWidget);
         });
 
     testWidgets('Medical tab displays correct information',
             (WidgetTester tester) async {
           mockAuthService.updateMockData(userData: testUser, user: mockUser);
-          await tester.pumpWidget(createTestableWidget(const ProfileScreen()));
+
+          // Create a completed future with the test user
+          final testUserFuture = Future.value(testUser);
+
+          // Build the widget with the testUserFuture
+          await tester.pumpWidget(createTestableWidget(
+              ProfileScreen(testUserFuture: testUserFuture)
+          ));
+
+          // Wait for the UI to render
           await tester.pumpAndSettle();
+
+          // First find and tap the 'More' tab
+          await tester.tap(find.text('More'));
+          await tester.pumpAndSettle();
+
+          // Debug what tabs are available
+          print('Tabs after tapping More:');
+          tester.allWidgets.where((widget) => widget is Tab).forEach((widget) {
+            if (widget is Tab) {
+              print('Tab: ${widget.text}');
+            }
+          });
+
+          // Then find and tap the 'Medical' tab within the nested TabBar
           await tester.tap(find.text('Medical'));
           await tester.pumpAndSettle();
+
+          // Verify medical information is displayed
           expect(find.text('A+'), findsOneWidget);
           expect(find.text('Asthma'), findsOneWidget);
           expect(find.text('Inhaler'), findsOneWidget);

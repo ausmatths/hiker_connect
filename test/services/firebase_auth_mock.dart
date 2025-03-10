@@ -42,10 +42,16 @@ class MockAuthService with ChangeNotifier implements AuthService {
   User? get currentUser => _mockUser;
 
   @override
-  Future<UserModel?> getCurrentUserData() async => _mockUserData;
+  Future<UserModel?> getCurrentUserData() async {
+    print('MockAuthService.getCurrentUserData() called, returning: $_mockUserData');
+    return _mockUserData;
+  }
 
   @override
-  Future<UserModel?> getUserData(String uid) async => _mockUserData;
+  Future<UserModel?> getUserData(String uid) async {
+    print('MockAuthService.getUserData() called with uid: $uid, returning: $_mockUserData');
+    return _mockUserData;
+  }
 
   @override
   Future<void> resetPassword(String email) async {

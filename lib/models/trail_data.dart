@@ -48,7 +48,7 @@ class TrailData {
       'trailDescription': trailDescription,
       'trailDifficulty': trailDifficulty,
       'trailNotice': trailNotice,
-      'trailImages': trailImages.isEmpty ? [] : trailImages,
+      'trailImages': trailImages,
       'trailDate': trailDate.toIso8601String(),
       'trailLocation': trailLocation,
       'trailParticipantNumber': trailParticipantNumber,
