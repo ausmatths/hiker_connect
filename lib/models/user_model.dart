@@ -263,6 +263,9 @@ class UserModel {
   @HiveField(29)
   final Map<String, dynamic>? lastViewedFilters;
 
+  @HiveField(30)
+  final List<String> galleryImageUrls;
+
   UserModel({
     required this.uid,
     required this.email,
@@ -289,6 +292,7 @@ class UserModel {
     this.weight,
     this.preferredLanguage,
     this.socialLinks,
+    this.galleryImageUrls = const [],
     this.favoriteEvents = const [],
     this.registeredEvents = const [],
     EventPreferences? eventPreferences,
@@ -329,6 +333,7 @@ class UserModel {
     EventPreferences? eventPreferences,
     Map<String, DateTime>? eventReminders,
     Map<String, dynamic>? lastViewedFilters,
+    List<String>? galleryImageUrls,
   }) {
     return UserModel(
       uid: uid ?? this.uid,
@@ -361,6 +366,7 @@ class UserModel {
       eventPreferences: eventPreferences ?? this.eventPreferences,
       eventReminders: eventReminders ?? this.eventReminders,
       lastViewedFilters: lastViewedFilters ?? this.lastViewedFilters,
+      galleryImageUrls: galleryImageUrls ?? this.galleryImageUrls,
     );
   }
 
@@ -444,6 +450,7 @@ class UserModel {
           ? eventReminders!.map((key, value) => MapEntry(key, Timestamp.fromDate(value)))
           : null,
       'lastViewedFilters': lastViewedFilters,
+      'galleryImageUrls': galleryImageUrls,
     };
   }
 
@@ -487,6 +494,8 @@ class UserModel {
           : null,
       eventReminders: _safeGetEventReminders(data, 'eventReminders'),
       lastViewedFilters: _safeGetMap(data, 'lastViewedFilters'),
+      galleryImageUrls: _safeGetStringList(data, 'galleryImageUrls'),
+
     );
   }
 

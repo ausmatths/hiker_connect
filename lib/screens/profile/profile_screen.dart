@@ -1,10 +1,14 @@
+import 'dart:io';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:hiker_connect/models/user_model.dart';
 import 'package:hiker_connect/services/firebase_auth.dart';
 import 'package:hiker_connect/screens/profile/edit_profile_screen.dart';
-import 'package:hiker_connect/screens/profile/profile_photo_gallery.dart';
 import 'package:hiker_connect/utils/async_context_handler.dart';
 import 'package:hiker_connect/utils/logger.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -24,6 +28,9 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   late Future<UserModel?> _userFuture;
   bool _isCurrentUser = false;
   late TabController _tabController;
+  List<File> _galleryImages = [];
+  List<String> _imageUrls = [];
+  final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
@@ -35,6 +42,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       }
     });
     _userFuture = Future.value(null);
+    _loadSavedImages();
   }
 
   @override
@@ -154,6 +162,78 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       );
     }
   }
+  Future<void> _loadSavedImages() async {
+    print('Loading saved images for user: ${widget.userId}');
+    final doc = await FirebaseFirestore.instance.collection('users').doc(widget.userId).get();
+    if (doc.exists && doc.data()!.containsKey('galleryImages')) {
+      setState(() {
+        _imageUrls = List<String>.from(doc['galleryImages']);
+      });
+    }
+  }
+  // Future<void> _pickImage(picker.ImageSource source) async {
+  //   final picker.XFile? image = await _picker.pickImage(source: source);
+  //   if (image != null) {
+  //     await _saveImages(File(image.path));
+  //   }
+  // }
+
+  Future<void> _saveImages(File imageFile) async {
+    try {
+      String fileName = 'gallery/${widget.userId}/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      TaskSnapshot snapshot = await FirebaseStorage.instance.ref(fileName).putFile(imageFile);
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+
+      setState(() {
+        _imageUrls.add(downloadUrl);
+      });
+
+      await FirebaseFirestore.instance.collection('users').doc(widget.userId).set({
+        'galleryImages': _imageUrls,
+      }, SetOptions(merge: true));
+
+    } catch (e) {
+      print("Error uploading image: $e");
+    }
+  }
+
+  Future<void> _showImageSourceDialog() async {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Choose Image Source"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.camera_alt),
+                title: Text("Take a Photo"),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _pickImage(ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.photo_library),
+                title: Text("Select from Gallery"),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _pickImage(ImageSource.gallery);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+  Future<void> _pickImage(ImageSource source) async {
+    final XFile? image = await _picker.pickImage(source: source);
+    if (image != null) {
+      await _saveImages(File(image.path));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -205,7 +285,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
                 child: CircularProgressIndicator(
-                  valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
+                  // valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
                 ),
               );
             }
@@ -259,7 +339,8 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
                     controller: _tabController,
                     children: [
                       _buildFeedTab(),
-                      ProfilePhotoGallery(userId: user.uid ?? widget.userId ?? ''),
+                      _buildPhotoGalleryTab(user),
+                     // ProfilePhotoGallery(userId: user.uid ?? widget.userId ?? ''),
                       _buildReviewsTab(),
                       _buildActivitiesTab(),
                       _buildMoreTabContent(user),
@@ -330,7 +411,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
             margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E2D1A),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Column(
@@ -411,7 +491,67 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       ),
     );
   }
-
+  Widget _buildPhotoGalleryTab(UserModel user) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Photo Gallery',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w500,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(height: 15),
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 4,
+                mainAxisSpacing: 4,
+              ),
+              itemCount: _galleryImages.length + 1,
+              itemBuilder: (context, index) {
+                if (index == _galleryImages.length) {
+                  return GestureDetector(
+                    onTap: _showImageSourceDialog,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade400),
+                        color: Colors.grey.shade200,
+                      ),
+                      child: Icon(
+                        Icons.photo_camera,
+                        size: 40,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  );
+                }
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.file(
+                    _galleryImages[index],
+                    fit: BoxFit.cover,
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
   Widget _buildReviewsTab() {
     return const Center(
       child: Text(
@@ -507,6 +647,55 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           ],
           const SizedBox(height: 16),
         ],
+      ),
+    );
+  }
+  Widget _buildEmptyState() {
+    return SingleChildScrollView(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.photo_library_outlined,
+                size: 64,
+                color: Colors.grey[600],
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Add some photos',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Share your hiking experiences',
+                style: TextStyle(
+                  color: Colors.white70,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              if (_isCurrentUser)
+                ElevatedButton.icon(
+                  onPressed: _showImageSourceDialog,
+                  icon: const Icon(Icons.add_a_photo),
+                  label: const Text('Upload Photo'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -690,6 +879,18 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
           style: TextStyle(color: Colors.grey[400]),
         ),
       ],
+    );
+  }
+  Widget _buildLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: Colors.grey[600],
+          fontSize: 16,
+        ),
+      ),
     );
   }
 

@@ -1,9 +1,10 @@
-// lib/screens/profile/profile_photo_gallery.dart
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:image_picker/image_picker.dart' as picker; // Use prefix for ImagePicker
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
 import 'package:hiker_connect/models/photo_data.dart';
@@ -11,6 +12,8 @@ import 'package:hiker_connect/services/databaseservice.dart';
 import 'package:hiker_connect/utils/logger.dart';
 import 'package:hiker_connect/widgets/shimmer_loading.dart';
 import 'package:hiker_connect/screens/photos/photo_detail_screen.dart';
+
+import '../../models/user_model.dart';
 
 class ProfilePhotoGallery extends StatefulWidget {
   final String userId;
@@ -29,12 +32,16 @@ class _ProfilePhotoGalleryState extends State<ProfilePhotoGallery> {
   List<PhotoData>? _photos;
   bool _isLoading = true;
   bool _isCurrentUser = false;
+  List<String> _imageUrls = [];
+  final picker.ImagePicker _picker = picker.ImagePicker(); // Use prefix for ImagePicker
+  List<File> _galleryImages = [];
 
   @override
   void initState() {
     super.initState();
     _isCurrentUser = widget.userId == FirebaseAuth.instance.currentUser?.uid;
     _loadPhotos();
+    _loadSavedImages(); // Load saved images when the page is opened
   }
 
   Future<void> _loadPhotos() async {
@@ -69,9 +76,8 @@ class _ProfilePhotoGalleryState extends State<ProfilePhotoGallery> {
 
   Future<void> _pickAndUploadImage() async {
     try {
-      final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(
-        source: ImageSource.gallery,
+      final pickedFile = await _picker.pickImage(
+        source: picker.ImageSource.gallery, // Use prefix for ImageSource
         maxWidth: 1800,
         maxHeight: 1800,
         imageQuality: 85,
@@ -131,6 +137,74 @@ class _ProfilePhotoGalleryState extends State<ProfilePhotoGallery> {
     });
   }
 
+  Future<void> _loadSavedImages() async {
+    print('Loading saved images for user: ${widget.userId}');
+    final doc = await FirebaseFirestore.instance.collection('users').doc(widget.userId).get();
+    if (doc.exists && doc.data()!.containsKey('galleryImages')) {
+      setState(() {
+        _imageUrls = List<String>.from(doc['galleryImages']);
+      });
+    }
+  }
+
+  Future<void> _saveImages(File imageFile) async {
+    try {
+      String fileName = 'gallery/${widget.userId}/${DateTime.now().millisecondsSinceEpoch}.jpg';
+      TaskSnapshot snapshot = await FirebaseStorage.instance.ref(fileName).putFile(imageFile);
+      String downloadUrl = await snapshot.ref.getDownloadURL();
+
+      setState(() {
+        _imageUrls.add(downloadUrl);
+      });
+
+      await FirebaseFirestore.instance.collection('users').doc(widget.userId).set({
+        'galleryImages': _imageUrls,
+      }, SetOptions(merge: true));
+
+    } catch (e) {
+      print("Error uploading image: $e");
+    }
+  }
+
+  Future<void> _showImageSourceDialog() async {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Choose Image Source"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.camera_alt),
+                title: Text("Take a Photo"),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _pickImage(picker.ImageSource.camera); // Use prefix for ImageSource
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.photo_library),
+                title: Text("Select from Gallery"),
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _pickImage(picker.ImageSource.gallery); // Use prefix for ImageSource
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickImage(picker.ImageSource source) async {
+    final picker.XFile? image = await _picker.pickImage(source: source);
+    if (image != null) {
+      await _saveImages(File(image.path));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -141,63 +215,55 @@ class _ProfilePhotoGalleryState extends State<ProfilePhotoGallery> {
       return _buildEmptyState();
     }
 
-    return Stack(
-      children: [
-        GridView.builder(
-          padding: EdgeInsets.all(4),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            childAspectRatio: 1.0,
-            crossAxisSpacing: 4,
-            mainAxisSpacing: 4,
-          ),
-          itemCount: _photos!.length,
-          itemBuilder: (context, index) {
-            final photo = _photos![index];
-            return _buildPhotoTile(photo);
-          },
-        ),
-        if (_isCurrentUser)
-          Positioned(
-            bottom: 16,
-            right: 16,
-            child: FloatingActionButton(
-              onPressed: _pickAndUploadImage,
-              backgroundColor: Colors.green,
-              child: Icon(Icons.add_a_photo),
-              tooltip: 'Upload Photo',
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 8),
+          Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: GridView.builder(
+              shrinkWrap: true,
+              physics: NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 4,
+                mainAxisSpacing: 4,
+              ),
+              itemCount: _imageUrls.length + 1, // Use _imageUrls instead of _galleryImages
+              itemBuilder: (context, index) {
+                if (index == _imageUrls.length) {
+                  return GestureDetector(
+                    onTap: _showImageSourceDialog,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.grey.shade400),
+                        color: Colors.grey.shade200,
+                      ),
+                      child: Icon(
+                        Icons.photo_camera,
+                        size: 40,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  );
+                }
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: CachedNetworkImage(
+                    imageUrl: _imageUrls[index], // Use _imageUrls instead of _galleryImages
+                    fit: BoxFit.cover,
+                  ),
+                );
+              },
             ),
           ),
-      ],
-    );
-  }
-
-  Widget _buildPhotoTile(PhotoData photo) {
-    return GestureDetector(
-      onTap: () => _openPhotoDetail(photo),
-      child: Hero(
-        tag: photo.id,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: CachedNetworkImage(
-            imageUrl: photo.thumbnailUrl ?? photo.url,
-            fit: BoxFit.cover,
-            placeholder: (context, url) =>
-                Container(
-                  color: Colors.grey[800],
-                  child: Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.green),
-                    ),
-                  ),
-                ),
-            errorWidget: (context, url, error) =>
-                Container(
-                  color: Colors.grey[800],
-                  child: Icon(Icons.error, color: Colors.white54),
-                ),
-          ),
-        ),
+        ],
       ),
     );
   }
@@ -213,7 +279,6 @@ class _ProfilePhotoGalleryState extends State<ProfilePhotoGallery> {
       ),
       itemCount: 9, // Show 9 shimmer placeholders
       itemBuilder: (context, index) {
-        // Remove the problematic parameters
         return ShimmerLoading(
           child: Container(
             decoration: BoxDecoration(
@@ -260,7 +325,7 @@ class _ProfilePhotoGalleryState extends State<ProfilePhotoGallery> {
               const SizedBox(height: 24),
               if (_isCurrentUser)
                 ElevatedButton.icon(
-                  onPressed: _pickAndUploadImage,
+                  onPressed: _showImageSourceDialog,
                   icon: const Icon(Icons.add_a_photo),
                   label: const Text('Upload Photo'),
                   style: ElevatedButton.styleFrom(
