@@ -8,8 +8,10 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/calendar/v3.dart' as calendar;
 import 'package:googleapis_auth/auth_io.dart';
 import 'dart:developer' as developer;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 /// Service for interacting with Google Calendar API to fetch hiking-related events
+/// and Google Places API to find nearby points of interest
 class GoogleEventsService {
   // Constants
   static const String _tokenKey = 'google_api_token';
@@ -58,6 +60,9 @@ class GoogleEventsService {
 
   /// Get the current user ID
   String? get currentUserId => _userId;
+
+  /// Get the API key from environment variables
+  String get apiKey => dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
 
   /// Initialize the service
   Future<bool> initialize() async {
@@ -435,6 +440,175 @@ class GoogleEventsService {
       organizer: event.organizer?.displayName,
       status: event.status,
     );
+  }
+
+  /// Get nearby events/places from Google Places API
+  Future<List<EventData>> getNearbyEvents({
+    required double latitude,
+    required double longitude,
+    required double radiusInKm,
+    String? keyword,
+  }) async {
+    final currentApiKey = apiKey;
+    if (currentApiKey.isEmpty) {
+      AppLogger.error('Google API key not available for Places API search');
+      return getSampleEvents();
+    }
+
+    try {
+      // Build the Google Places API URL
+      final url = Uri.https(
+        'maps.googleapis.com',
+        '/maps/api/place/nearbysearch/json',
+        {
+          'location': '$latitude,$longitude',
+          'radius': '${(radiusInKm * 1000).round()}', // Convert to meters
+          'type': 'point_of_interest',
+          'keyword': keyword ?? 'hiking trail nature outdoor',
+          'key': currentApiKey,
+        },
+      );
+
+      // Make the API request
+      final client = http.Client();
+      try {
+        final response = await client.get(url);
+
+        if (response.statusCode != 200) {
+          AppLogger.error('Google Places API error: ${response.statusCode} ${response.body}');
+          return getSampleEvents();
+        }
+
+        // Parse the response
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+        if (data['status'] != 'OK') {
+          AppLogger.error('Google Places API error: ${data['status']}');
+          return getSampleEvents();
+        }
+
+        final results = data['results'] as List;
+        List<EventData> events = [];
+
+        for (var place in results) {
+          try {
+            // Get place details for more information
+            final detailsResponse = await _getPlaceDetails(place['place_id'], currentApiKey);
+
+            if (detailsResponse == null) continue;
+
+            final now = DateTime.now();
+
+            // Create an event from place data
+            final event = EventData(
+              id: 'google_${place['place_id']}',
+              title: place['name'] as String,
+              description: detailsResponse['formatted_address'] as String? ??
+                  place['vicinity'] as String? ??
+                  'No description available',
+              eventDate: now, // Current date as placeholder
+              endDate: now.add(const Duration(days: 7)), // One week as placeholder
+              duration: const Duration(hours: 2), // Default duration
+              location: place['vicinity'] as String? ?? '',
+              category: _determineCategoryFromTypes(place['types'] as List? ?? []),
+              difficulty: _determineDifficultyFromRating(place['rating'] as double? ?? 3.0),
+              latitude: place['geometry']['location']['lat'] as double,
+              longitude: place['geometry']['location']['lng'] as double,
+              // Use photos if available
+              imageUrl: _getPhotoUrlFromPlace(place, detailsResponse, currentApiKey),
+              // Mark as external source
+              createdBy: 'Google',
+            );
+
+            events.add(event);
+          } catch (e) {
+            AppLogger.error('Error processing Google Places result: $e');
+          }
+        }
+
+        return events;
+      } finally {
+        client.close();
+      }
+    } catch (e) {
+      AppLogger.error('Error fetching Google Places: $e');
+      return getSampleEvents();
+    }
+  }
+
+  /// Helper method to get place details
+  Future<Map<String, dynamic>?> _getPlaceDetails(String placeId, String apiKey) async {
+    try {
+      final detailsUrl = Uri.https(
+        'maps.googleapis.com',
+        '/maps/api/place/details/json',
+        {
+          'place_id': placeId,
+          'fields': 'name,formatted_address,formatted_phone_number,website,photos,opening_hours,rating,reviews',
+          'key': apiKey,
+        },
+      );
+
+      final client = http.Client();
+      try {
+        final response = await client.get(detailsUrl);
+
+        if (response.statusCode != 200) {
+          return null;
+        }
+
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+        if (data['status'] != 'OK') {
+          return null;
+        }
+
+        return data['result'] as Map<String, dynamic>;
+      } finally {
+        client.close();
+      }
+    } catch (e) {
+      AppLogger.error('Error getting place details: $e');
+      return null;
+    }
+  }
+
+  /// Helper method to determine category from place types
+  String _determineCategoryFromTypes(List types) {
+    if (types.contains('campground')) return 'Camping';
+    if (types.contains('park')) return 'Park';
+    if (types.contains('natural_feature')) return 'Nature';
+    if (types.contains('point_of_interest')) return 'Point of Interest';
+    return 'Outdoor';
+  }
+
+  /// Helper method to determine difficulty from rating
+  int _determineDifficultyFromRating(double rating) {
+    if (rating >= 4.5) return 4; // Challenging but rewarding
+    if (rating >= 4.0) return 3; // Moderate
+    if (rating >= 3.0) return 2; // Easy to moderate
+    return 1; // Easy
+  }
+
+  /// Helper method to get photo URL from place data
+  String _getPhotoUrlFromPlace(Map<String, dynamic> place, Map<String, dynamic>? details, String apiKey) {
+    // Try to get photo reference from place or details
+    String? photoReference;
+
+    if (place.containsKey('photos') && place['photos'] is List && (place['photos'] as List).isNotEmpty) {
+      photoReference = place['photos'][0]['photo_reference'] as String?;
+    } else if (details != null && details.containsKey('photos') &&
+        details['photos'] is List && (details['photos'] as List).isNotEmpty) {
+      photoReference = details['photos'][0]['photo_reference'] as String?;
+    }
+
+    if (photoReference != null) {
+      // Construct the photo URL
+      return 'https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=$photoReference&key=$apiKey';
+    }
+
+    // Default image if no photo available
+    return 'https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/generic_business-71.png';
   }
 
   List<EventData> getSampleEvents() {

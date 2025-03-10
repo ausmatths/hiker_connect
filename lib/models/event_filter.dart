@@ -1,5 +1,7 @@
 import 'package:hive/hive.dart';
 
+part 'event_filter.g.dart';
+
 @HiveType(typeId: 7)
 class EventFilter {
   @HiveField(0)
@@ -47,6 +49,18 @@ class EventFilter {
   @HiveField(14)
   final String? locationQuery;
 
+  @HiveField(15)
+  final bool includePastEvents;
+
+  @HiveField(16)
+  final bool includeCurrentEvents;
+
+  @HiveField(17)
+  final bool includeFutureEvents;
+
+  @HiveField(18)
+  final double? radiusInKm; // For Google API consistency
+
   EventFilter({
     this.searchQuery,
     this.startDate,
@@ -63,6 +77,10 @@ class EventFilter {
     this.category,
     this.difficultyLevel,
     this.locationQuery,
+    this.includePastEvents = false,
+    this.includeCurrentEvents = true,
+    this.includeFutureEvents = true,
+    this.radiusInKm,
   });
 
   // Create a copy of the filter with some modified fields
@@ -82,6 +100,10 @@ class EventFilter {
     String? category,
     int? difficultyLevel,
     String? locationQuery,
+    bool? includePastEvents,
+    bool? includeCurrentEvents,
+    bool? includeFutureEvents,
+    double? radiusInKm,
   }) {
     return EventFilter(
       searchQuery: searchQuery ?? this.searchQuery,
@@ -99,6 +121,10 @@ class EventFilter {
       category: category ?? this.category,
       difficultyLevel: difficultyLevel ?? this.difficultyLevel,
       locationQuery: locationQuery ?? this.locationQuery,
+      includePastEvents: includePastEvents ?? this.includePastEvents,
+      includeCurrentEvents: includeCurrentEvents ?? this.includeCurrentEvents,
+      includeFutureEvents: includeFutureEvents ?? this.includeFutureEvents,
+      radiusInKm: radiusInKm ?? this.radiusInKm,
     );
   }
 
@@ -131,6 +157,10 @@ class EventFilter {
       category: map['category'] as String?,
       difficultyLevel: map['difficultyLevel'] as int?,
       locationQuery: map['locationQuery'] as String?,
+      includePastEvents: map['includePastEvents'] as bool? ?? false,
+      includeCurrentEvents: map['includeCurrentEvents'] as bool? ?? true,
+      includeFutureEvents: map['includeFutureEvents'] as bool? ?? true,
+      radiusInKm: map['radiusInKm'] as double?,
     );
   }
 
@@ -151,11 +181,15 @@ class EventFilter {
       'category': category,
       'difficultyLevel': difficultyLevel,
       'locationQuery': locationQuery,
+      'includePastEvents': includePastEvents,
+      'includeCurrentEvents': includeCurrentEvents,
+      'includeFutureEvents': includeFutureEvents,
+      'radiusInKm': radiusInKm,
     };
   }
 
   @override
   String toString() {
-    return 'EventFilter{searchQuery: $searchQuery, startDate: $startDate, endDate: $endDate, categories: $categories, minDifficulty: $minDifficulty, maxDifficulty: $maxDifficulty, location: $location, maxDistance: $maxDistance, userLatitude: $userLatitude, userLongitude: $userLongitude, favoritesOnly: $favoritesOnly, showOnlyFavorites: $showOnlyFavorites, category: $category, difficultyLevel: $difficultyLevel, locationQuery: $locationQuery}';
+    return 'EventFilter{searchQuery: $searchQuery, startDate: $startDate, endDate: $endDate, categories: $categories, minDifficulty: $minDifficulty, maxDifficulty: $maxDifficulty, location: $location, maxDistance: $maxDistance, userLatitude: $userLatitude, userLongitude: $userLongitude, favoritesOnly: $favoritesOnly, showOnlyFavorites: $showOnlyFavorites, category: $category, difficultyLevel: $difficultyLevel, locationQuery: $locationQuery, includePastEvents: $includePastEvents, includeCurrentEvents: $includeCurrentEvents, includeFutureEvents: $includeFutureEvents, radiusInKm: $radiusInKm}';
   }
 }
