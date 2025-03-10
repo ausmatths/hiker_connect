@@ -179,6 +179,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 final review = Review(
                   userId: FirebaseAuth.instance.currentUser!.uid,
                   eventId: widget.eventId,
+                  trailId: '', // Assuming trailId is not used for events
+                  username: FirebaseAuth.instance.currentUser!.displayName ?? 'Anonymous',
                   reviewText: _reviewController.text.trim(),
                   rating: _rating,
                   timestamp: DateTime.now(),
@@ -221,6 +223,80 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
     developer.log('Sharing event: $eventTitle', name: 'EventDetailScreen');
     Share.share(shareText);
+  }
+  void _showReviewsBottomSheet(BuildContext context, List<Review> reviews) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      builder: (context) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Reviews',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: reviews.length,
+                  itemBuilder: (context, index) {
+                    final review = reviews[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                RatingBarIndicator(
+                                  rating: review.rating,
+                                  itemCount: 5,
+                                  itemSize: 16,
+                                  itemBuilder: (context, _) => const Icon(
+                                    Icons.star,
+                                    color: Colors.amber,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Posted on ${DateFormat('MMMM d, yyyy').format(review.timestamp)}',
+                                  style: const TextStyle(fontSize: 14),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              review.reviewText,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'By User ${review.username}',// Display a portion of the user ID
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildEventInfo(String title, String? value, IconData icon, ThemeData theme) {
@@ -355,7 +431,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       ),
                       if (numberOfReviews > 0) ...[
                         const SizedBox(width: 8),
-                      Row(
+                      GestureDetector(
+                          onTap: () { _showReviewsBottomSheet(context, reviews);},
+                      child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             RatingBarIndicator(
@@ -372,6 +450,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                               style: const TextStyle(fontSize: 14),
                             ),
                           ],
+                      ),
                         ),
               ],
                       ]

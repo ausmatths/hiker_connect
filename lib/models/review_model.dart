@@ -1,6 +1,8 @@
 class Review {
   final String userId;
   final String eventId;
+  final String trailId;
+  final String username;
   final String reviewText;
   final double rating; // Add a rating field
   final DateTime timestamp;
@@ -8,6 +10,8 @@ class Review {
   Review({
     required this.userId,
     required this.eventId,
+    required this.trailId,
+    required this.username,
     required this.reviewText,
     required this.rating,
     required this.timestamp,
@@ -17,6 +21,8 @@ class Review {
     return {
       'userId': userId,
       'eventId': eventId,
+      'trailId': trailId,
+      'username': username,
       'reviewText': reviewText,
       'rating': rating,
       'timestamp': timestamp.toIso8601String(),
@@ -27,6 +33,8 @@ class Review {
     return Review(
       userId: data['userId'],
       eventId: data['eventId'],
+      trailId: data['trailId'],
+      username: data['username'],
       reviewText: data['reviewText'],
       rating: data['rating'],
       timestamp: DateTime.parse(data['timestamp']),
