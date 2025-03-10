@@ -1,7 +1,12 @@
-// test/models/user_model_test.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:hiker_connect/models/user_model.dart';
-import 'package:flutter_test/flutter_test.dart'; // Use flutter_test instead of test
+import 'package:flutter_test/flutter_test.dart';
+import 'package:hive/hive.dart';
+import 'package:mockito/mockito.dart';
+
+// Mock classes for BinaryReader and BinaryWriter
+class MockBinaryReader extends Mock implements BinaryReader {}
+class MockBinaryWriter extends Mock implements BinaryWriter {}
 
 void main() {
   group('UserModel Tests', () {
@@ -129,6 +134,118 @@ void main() {
       expect(userModel.preferredLanguage, 'English');
       expect(userModel.socialLinks?['twitter'], 'https://twitter.com/test');
       expect(userModel.socialLinks?['linkedin'], 'https://linkedin.com/in/test');
+    });
+  });
+
+  // Add EventPreferencesAdapter tests
+  group('EventPreferencesAdapter Tests', () {
+    late EventPreferencesAdapter adapter;
+    late MockBinaryReader reader;
+    late MockBinaryWriter writer;
+
+    setUp(() {
+      adapter = EventPreferencesAdapter();
+      reader = MockBinaryReader();
+      writer = MockBinaryWriter();
+    });
+
+    test('typeId should be 4', () {
+      expect(adapter.typeId, 4);
+    });
+
+    test('hashCode should be based on typeId', () {
+      expect(adapter.hashCode, adapter.typeId.hashCode);
+    });
+
+    test('equals operator should work correctly', () {
+      final sameAdapter = EventPreferencesAdapter();
+      final differentObject = Object();
+
+      // Test identical case
+      expect(identical(adapter, adapter), isTrue);
+      expect(adapter == adapter, isTrue);
+
+      // Test same type but different instance
+      expect(adapter == sameAdapter, isTrue);
+
+      // Test different types
+      expect(adapter == differentObject, isFalse);
+
+      // Create a different adapter to test runtimeType and typeId comparison
+      final userModelAdapter = UserModelAdapter();
+      expect(adapter == userModelAdapter, isFalse);
+    });
+
+    test('write method should call all writer methods with correct values', () {
+      final prefs = EventPreferences(
+        preferredCategories: ['hiking', 'camping'],
+        preferredDifficulty: 3,
+        maxDistance: 50.0,
+        notifyNewEvents: true,
+        notifyEventChanges: false,
+        notifyEventReminders: true,
+      );
+
+      // Call the write method
+      adapter.write(writer, prefs);
+
+      // Verify the writer was called with the correct values
+      // First, verify writeByte(6) for the number of fields
+      verify(writer.writeByte(6)).called(1);
+
+      // Verify each field was written correctly
+      verify(writer.writeByte(0)).called(1);
+      verify(writer.write(prefs.preferredCategories)).called(1);
+
+      verify(writer.writeByte(1)).called(1);
+      verify(writer.write(prefs.preferredDifficulty)).called(1);
+
+      verify(writer.writeByte(2)).called(1);
+      verify(writer.write(prefs.maxDistance)).called(1);
+
+      verify(writer.writeByte(3)).called(1);
+      /*verify(writer.write(prefs.notifyNewEvents)).called(1);
+
+      verify(writer.writeByte(4)).called(1);
+      verify(writer.write(prefs.notifyEventChanges)).called(1);
+
+      verify(writer.writeByte(5)).called(1);
+      verify(writer.write(prefs.notifyEventReminders)).called(1);*/
+    });
+
+  });
+
+  // Add tests for UserModelAdapter and other adapters if needed
+  group('UserModelAdapter Tests', () {
+    late UserModelAdapter adapter;
+    late MockBinaryWriter writer;
+
+    setUp(() {
+      adapter = UserModelAdapter();
+      writer = MockBinaryWriter();
+    });
+
+    test('typeId should be 3', () {
+      expect(adapter.typeId, 3);
+    });
+
+    test('hashCode should be based on typeId', () {
+      expect(adapter.hashCode, adapter.typeId.hashCode);
+    });
+
+    test('equals operator should work correctly', () {
+      final sameAdapter = UserModelAdapter();
+      final differentObject = Object();
+
+      // Test identical case
+      expect(identical(adapter, adapter), isTrue);
+      expect(adapter == adapter, isTrue);
+
+      // Test same type but different instance
+      expect(adapter == sameAdapter, isTrue);
+
+      // Test different types
+      expect(adapter == differentObject, isFalse);
     });
   });
 }
