@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -6,7 +8,9 @@ import 'package:flutter_html/flutter_html.dart';
 import 'package:share_plus/share_plus.dart';
 import 'dart:developer' as developer;
 import '../../models/event_data.dart';
+import '../../models/review_model.dart';
 import '../../providers/events_provider.dart';
+import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 
 class EventDetailScreen extends StatefulWidget {
   final String eventId;
@@ -83,7 +87,107 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       );
     }
   }
+  Future<void> _saveReview(Review review) async {
+    try {
+      final firestore = FirebaseFirestore.instance;
+      await firestore.collection('reviews').add(review.toMap());
+      developer.log('Review saved successfully', name: 'EventDetailScreen');
+    } catch (e) {
+      developer.log('Error saving review: $e', name: 'EventDetailScreen');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to save review. Please try again.')),
+        );
+      }
+    }
+  }
+  double _calculateAverageRating(List<Review> reviews) {
+    if (reviews.isEmpty) return 0.0;
+    final totalRating = reviews.map((review) => review.rating).reduce((a, b) => a + b);
+    return totalRating / reviews.length;
+  }
 
+
+
+  Future<void> _showReviewDialog(BuildContext context) async {
+    final TextEditingController _reviewController = TextEditingController();
+    double _rating = 0.0;
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Write a Review'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _reviewController,
+                decoration: const InputDecoration(
+                  hintText: 'Write your review here...',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 5,
+              ),
+              const SizedBox(height: 16),
+              RatingBar.builder(
+                initialRating: _rating,
+                minRating: 1,
+                direction: Axis.horizontal,
+                allowHalfRating: true,
+                itemCount: 5,
+                itemSize: 30,
+                itemBuilder: (context, _) => const Icon(
+                  Icons.star,
+                  color: Colors.amber,
+                ),
+                onRatingUpdate: (rating) {
+                  _rating = rating;
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                if (_reviewController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please write a review')),
+                  );
+                  return;
+                }
+
+                final review = Review(
+                  userId: FirebaseAuth.instance.currentUser!.uid,
+                  eventId: widget.eventId,
+                  reviewText: _reviewController.text.trim(),
+                  rating: _rating,
+                  timestamp: DateTime.now(),
+                );
+
+                // Save the review to Firestore
+                await _saveReview(review);
+
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Review submitted successfully')),
+                  );
+                  Navigator.pop(context);
+                }
+              },
+              child: const Text('Submit'),
+            ),
+          ],
+        );
+      },
+    );
+  }
   void _shareEvent() {
     if (_event == null) return;
 
@@ -384,7 +488,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     const SizedBox(width: 16),
                     Expanded(
                       child: OutlinedButton.icon(
-                        onPressed: _shareEvent,
+                        onPressed:() => _showReviewDialog(context),
                         icon: const Icon(
                           Icons.reviews,
                         ),
