@@ -15,6 +15,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "967683373829-desv0eu05vvr9oebrk9f54m8mg67jjd6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ausmatths.hikerConnect",
+            "certificate_hash": "302b07c6595d55a2f3d50c47c43db5399b623f36"
+          }
+        },
+        {
+          "client_id": "967683373829-eoqa3g0hqfkbfciaapptjmgkncfo2bga.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.ausmatths.hikerConnect",
+            "certificate_hash": "241a6bac61c698674665c017a94a41205d1299cf"
+          }
+        },
+        {
           "client_id": "967683373829-kjq1shb1aavq4jr2rgibg5ddtdk5bvrm.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -51,14 +67,6 @@
       },
       "oauth_client": [
         {
-          "client_id": "967683373829-576k20omp8p7tjq5t3oht8mk1ihf37bj.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.hiker_connect",
-            "certificate_hash": "8c6bf6729779ae3dafe6c87b64886609c198ebb4"
-          }
-        },
-        {
           "client_id": "967683373829-kjq1shb1aavq4jr2rgibg5ddtdk5bvrm.apps.googleusercontent.com",
           "client_type": 3
         }
@@ -94,6 +102,22 @@
         }
       },
       "oauth_client": [
+        {
+          "client_id": "967683373829-4k5ut5k12o375qc2da2pr47jj9dufk64.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hikerconnect.app",
+            "certificate_hash": "241a6bac61c698674665c017a94a41205d1299cf"
+          }
+        },
+        {
+          "client_id": "967683373829-90ighnvcv4vjphsk2s579upmmahdn7og.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.hikerconnect.app",
+            "certificate_hash": "302b07c6595d55a2f3d50c47c43db5399b623f36"
+          }
+        },
         {
           "client_id": "967683373829-kjq1shb1aavq4jr2rgibg5ddtdk5bvrm.apps.googleusercontent.com",
           "client_type": 3

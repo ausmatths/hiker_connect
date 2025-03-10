@@ -396,7 +396,6 @@ class AppInitializer {
       await Hive.openBox<EventData>('eventBox');
       await Hive.openBox<String>('favoritesBox');
 
-      // Specifically handle photoBox
       try {
         if (!Hive.isBoxOpen('photoBox')) {
           await Hive.openBox<PhotoData>('photoBox');
@@ -578,6 +577,7 @@ class AppInitializer {
   /// Initialize Firebase App Check
   static Future<void> _initializeAppCheck() async {
     try {
+      // Always use the debug provider in debug mode
       // Always use the debug provider in debug mode
       if (kDebugMode) {
         developer.log('Initializing App Check with debug provider', name: 'App Setup');

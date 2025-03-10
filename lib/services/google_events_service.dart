@@ -17,8 +17,8 @@ class GoogleEventsService {
   static const String _apiKeyKey = 'google_api_key';
   static const String _userIdKey = 'google_user_id';
 
-  // Client ID for OAuth (using your actual client ID)
-  static const String _clientId = '967683373829-etonh967dnlo7mrmtha7qvbl78u9a3s9.apps.googleusercontent.com';
+  // Client ID for OAuth using the provided configuration
+  static const String _clientId = '967683373829-eoqa3g0hqfkbfciaapptjmgkncfo2bga.apps.googleusercontent.com';
   static const List<String> _scopes = [
     'https://www.googleapis.com/auth/calendar.readonly',
     'https://www.googleapis.com/auth/calendar.events.readonly',
@@ -36,7 +36,8 @@ class GoogleEventsService {
   // Google SignIn instance
   final GoogleSignIn _googleSignIn = GoogleSignIn(
     scopes: _scopes,
-    clientId: _clientId,
+    // Using serverClientId instead of clientId to fix the warning
+    serverClientId: _clientId,
   );
 
   // HTTP client for API requests
@@ -131,10 +132,16 @@ class GoogleEventsService {
       await _secureStorage.write(key: _userIdKey, value: _userId);
       await _secureStorage.write(key: _tokenKey, value: auth.accessToken);
 
-      // Try to authenticate with the token (add refresh token too)
+      // Check if refresh token is available
+      if (auth.idToken != null) {
+        // Using idToken as a temporary substitute when refreshToken isn't available
+        await _secureStorage.write(key: _refreshTokenKey, value: auth.idToken);
+      }
+
+      // Try to authenticate with the token
       _isAuthenticated = await _authenticateWithToken(
         auth.accessToken!,
-        auth.accessToken!, // Using accessToken as refreshToken for simplicity
+        auth.idToken ?? auth.accessToken!, // Using idToken as refreshToken if available
       );
 
       return _isAuthenticated;
@@ -156,18 +163,8 @@ class GoogleEventsService {
       // Add a small delay before sign-in to ensure UI is ready
       await Future.delayed(Duration(milliseconds: 300));
 
-      // Silent sign-in first to avoid UI prompts if possible
-      GoogleSignInAccount? account;
-      try {
-        account = await _googleSignIn.signInSilently();
-      } catch (e) {
-        AppLogger.warning('Silent sign-in failed, trying interactive: $e');
-      }
-
-      // If silent sign-in failed, try interactive
-      if (account == null) {
-        account = await _googleSignIn.signIn();
-      }
+      // Try interactive sign-in
+      final account = await _googleSignIn.signIn();
 
       if (account == null) {
         AppLogger.warning('User canceled sign-in');
@@ -189,10 +186,15 @@ class GoogleEventsService {
       await _secureStorage.write(key: _userIdKey, value: _userId);
       await _secureStorage.write(key: _tokenKey, value: auth.accessToken);
 
+      // Store idToken if available (useful for some authentication flows)
+      if (auth.idToken != null) {
+        await _secureStorage.write(key: _refreshTokenKey, value: auth.idToken);
+      }
+
       // Try to authenticate with the token
       _isAuthenticated = await _authenticateWithToken(
         auth.accessToken!,
-        auth.accessToken!, // Using accessToken as refreshToken for simplicity
+        auth.idToken ?? auth.accessToken!, // Using idToken as refreshToken if available
       );
 
       return _isAuthenticated;

@@ -63,7 +63,7 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data
-                    android:scheme="com.googleusercontent.apps.967683373829-etonh967dnlo7mrmtha7qvbl78u9a3s9"
+                    android:scheme="com.googleusercontent.apps.967683373829-eoqa3g0hqfkbfciaapptjmgkncfo2bga"
                     android:host="oauth2redirect"/>
             </intent-filter>
         </activity>
