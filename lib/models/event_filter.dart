@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hive/hive.dart';
 
 part 'event_filter.g.dart';
@@ -9,6 +11,14 @@ class EventFilter {
 
   @HiveField(1)
   final DateTime? endDate;
+
+  // Add the new fields needed for events_filter_screen.dart
+  final TimeOfDay? startTime;
+  final TimeOfDay? endTime;
+  final String? timePeriod;
+  final LatLng? searchLocation;
+  final double? searchRadius;
+  final bool includeGoogleEvents;
 
   @HiveField(2)
   final List<String> categories;
@@ -65,6 +75,12 @@ class EventFilter {
     this.searchQuery,
     this.startDate,
     this.endDate,
+    this.startTime,
+    this.endTime,
+    this.timePeriod,
+    this.searchLocation,
+    this.searchRadius,
+    this.includeGoogleEvents = false,
     this.categories = const [],
     this.minDifficulty,
     this.maxDifficulty,
@@ -88,6 +104,12 @@ class EventFilter {
     String? searchQuery,
     DateTime? startDate,
     DateTime? endDate,
+    TimeOfDay? startTime,
+    TimeOfDay? endTime,
+    String? timePeriod,
+    LatLng? searchLocation,
+    double? searchRadius,
+    bool? includeGoogleEvents,
     List<String>? categories,
     int? minDifficulty,
     int? maxDifficulty,
@@ -109,6 +131,12 @@ class EventFilter {
       searchQuery: searchQuery ?? this.searchQuery,
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
+      startTime: startTime ?? this.startTime,
+      endTime: endTime ?? this.endTime,
+      timePeriod: timePeriod ?? this.timePeriod,
+      searchLocation: searchLocation ?? this.searchLocation,
+      searchRadius: searchRadius ?? this.searchRadius,
+      includeGoogleEvents: includeGoogleEvents ?? this.includeGoogleEvents,
       categories: categories ?? this.categories,
       minDifficulty: minDifficulty ?? this.minDifficulty,
       maxDifficulty: maxDifficulty ?? this.maxDifficulty,
@@ -161,6 +189,7 @@ class EventFilter {
       includeCurrentEvents: map['includeCurrentEvents'] as bool? ?? true,
       includeFutureEvents: map['includeFutureEvents'] as bool? ?? true,
       radiusInKm: map['radiusInKm'] as double?,
+      includeGoogleEvents: map['includeGoogleEvents'] as bool? ?? false,
     );
   }
 
@@ -185,11 +214,12 @@ class EventFilter {
       'includeCurrentEvents': includeCurrentEvents,
       'includeFutureEvents': includeFutureEvents,
       'radiusInKm': radiusInKm,
+      'includeGoogleEvents': includeGoogleEvents,
     };
   }
 
   @override
   String toString() {
-    return 'EventFilter{searchQuery: $searchQuery, startDate: $startDate, endDate: $endDate, categories: $categories, minDifficulty: $minDifficulty, maxDifficulty: $maxDifficulty, location: $location, maxDistance: $maxDistance, userLatitude: $userLatitude, userLongitude: $userLongitude, favoritesOnly: $favoritesOnly, showOnlyFavorites: $showOnlyFavorites, category: $category, difficultyLevel: $difficultyLevel, locationQuery: $locationQuery, includePastEvents: $includePastEvents, includeCurrentEvents: $includeCurrentEvents, includeFutureEvents: $includeFutureEvents, radiusInKm: $radiusInKm}';
+    return 'EventFilter{searchQuery: $searchQuery, startDate: $startDate, endDate: $endDate, categories: $categories, minDifficulty: $minDifficulty, maxDifficulty: $maxDifficulty, location: $location, maxDistance: $maxDistance, userLatitude: $userLatitude, userLongitude: $userLongitude, favoritesOnly: $favoritesOnly, showOnlyFavorites: $showOnlyFavorites, category: $category, difficultyLevel: $difficultyLevel, locationQuery: $locationQuery, includePastEvents: $includePastEvents, includeCurrentEvents: $includeCurrentEvents, includeFutureEvents: $includeFutureEvents, radiusInKm: $radiusInKm, startTime: $startTime, endTime: $endTime, timePeriod: $timePeriod, searchLocation: $searchLocation, searchRadius: $searchRadius, includeGoogleEvents: $includeGoogleEvents}';
   }
 }

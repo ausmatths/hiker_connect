@@ -495,4 +495,66 @@ class MockDatabaseService extends _i1.Mock implements _i4.DatabaseService {
         returnValue: _i5.Future<void>.value(),
         returnValueForMissingStub: _i5.Future<void>.value(),
       ) as _i5.Future<void>);
+
+  @override
+  _i5.Future<List<_i7.EventData>> getFilteredEvents(_i9.EventFilter? filter) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getFilteredEvents,
+          [filter],
+        ),
+        returnValue: _i5.Future<List<_i7.EventData>>.value(<_i7.EventData>[]),
+      ) as _i5.Future<List<_i7.EventData>>);
+
+  @override
+  _i5.Future<List<_i7.EventData>> getUpcomingEvents({int? limit = 10}) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getUpcomingEvents,
+          [],
+          {#limit: limit},
+        ),
+        returnValue: _i5.Future<List<_i7.EventData>>.value(<_i7.EventData>[]),
+      ) as _i5.Future<List<_i7.EventData>>);
+
+  @override
+  _i5.Future<List<_i7.EventData>> getOngoingEvents() => (super.noSuchMethod(
+        Invocation.method(
+          #getOngoingEvents,
+          [],
+        ),
+        returnValue: _i5.Future<List<_i7.EventData>>.value(<_i7.EventData>[]),
+      ) as _i5.Future<List<_i7.EventData>>);
+
+  @override
+  _i5.Future<List<_i7.EventData>> getPastEvents({int? limit = 20}) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getPastEvents,
+          [],
+          {#limit: limit},
+        ),
+        returnValue: _i5.Future<List<_i7.EventData>>.value(<_i7.EventData>[]),
+      ) as _i5.Future<List<_i7.EventData>>);
+
+  @override
+  _i5.Future<List<_i7.EventData>> getGoogleEvents({
+    required double? latitude,
+    required double? longitude,
+    required double? radiusInKm,
+    String? keyword,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getGoogleEvents,
+          [],
+          {
+            #latitude: latitude,
+            #longitude: longitude,
+            #radiusInKm: radiusInKm,
+            #keyword: keyword,
+          },
+        ),
+        returnValue: _i5.Future<List<_i7.EventData>>.value(<_i7.EventData>[]),
+      ) as _i5.Future<List<_i7.EventData>>);
 }

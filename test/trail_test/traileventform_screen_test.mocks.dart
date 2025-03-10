@@ -682,6 +682,69 @@ class MockDatabaseService extends _i1.Mock implements _i9.DatabaseService {
         returnValue: _i8.Future<void>.value(),
         returnValueForMissingStub: _i8.Future<void>.value(),
       ) as _i8.Future<void>);
+
+  @override
+  _i8.Future<List<_i11.EventData>> getFilteredEvents(
+          _i13.EventFilter? filter) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getFilteredEvents,
+          [filter],
+        ),
+        returnValue: _i8.Future<List<_i11.EventData>>.value(<_i11.EventData>[]),
+      ) as _i8.Future<List<_i11.EventData>>);
+
+  @override
+  _i8.Future<List<_i11.EventData>> getUpcomingEvents({int? limit = 10}) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getUpcomingEvents,
+          [],
+          {#limit: limit},
+        ),
+        returnValue: _i8.Future<List<_i11.EventData>>.value(<_i11.EventData>[]),
+      ) as _i8.Future<List<_i11.EventData>>);
+
+  @override
+  _i8.Future<List<_i11.EventData>> getOngoingEvents() => (super.noSuchMethod(
+        Invocation.method(
+          #getOngoingEvents,
+          [],
+        ),
+        returnValue: _i8.Future<List<_i11.EventData>>.value(<_i11.EventData>[]),
+      ) as _i8.Future<List<_i11.EventData>>);
+
+  @override
+  _i8.Future<List<_i11.EventData>> getPastEvents({int? limit = 20}) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getPastEvents,
+          [],
+          {#limit: limit},
+        ),
+        returnValue: _i8.Future<List<_i11.EventData>>.value(<_i11.EventData>[]),
+      ) as _i8.Future<List<_i11.EventData>>);
+
+  @override
+  _i8.Future<List<_i11.EventData>> getGoogleEvents({
+    required double? latitude,
+    required double? longitude,
+    required double? radiusInKm,
+    String? keyword,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getGoogleEvents,
+          [],
+          {
+            #latitude: latitude,
+            #longitude: longitude,
+            #radiusInKm: radiusInKm,
+            #keyword: keyword,
+          },
+        ),
+        returnValue: _i8.Future<List<_i11.EventData>>.value(<_i11.EventData>[]),
+      ) as _i8.Future<List<_i11.EventData>>);
 }
 
 /// A class which mocks [FirebaseAuth].
