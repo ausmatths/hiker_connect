@@ -55,6 +55,7 @@ dependencies:
   flutter_rating_bar: ^4.0.1
   location: ^5.0.0
   google_maps_flutter: ^2.3.0
+  timeago: ^3.4.0
 
 
   # Firebase dependencies

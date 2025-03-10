@@ -21,6 +21,7 @@ import 'package:hiker_connect/services/databaseservice.dart';
 import 'package:hiker_connect/services/google_events_service.dart'; // New import for Google Events
 import 'package:hiker_connect/providers/events_provider.dart';
 import 'package:hiker_connect/providers/event_browsing_provider.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart'; // Add for LatLng support
 import 'dart:async'; // Add this for runZonedGuarded
 import 'dart:developer' as developer;
 import 'dart:io' show Directory, HttpClient, Platform;
@@ -36,6 +37,7 @@ import 'package:flutter/src/foundation/binding.dart' show BindingBase;
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:firebase_performance/firebase_performance.dart'; // Add for performance monitoring
+import 'package:geolocator/geolocator.dart'; // Add for user location
 
 // Import screens and services
 import 'package:hiker_connect/services/firebase_auth.dart';
@@ -126,13 +128,17 @@ class EventFilterAdapter extends TypeAdapter<EventFilter> {
       category: fields[12] as String?,
       difficultyLevel: fields[13] as int?,
       locationQuery: fields[14] as String?,
+      includePastEvents: fields[15] as bool? ?? false,
+      includeCurrentEvents: fields[16] as bool? ?? true,
+      includeFutureEvents: fields[17] as bool? ?? true,
+      includeGoogleEvents: fields[18] as bool? ?? false,
     );
   }
 
   @override
   void write(BinaryWriter writer, EventFilter obj) {
     writer
-      ..writeByte(15)
+      ..writeByte(19)
       ..writeByte(0)
       ..write(obj.startDate)
       ..writeByte(1)
@@ -162,7 +168,15 @@ class EventFilterAdapter extends TypeAdapter<EventFilter> {
       ..writeByte(13)
       ..write(obj.difficultyLevel)
       ..writeByte(14)
-      ..write(obj.locationQuery);
+      ..write(obj.locationQuery)
+      ..writeByte(15)
+      ..write(obj.includePastEvents)
+      ..writeByte(16)
+      ..write(obj.includeCurrentEvents)
+      ..writeByte(17)
+      ..write(obj.includeFutureEvents)
+      ..writeByte(18)
+      ..write(obj.includeGoogleEvents);
   }
 
   @override
@@ -287,10 +301,76 @@ class PerformanceMonitoringService {
   int min(int a, int b) => a < b ? a : b;
 }
 
+/// Location service to get and track user location
+class LocationService {
+  Position? _currentPosition;
+
+  Position? get currentPosition => _currentPosition;
+
+  // Check if location services are enabled
+  Future<bool> _checkLocationServices() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      return false;
+    }
+    return true;
+  }
+
+  // Request location permission
+  Future<LocationPermission> _requestPermission() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    return permission;
+  }
+
+  // Get current user location
+  Future<Position?> getCurrentLocation() async {
+    try {
+      // Check if location services are enabled
+      bool serviceEnabled = await _checkLocationServices();
+      if (!serviceEnabled) {
+        developer.log('Location services are disabled', name: 'LocationService');
+        return null;
+      }
+
+      // Request permission
+      LocationPermission permission = await _requestPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        developer.log('Location permission denied', name: 'LocationService');
+        return null;
+      }
+
+      // Get position
+      _currentPosition = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high
+      );
+
+      developer.log(
+          'Got user location: ${_currentPosition?.latitude}, ${_currentPosition?.longitude}',
+          name: 'LocationService'
+      );
+
+      return _currentPosition;
+    } catch (e) {
+      developer.log('Error getting location: $e', name: 'LocationService');
+      return null;
+    }
+  }
+
+  // Convert Position to LatLng for Google Maps
+  LatLng? positionToLatLng(Position? position) {
+    if (position == null) return null;
+    return LatLng(position.latitude, position.longitude);
+  }
+}
+
 /// Handles the initialization of all app dependencies
 class AppInitializer {
   /// Initialize all services and return them for use in the app
-  static Future<(DatabaseService, GoogleEventsService, AuthService, PerformanceMonitoringService)> initialize() async {
+  static Future<(DatabaseService, GoogleEventsService, AuthService, PerformanceMonitoringService, LocationService)> initialize() async {
     // Configure error handling
     _setupErrorHandling();
 
@@ -300,6 +380,12 @@ class AppInitializer {
     // Initialize Firebase Performance Monitoring
     final performanceService = PerformanceMonitoringService();
 
+    // Initialize location service
+    final locationService = LocationService();
+
+    // Try to get initial location
+    await locationService.getCurrentLocation();
+
     // Initialize services in the correct order
     final dbService = await _initializeDatabaseService();
     final googleEventsService = await _initializeGoogleEventsService();
@@ -307,7 +393,7 @@ class AppInitializer {
     // Initialize auth service after Firebase is ready
     final authService = AuthService();
 
-    return (dbService, googleEventsService, authService, performanceService);
+    return (dbService, googleEventsService, authService, performanceService, locationService);
   }
 
   /// Set up global error handling
@@ -578,7 +664,6 @@ class AppInitializer {
   static Future<void> _initializeAppCheck() async {
     try {
       // Always use the debug provider in debug mode
-      // Always use the debug provider in debug mode
       if (kDebugMode) {
         developer.log('Initializing App Check with debug provider', name: 'App Setup');
 
@@ -677,50 +762,61 @@ void main() {
 
     try {
       // Initialize all app dependencies
-      final (dbService, googleEventsService, authService, performanceService) = await AppInitializer.initialize();
+      final (dbService, googleEventsService, authService, performanceService, locationService) =
+      await AppInitializer.initialize();
+
+      // Get user's current location as LatLng
+      final userLocation = locationService.positionToLatLng(locationService.currentPosition);
 
       // Run app with providers
       runApp(
-        MultiProvider(
-          providers: [
-            // Auth providers
-            ChangeNotifierProvider<AuthService>.value(value: authService),
-            StreamProvider<User?>.value(
-              value: authService.authStateChanges,
-              initialData: null,
-              catchError: (context, error) {
-                developer.log(
-                  'Auth State Stream Error',
-                  name: 'AuthProvider',
-                  error: error,
-                );
-                return null;
-              },
-            ),
+          MultiProvider(
+              providers: [
+          // Auth providers
+          ChangeNotifierProvider<AuthService>.value(value: authService),
+          StreamProvider<User?>.value(
+          value: authService.authStateChanges,
+          initialData: null,
+          catchError: (context, error) {
+        developer.log(
+          'Auth State Stream Error',
+          name: 'AuthProvider',
+          error: error,
+        );
+        return null;
+      },
+    ),
 
-            // Database provider
-            Provider<DatabaseService>.value(value: dbService),
+    // Database provider
+    Provider<DatabaseService>.value(value: dbService),
 
-            // Google Events provider
-            Provider<GoogleEventsService>.value(value: googleEventsService),
+    // Google Events provider
+    Provider<GoogleEventsService>.value(value: googleEventsService),
 
-            // Performance monitoring provider
-            Provider<PerformanceMonitoringService>.value(value: performanceService),
+    // Performance monitoring provider
+    Provider<PerformanceMonitoringService>.value(value: performanceService),
 
-            // Events provider (using Google Events)
-            ChangeNotifierProvider<EventsProvider>(
-              create: (_) => EventsProvider(googleEventsService: googleEventsService),
-              lazy: true,
-            ),
+                // Location service provider
+                Provider<LocationService>.value(value: locationService),
 
-            // Event browsing provider
-            ChangeNotifierProvider<EventBrowsingProvider>(
-              create: (_) => EventBrowsingProvider(databaseService: dbService),
-              lazy: false,
-            ),
-          ],
-          child: const App(),
-        ),
+                // Events provider (using Google Events)
+                ChangeNotifierProvider<EventsProvider>(
+                  create: (_) => EventsProvider(googleEventsService: googleEventsService),
+                  lazy: true,
+                ),
+
+                // Event browsing provider
+                ChangeNotifierProvider<EventBrowsingProvider>(
+                  create: (_) => EventBrowsingProvider(
+                    databaseService: dbService,
+                    googleEventsService: googleEventsService,
+                    initialUserLocation: userLocation,
+                  ),
+                  lazy: false,
+                ),
+              ],
+            child: const App(),
+          ),
       );
     } catch (e, stackTrace) {
       developer.log(
@@ -790,19 +886,26 @@ class _AuthWrapperState extends State<AuthWrapper> {
   @override
   void initState() {
     super.initState();
-    // Initialize provider outside of build
+    // Initialize providers outside of build
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         final eventsProvider = Provider.of<EventsProvider>(context, listen: false);
+        final eventBrowsingProvider = Provider.of<EventBrowsingProvider>(context, listen: false);
         final performanceService = Provider.of<PerformanceMonitoringService>(context, listen: false);
 
+        // Initialize event providers with performance tracing
         if (!eventsProvider.initialized) {
-          // Use performance monitoring to trace initialization
           performanceService.traceEventOperation(
             traceName: 'events_initialization',
             operation: () => eventsProvider.initialize(),
           );
         }
+
+        // Refresh event data in the browsing provider
+        performanceService.traceEventOperation(
+          traceName: 'event_browsing_refresh',
+          operation: () => eventBrowsingProvider.refreshEvents(),
+        );
       }
     });
   }
@@ -820,60 +923,60 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InitializationScreen(
-        child: MaterialApp(
+      child: MaterialApp(
         title: 'Hiker Connect',
         debugShowCheckedModeBanner: false,
         localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: const [Locale('en', 'US')],
-    theme: ThemeData(
-    colorScheme: ColorScheme.fromSeed(
-    seedColor: Colors.green,
-    brightness: Brightness.light,
-    ),
-    useMaterial3: true,
-    appBarTheme: const AppBarTheme(
-    centerTitle: true,
-    elevation: 0,
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-    style: ElevatedButton.styleFrom(
-    padding: const EdgeInsets.symmetric(vertical: 16),
-    ),
-    ),
-    ),
-    darkTheme: ThemeData(
-    colorScheme: ColorScheme.fromSeed(
-    seedColor: Colors.green,
-    brightness: Brightness.dark,
-    ),
-    useMaterial3: true,
-    scaffoldBackgroundColor: Colors.black,
-    appBarTheme: const AppBarTheme(
-    backgroundColor: Colors.black,
-    foregroundColor: Colors.white,
-    centerTitle: true,
-    elevation: 0,
-    ),
-    ),
-          themeMode: ThemeMode.dark, // Set default to dark theme for the photo gallery appearance
-          home: const AuthWrapper(),
-          routes: {
-            '/login': (context) => const LoginScreen(),
-            '/signup': (context) => const SignUpScreen(),
-            '/home': (context) => const HomeScreen(),
-            '/profile': (context) => const ProfileScreen(),
-            '/events': (context) => const EventsListScreen(),
-            '/events-browse': (context) => const EventsBrowsingScreen(),
-            '/trails': (context) => const TrailListScreen(),
-            '/forgot-password': (context) => const ForgotPasswordScreen(),
-            '/event-form': (context) => const EventFormScreen(),
-            // Removed problematic PhotoDetailScreen route
-          },
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.green,
+            brightness: Brightness.light,
+          ),
+          useMaterial3: true,
+          appBarTheme: const AppBarTheme(
+            centerTitle: true,
+            elevation: 0,
+          ),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+          ),
         ),
+        darkTheme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.green,
+            brightness: Brightness.dark,
+          ),
+          useMaterial3: true,
+          scaffoldBackgroundColor: Colors.black,
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.black,
+            foregroundColor: Colors.white,
+            centerTitle: true,
+            elevation: 0,
+          ),
+        ),
+        themeMode: ThemeMode.dark, // Set default to dark theme for the photo gallery appearance
+        home: const AuthWrapper(),
+        routes: {
+          '/login': (context) => const LoginScreen(),
+          '/signup': (context) => const SignUpScreen(),
+          '/home': (context) => const HomeScreen(),
+          '/profile': (context) => const ProfileScreen(),
+          '/events': (context) => const EventsListScreen(),
+          '/events-browse': (context) => const EventsBrowsingScreen(),
+          '/trails': (context) => const TrailListScreen(),
+          '/forgot-password': (context) => const ForgotPasswordScreen(),
+          '/event-form': (context) => const EventFormScreen(),
+          // Removed problematic PhotoDetailScreen route
+        },
+      ),
     );
   }
 }

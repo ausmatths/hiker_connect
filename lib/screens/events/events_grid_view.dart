@@ -11,6 +11,7 @@ class EventsGridView extends StatelessWidget {
   final bool hasMoreEvents;
   final bool isLoadingMore;
   final VoidCallback onLoadMore;
+  final bool showTimeSince;
 
   const EventsGridView({
     Key? key,
@@ -18,6 +19,7 @@ class EventsGridView extends StatelessWidget {
     this.hasMoreEvents = false,
     this.isLoadingMore = false,
     required this.onLoadMore,
+    this.showTimeSince = false,
   }) : super(key: key);
 
   @override
@@ -26,10 +28,37 @@ class EventsGridView extends StatelessWidget {
     final screenWidth = MediaQuery.of(context).size.width;
 
     // Calculate number of columns based on screen width
-    final int crossAxisCount = screenWidth > 600 ? 3 : 2;
+    final int crossAxisCount = screenWidth > 900 ? 4 : (screenWidth > 600 ? 3 : 2);
 
     // Adjust aspect ratio slightly to provide more space for content
     final double aspectRatio = 0.8;
+
+    if (events.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.event_busy,
+              size: 64,
+              color: Theme.of(context).colorScheme.secondary.withOpacity(0.5),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No events found',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Try adjusting your filters',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return NotificationListener<ScrollNotification>(
       onNotification: (ScrollNotification scrollInfo) {
@@ -134,6 +163,31 @@ class EventsGridView extends StatelessWidget {
                             ),
                           ),
                         ),
+                      // Time badge for upcoming events
+                      if (event.eventDate.isAfter(DateTime.now()) &&
+                          event.eventDate.difference(DateTime.now()).inDays <= 7)
+                        Positioned(
+                          bottom: 8,
+                          left: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6.0,
+                              vertical: 2.0,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.7),
+                              borderRadius: BorderRadius.circular(4.0),
+                            ),
+                            child: Text(
+                              _getShortTimeSinceText(event.eventDate),
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10.0,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
                       // Favorite button
                       Positioned(
                         top: 4,
@@ -194,7 +248,9 @@ class EventsGridView extends StatelessWidget {
                                   const SizedBox(width: 2.0), // Reduced spacing
                                   Expanded(
                                     child: Text(
-                                      dateFormat.format(event.eventDate),
+                                      showTimeSince
+                                          ? _getTimeSinceText(event.eventDate)
+                                          : dateFormat.format(event.eventDate),
                                       style: TextStyle(
                                         fontSize: 10.0, // Smaller text
                                         color: Theme.of(context).colorScheme.secondary,
@@ -242,35 +298,48 @@ class EventsGridView extends StatelessWidget {
 
                               const Spacer(flex: 1), // Use flexible spacer
 
-                              // Attendees count - make this row as small as possible
+                              // Bottom row with attendees count and price indicator
                               Row(
-                                mainAxisSize: MainAxisSize.min, // Important - prevent overflow
+                                mainAxisSize: MainAxisSize.max, // Take full width
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
-                                  const Icon(Icons.people_outline, size: 10.0), // Smaller icon
-                                  const SizedBox(width: 2.0), // Reduced spacing
-                                  Text(
-                                    '${event.attendees?.length ?? 0}',
-                                    style: const TextStyle(fontSize: 10.0), // Smaller text
+                                  // Attendees count
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.people_outline, size: 10.0), // Smaller icon
+                                      const SizedBox(width: 2.0), // Reduced spacing
+                                      Text(
+                                        '${event.attendees?.length ?? 0}',
+                                        style: const TextStyle(fontSize: 10.0), // Smaller text
+                                      ),
+                                    ],
                                   ),
-                                  if (event.isFree != null && event.isFree!)
-                                    Expanded(
-                                      child: Align(
-                                        alignment: Alignment.centerRight,
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
-                                          decoration: BoxDecoration(
-                                            color: Colors.green.withOpacity(0.2),
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          child: const Text(
-                                            'FREE',
-                                            style: TextStyle(
-                                              fontSize: 8, // Even smaller text
-                                              color: Colors.green,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
+
+                                  // Free badge or price
+                                  if (event.isFree == true)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Text(
+                                        'FREE',
+                                        style: TextStyle(
+                                          fontSize: 8, // Even smaller text
+                                          color: Colors.green,
+                                          fontWeight: FontWeight.bold,
                                         ),
+                                      ),
+                                    )
+                                  else if (event.price != null)
+                                    Text(
+                                      _formatPrice(event.price),
+                                      style: TextStyle(
+                                        fontSize: 10.0,
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(context).colorScheme.secondary,
                                       ),
                                     ),
                                 ],
@@ -290,12 +359,91 @@ class EventsGridView extends StatelessWidget {
     );
   }
 
+  // Helper to format price correctly regardless of type
+  String _formatPrice(dynamic price) {
+    if (price == null) return '';
+
+    // Handle different types of price data
+    if (price is int) {
+      return '\$${price.toString()}';
+    } else if (price is double) {
+      return '\$${price.toStringAsFixed(2)}';
+    } else if (price is String) {
+      // Try to parse the string as a number
+      double? parsedPrice = double.tryParse(price);
+      if (parsedPrice != null) {
+        return '\$${parsedPrice.toStringAsFixed(2)}';
+      } else {
+        // If it's not a parseable number, just return the string with $ prefix
+        return price.startsWith('\$') ? price : '\$$price';
+      }
+    }
+
+    // Fallback for any other type
+    return '\$$price';
+  }
+
   // Helper to truncate location text to prevent overflow
   String _truncateLocation(String location) {
-    if (location.length > 25) { // Reduced character limit
+    if (location.length > 25) {
+      // Reduced character limit
       return location.substring(0, 22) + '...';
     }
     return location;
+  }
+
+  String _getTimeSinceText(DateTime eventDate) {
+    final now = DateTime.now();
+
+    // Calculate the difference manually
+    final difference = eventDate.difference(now);
+
+    if (difference.isNegative) {
+      // Event is in the past
+      if (difference.inDays < -365) {
+        return '${(-difference.inDays / 365).floor()} years ago';
+      } else if (difference.inDays < -30) {
+        return '${(-difference.inDays / 30).floor()} months ago';
+      } else if (difference.inDays < -1) {
+        return '${-difference.inDays} days ago';
+      } else if (difference.inHours < -1) {
+        return '${-difference.inHours} hours ago';
+      } else if (difference.inMinutes < -1) {
+        return '${-difference.inMinutes} minutes ago';
+      } else {
+        return 'Just now';
+      }
+    } else {
+      // Event is in the future
+      if (difference.inDays > 365) {
+        return 'In ${(difference.inDays / 365).floor()} years';
+      } else if (difference.inDays > 30) {
+        return 'In ${(difference.inDays / 30).floor()} months';
+      } else if (difference.inDays > 0) {
+        return 'In ${difference.inDays} days';
+      } else if (difference.inHours > 0) {
+        return 'In ${difference.inHours} hours';
+      } else if (difference.inMinutes > 0) {
+        return 'In ${difference.inMinutes} minutes';
+      } else {
+        return 'About to start';
+      }
+    }
+  }
+
+  String _getShortTimeSinceText(DateTime eventDate) {
+    final now = DateTime.now();
+    final difference = eventDate.difference(now);
+
+    if (difference.inDays > 0) {
+      return 'In ${difference.inDays}d';
+    } else if (difference.inHours > 0) {
+      return 'In ${difference.inHours}h';
+    } else if (difference.inMinutes > 0) {
+      return 'In ${difference.inMinutes}m';
+    } else {
+      return 'Now';
+    }
   }
 
   Widget _buildDifficultyIndicator(BuildContext context, int difficulty) {
