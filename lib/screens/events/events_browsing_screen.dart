@@ -196,41 +196,6 @@ class _EventsBrowsingScreenState extends State<EventsBrowsingScreen> {
         child: Column(
           children: [
             // Add sign-in banner when showing sample data and not authenticated
-            Consumer<EventsProvider>(
-              builder: (ctx, provider, _) {
-                if (provider.isUsingLocalData && !provider.isAuthenticated) {
-                  return Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    child: Row(
-                      children: [
-                        const Icon(Icons.info_outline),
-                        const SizedBox(width: 8.0),
-                        Expanded(
-                          child: Text(
-                            'Using sample data. Sign in with Google to see real events.',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onPrimaryContainer,
-                            ),
-                          ),
-                        ),
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.login, size: 18),
-                          label: const Text('Sign in'),
-                          onPressed: () => provider.signIn(),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            textStyle: const TextStyle(fontSize: 14),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              },
-            ),
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
@@ -257,6 +222,41 @@ class _EventsBrowsingScreenState extends State<EventsBrowsingScreen> {
                   ),
                 ],
               ),
+            ),
+            Consumer<EventsProvider>(
+              builder: (ctx, provider, _) {
+                if (provider.isUsingLocalData && !provider.isAuthenticated) {
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline),
+                        const SizedBox(width: 8.0),
+                        Expanded(
+                          child: Text(
+                            'Sign in with Google to see more events near you.',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSecondaryContainer,
+                            ),
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.login, size: 18),
+                          label: const Text('Sign in'),
+                          onPressed: () => provider.signIn(),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            textStyle: const TextStyle(fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
             ),
             Consumer<EventsProvider>(
               builder: (ctx, provider, _) {
