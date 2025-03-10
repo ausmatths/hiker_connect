@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:image/image.dart' as img;
@@ -13,6 +14,8 @@ import 'package:hiker_connect/models/event_data.dart';
 import 'package:hiker_connect/models/event_filter.dart';
 import 'package:hiker_connect/models/photo_data.dart';
 import 'package:hiker_connect/utils/logger.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -76,7 +79,8 @@ class DatabaseService {
       // Open Hive boxes
       await Hive.openBox<EventData>('events');
       await Hive.openBox<String>('favoriteEvents');
-      await getPhotoBox(); // Use getPhotoBox() which handles the initialization
+      await getPhotoBox();
+      await dotenv.load();
 
       // Create sample events if box is empty
       final eventsBox = Hive.box<EventData>('events');
@@ -1965,6 +1969,642 @@ class DatabaseService {
       }
     } catch (e) {
       AppLogger.error('Error in recoverUnsyncedPhotos: $e');
+    }
+  }
+
+  // Enhanced method to get events by filter criteria with time-based filtering
+  Future<List<EventData>> getFilteredEvents(EventFilter filter) async {
+    try {
+      // Start with a Firestore query
+      Query query = _firestore.collection('events');
+
+      // Apply initial database-level filters
+      final now = DateTime.now();
+
+      // Apply date range filters if specified
+      if (filter.startDate != null) {
+        // Events ending after this start date
+        query = query.where('endDate', isGreaterThanOrEqualTo: filter.startDate!.millisecondsSinceEpoch);
+      }
+
+      if (filter.endDate != null) {
+        // Events starting before this end date
+        query = query.where('eventDate', isLessThanOrEqualTo: filter.endDate!.millisecondsSinceEpoch);
+      }
+
+      // Apply category filter if a single category specified
+      if (filter.category != null && filter.category!.isNotEmpty) {
+        query = query.where('category', isEqualTo: filter.category);
+      }
+
+      // Apply difficulty level filter if specified
+      if (filter.difficultyLevel != null) {
+        query = query.where('difficulty', isEqualTo: filter.difficultyLevel);
+      } else {
+        // Apply min/max difficulty if specified
+        if (filter.minDifficulty != null) {
+          query = query.where('difficulty', isGreaterThanOrEqualTo: filter.minDifficulty);
+        }
+
+        if (filter.maxDifficulty != null) {
+          query = query.where('difficulty', isLessThanOrEqualTo: filter.maxDifficulty);
+        }
+      }
+
+      // Execute the query
+      final snapshot = await query.get();
+
+      // Convert results to EventData objects
+      List<EventData> allEvents = snapshot.docs
+          .map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        // Ensure the ID is set correctly
+        if (data['id'] == null || data['id'].isEmpty) {
+          data['id'] = doc.id;
+        }
+
+        // Handle timestamp conversions
+        if (data['eventDate'] is Timestamp) {
+          data['eventDate'] = (data['eventDate'] as Timestamp).toDate();
+        }
+        if (data['endDate'] is Timestamp) {
+          data['endDate'] = (data['endDate'] as Timestamp).toDate();
+        }
+
+        return EventData.fromMap(data);
+      })
+          .toList();
+
+      // Apply additional in-memory filters
+      return allEvents.where((event) {
+        // Apply time-based filters
+        final isPast = event.endDate != null
+            ? event.endDate!.isBefore(now)
+            : event.eventDate.add(event.duration ?? const Duration(hours: 2)).isBefore(now);
+
+        final isCurrent = event.eventDate.isBefore(now) &&
+            (event.endDate != null
+                ? event.endDate!.isAfter(now)
+                : event.eventDate.add(event.duration ?? const Duration(hours: 2)).isAfter(now));
+
+        final isFuture = event.eventDate.isAfter(now);
+
+        bool passesTimeFilter = (isPast && filter.includePastEvents) ||
+            (isCurrent && filter.includeCurrentEvents) ||
+            (isFuture && filter.includeFutureEvents);
+
+        if (!passesTimeFilter) return false;
+
+        // Apply location filters if specified
+        if (filter.userLatitude != null && filter.userLongitude != null) {
+          if (event.latitude == null || event.longitude == null) return false;
+
+          // Calculate distance using Haversine formula
+          final distance = _calculateDistance(
+              filter.userLatitude!, filter.userLongitude!,
+              event.latitude!, event.longitude!
+          );
+
+          // Use either maxDistance or radiusInKm (for consistency)
+          final maxDistanceKm = filter.maxDistance ?? filter.radiusInKm;
+          if (maxDistanceKm != null && distance > maxDistanceKm) return false;
+        }
+
+        // Apply location text search if specified
+        if (filter.locationQuery != null && filter.locationQuery!.isNotEmpty) {
+          final locationQuery = filter.locationQuery!.toLowerCase();
+          if (!((event.location ?? '').toLowerCase().contains(locationQuery))) {
+            return false;
+          }
+        }
+
+        // Apply categories filter (for multiple categories)
+        if (filter.categories.isNotEmpty) {
+          if (event.category == null || !filter.categories.contains(event.category)) {
+            return false;
+          }
+        }
+
+        // Apply search query if specified
+        if (filter.searchQuery != null && filter.searchQuery!.isNotEmpty) {
+          final query = filter.searchQuery!.toLowerCase();
+          if (!event.title.toLowerCase().contains(query) &&
+              !(event.description?.toLowerCase().contains(query) ?? false)) {
+            return false;
+          }
+        }
+
+        // Apply favorites filter
+        if (filter.favoritesOnly || filter.showOnlyFavorites) {
+          final user = _auth.currentUser;
+          if (user != null) {
+            // Check if we have favorites in memory
+            bool isInFavorites = false;
+            try {
+              final favBox = Hive.box<String>('favoriteEvents');
+              isInFavorites = favBox.values.contains(event.id);
+            } catch (e) {
+              AppLogger.error('Error checking favorites: $e');
+            }
+            if (!isInFavorites) return false;
+          } else {
+            return false;
+          }
+        }
+
+        return true;
+      }).toList();
+    } catch (e) {
+      AppLogger.error('Error applying filters: $e');
+      // Return empty list or fallback to local cache
+      try {
+        final box = await getEventBox();
+        final events = box.values.toList();
+        AppLogger.info('Using cached events as fallback after filter error');
+        return events;
+      } catch (e2) {
+        AppLogger.error('Failed to get cached events: $e2');
+        return [];
+      }
+    }
+  }
+
+  // Get upcoming events (events that start in the future)
+  Future<List<EventData>> getUpcomingEvents({int limit = 10}) async {
+    try {
+      final now = DateTime.now();
+
+      // Query Firestore
+      final snapshot = await _firestore.collection('events')
+          .where('eventDate', isGreaterThan: Timestamp.fromDate(now))
+          .orderBy('eventDate')
+          .limit(limit)
+          .get();
+
+      // Convert to EventData objects
+      List<EventData> events = snapshot.docs
+          .map((doc) {
+        final data = doc.data() as Map<String, dynamic>;
+        // Ensure ID is set
+        if (data['id'] == null || data['id'].isEmpty) {
+          data['id'] = doc.id;
+        }
+
+        // Handle timestamp conversions
+        if (data['eventDate'] is Timestamp) {
+          data['eventDate'] = (data['eventDate'] as Timestamp).toDate();
+        }
+        if (data['endDate'] is Timestamp) {
+          data['endDate'] = (data['endDate'] as Timestamp).toDate();
+        }
+
+        return EventData.fromMap(data);
+      })
+          .toList();
+
+      // Cache these events
+      final box = await getEventBox();
+      for (var event in events) {
+        // Check if already in cache
+        bool found = false;
+        for (var i = 0; i < box.length; i++) {
+          final existingEvent = box.getAt(i);
+          if (existingEvent != null && existingEvent.id == event.id) {
+            found = true;
+            await box.putAt(i, event); // Update with latest data
+            break;
+          }
+        }
+
+        if (!found) {
+          await box.add(event); // Add if not in cache
+        }
+      }
+
+      return events;
+    } catch (e) {
+      AppLogger.error('Error getting upcoming events: $e');
+
+      // Try to get from cache as fallback
+      try {
+        final now = DateTime.now();
+        final box = await getEventBox();
+        final allEvents = box.values.toList();
+
+        // Filter to upcoming events
+        final upcomingEvents = allEvents
+            .where((event) => event.eventDate.isAfter(now))
+            .toList();
+
+        // Sort by date
+        upcomingEvents.sort((a, b) => a.eventDate.compareTo(b.eventDate));
+
+        // Apply limit
+        if (upcomingEvents.length > limit) {
+          return upcomingEvents.sublist(0, limit);
+        }
+
+        return upcomingEvents;
+      } catch (e2) {
+        AppLogger.error('Failed to get cached upcoming events: $e2');
+        return [];
+      }
+    }
+  }
+
+  // Get ongoing events (events happening now)
+  Future<List<EventData>> getOngoingEvents() async {
+    try {
+      final now = DateTime.now();
+
+      // This query is more complex and may require multiple Firestore calls
+      // First, get events that have started but haven't ended
+      final snapshot = await _firestore.collection('events')
+          .where('eventDate', isLessThanOrEqualTo: Timestamp.fromDate(now))
+          .get();
+
+      // Process and filter client-side
+      List<EventData> events = [];
+
+      for (var doc in snapshot.docs) {
+        try {
+          final data = doc.data() as Map<String, dynamic>;
+          // Ensure ID is set
+          if (data['id'] == null || data['id'].isEmpty) {
+            data['id'] = doc.id;
+          }
+
+          // Handle timestamp conversions
+          DateTime eventDate;
+          if (data['eventDate'] is Timestamp) {
+            eventDate = (data['eventDate'] as Timestamp).toDate();
+          } else if (data['eventDate'] is DateTime) {
+            eventDate = data['eventDate'];
+          } else {
+            continue; // Skip if we can't determine event date
+          }
+
+          // Handle end date
+          DateTime endDate;
+          if (data['endDate'] is Timestamp) {
+            endDate = (data['endDate'] as Timestamp).toDate();
+          } else if (data['endDate'] is DateTime) {
+            endDate = data['endDate'];
+          } else {
+            Duration duration;
+            if (data['duration'] is int) {
+              duration = Duration(minutes: data['duration']);
+            } else if (data['duration'] is Duration) {
+              duration = data['duration'];
+            } else {
+              duration = const Duration(hours: 2);
+            }
+            endDate = eventDate.add(duration);
+          }
+
+          // Check if event is still ongoing
+          if (endDate.isAfter(now)) {
+            events.add(EventData.fromMap(data));
+          }
+        } catch (e) {
+          AppLogger.error('Error processing ongoing event doc: $e');
+        }
+      }
+
+      // Cache these events
+      final box = await getEventBox();
+      for (var event in events) {
+        // Check if already in cache
+        bool found = false;
+        for (var i = 0; i < box.length; i++) {
+          final existingEvent = box.getAt(i);
+          if (existingEvent != null && existingEvent.id == event.id) {
+            found = true;
+            await box.putAt(i, event); // Update with latest data
+            break;
+          }
+        }
+
+        if (!found) {
+          await box.add(event); // Add if not in cache
+        }
+      }
+
+      return events;
+    } catch (e) {
+      AppLogger.error('Error getting ongoing events: $e');
+
+      // Try to get from cache as fallback
+      try {
+        final now = DateTime.now();
+        final box = await getEventBox();
+        final allEvents = box.values.toList();
+
+        // Filter to ongoing events
+        return allEvents.where((event) {
+          final eventEnd = event.endDate ??
+              event.eventDate.add(event.duration ?? const Duration(hours: 2));
+          return event.eventDate.isBefore(now) && eventEnd.isAfter(now);
+        }).toList();
+      } catch (e2) {
+        AppLogger.error('Failed to get cached ongoing events: $e2');
+        return [];
+      }
+    }
+  }
+
+  // Get past events (events that have already ended)
+  Future<List<EventData>> getPastEvents({int limit = 20}) async {
+    try {
+      final now = DateTime.now();
+
+      // This query requires additional client-side filtering
+      // We'll fetch events with end dates in the past
+      final snapshot = await _firestore.collection('events')
+          .orderBy('eventDate', descending: true)
+          .get();
+
+      // Process and filter client-side
+      List<EventData> events = [];
+
+      for (var doc in snapshot.docs) {
+        try {
+          final data = doc.data() as Map<String, dynamic>;
+          // Ensure ID is set
+          if (data['id'] == null || data['id'].isEmpty) {
+            data['id'] = doc.id;
+          }
+
+          // Handle timestamp conversions
+          DateTime eventDate;
+          if (data['eventDate'] is Timestamp) {
+            eventDate = (data['eventDate'] as Timestamp).toDate();
+          } else if (data['eventDate'] is DateTime) {
+            eventDate = data['eventDate'];
+          } else {
+            continue; // Skip if we can't determine event date
+          }
+
+          // Handle end date
+          DateTime endDate;
+          if (data['endDate'] is Timestamp) {
+            endDate = (data['endDate'] as Timestamp).toDate();
+          } else if (data['endDate'] is DateTime) {
+            endDate = data['endDate'];
+          } else {
+            Duration duration;
+            if (data['duration'] is int) {
+              duration = Duration(minutes: data['duration']);
+            } else if (data['duration'] is Duration) {
+              duration = data['duration'];
+            } else {
+              duration = const Duration(hours: 2);
+            }
+            endDate = eventDate.add(duration);
+          }
+
+          // Check if event has ended
+          if (endDate.isBefore(now)) {
+            events.add(EventData.fromMap(data));
+
+            // Apply limit
+            if (events.length >= limit) break;
+          }
+        } catch (e) {
+          AppLogger.error('Error processing past event doc: $e');
+        }
+      }
+
+      // Cache these events
+      final box = await getEventBox();
+      for (var event in events) {
+        // Check if already in cache
+        bool found = false;
+        for (var i = 0; i < box.length; i++) {
+          final existingEvent = box.getAt(i);
+          if (existingEvent != null && existingEvent.id == event.id) {
+            found = true;
+            await box.putAt(i, event); // Update with latest data
+            break;
+          }
+        }
+
+        if (!found) {
+          await box.add(event); // Add if not in cache
+        }
+      }
+
+      return events;
+    } catch (e) {
+      AppLogger.error('Error getting past events: $e');
+
+      // Try to get from cache as fallback
+      try {
+        final now = DateTime.now();
+        final box = await getEventBox();
+        final allEvents = box.values.toList();
+
+        // Filter to past events
+        final pastEvents = allEvents.where((event) {
+          final eventEnd = event.endDate ??
+              event.eventDate.add(event.duration ?? const Duration(hours: 2));
+          return eventEnd.isBefore(now);
+        }).toList();
+
+        // Sort by date (most recent first)
+        pastEvents.sort((a, b) => b.eventDate.compareTo(a.eventDate));
+
+        // Apply limit
+        if (pastEvents.length > limit) {
+          return pastEvents.sublist(0, limit);
+        }
+
+        return pastEvents;
+      } catch (e2) {
+        AppLogger.error('Failed to get cached past events: $e2');
+        return [];
+      }
+    }
+  }
+
+  // Get nearby events from Google Places API
+  Future<List<EventData>> getGoogleEvents({
+    required double latitude,
+    required double longitude,
+    required double radiusInKm,
+    String? keyword,
+  }) async {
+    final apiKey = dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';
+
+    try {
+      // Build the Google Places API URL
+      final url = Uri.https(
+        'maps.googleapis.com',
+        '/maps/api/place/nearbysearch/json',
+        {
+          'location': '$latitude,$longitude',
+          'radius': '${(radiusInKm * 1000).round()}', // Convert to meters
+          'type': 'point_of_interest',
+          'keyword': keyword ?? 'hiking trail nature outdoor',
+          'key': apiKey,
+        },
+      );
+
+      // Make the API request
+      final client = http.Client();
+      try {
+        final response = await client.get(url);
+
+        if (response.statusCode != 200) {
+          AppLogger.error('Google Places API error: ${response.statusCode} ${response.body}');
+          return [];
+        }
+
+        // Parse the response
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+        if (data['status'] != 'OK') {
+          AppLogger.error('Google Places API error: ${data['status']}');
+          return [];
+        }
+
+        final results = data['results'] as List;
+        List<EventData> events = [];
+
+        for (var place in results) {
+          try {
+            // Get place details for more information
+            final detailsResponse = await _getPlaceDetails(place['place_id'], apiKey);
+
+            if (detailsResponse == null) continue;
+
+            final now = DateTime.now();
+
+            // Create an event from place data
+            final event = EventData(
+              id: 'google_${place['place_id']}',
+              title: place['name'] as String,
+              description: detailsResponse['formatted_address'] as String? ??
+                  place['vicinity'] as String? ??
+                  'No description available',
+              eventDate: now, // Current date as placeholder
+              endDate: now.add(const Duration(days: 7)), // One week as placeholder
+              duration: const Duration(hours: 2), // Default duration
+              location: place['vicinity'] as String? ?? '',
+              category: _determineCategoryFromTypes(place['types'] as List? ?? []),
+              difficulty: _determineDifficultyFromRating(place['rating'] as double? ?? 3.0),
+              latitude: place['geometry']['location']['lat'] as double,
+              longitude: place['geometry']['location']['lng'] as double,
+              // Use photos if available
+              imageUrl: _getPhotoUrlFromPlace(place, detailsResponse, apiKey),
+              // Mark as external source
+              createdBy: 'Google',
+            );
+
+            events.add(event);
+          } catch (e) {
+            AppLogger.error('Error processing Google Places result: $e');
+          }
+        }
+
+        // Cache these Google events temporarily
+        try {
+          // Use a separate box for Google events to avoid conflicts
+          if (!Hive.isBoxOpen('googleEventsBox')) {
+            await Hive.openBox<EventData>('googleEventsBox');
+          }
+
+          final box = Hive.box<EventData>('googleEventsBox');
+          await box.clear(); // Clear old results
+
+          for (var event in events) {
+            await box.add(event);
+          }
+        } catch (e) {
+          AppLogger.error('Error caching Google events: $e');
+        }
+
+        return events;
+      } finally {
+        client.close();
+      }
+    } catch (e) {
+      AppLogger.error('Error fetching Google events: $e');
+      return [];
+    }
+  }
+
+  String _determineCategoryFromTypes(List types) {
+    if (types.contains('campground')) return 'Camping';
+    if (types.contains('park')) return 'Park';
+    if (types.contains('natural_feature')) return 'Nature';
+    if (types.contains('point_of_interest')) return 'Point of Interest';
+    return 'Outdoor';
+  }
+
+// Helper method to determine difficulty from rating
+  int _determineDifficultyFromRating(double rating) {
+    if (rating >= 4.5) return 4; // Challenging but rewarding
+    if (rating >= 4.0) return 3; // Moderate
+    if (rating >= 3.0) return 2; // Easy to moderate
+    return 1; // Easy
+  }
+
+// Helper method to get photo URL from place data
+  String _getPhotoUrlFromPlace(Map<String, dynamic> place, Map<String, dynamic>? details, String apiKey) {
+    // Try to get photo reference from place or details
+    String? photoReference;
+
+    if (place.containsKey('photos') && place['photos'] is List && (place['photos'] as List).isNotEmpty) {
+      photoReference = place['photos'][0]['photo_reference'] as String?;
+    } else if (details != null && details.containsKey('photos') &&
+        details['photos'] is List && (details['photos'] as List).isNotEmpty) {
+      photoReference = details['photos'][0]['photo_reference'] as String?;
+    }
+
+    if (photoReference != null) {
+      // Construct the photo URL
+      return 'https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=$photoReference&key=$apiKey';
+    }
+
+    // Default image if no photo available
+    return 'https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/generic_business-71.png';
+  }
+
+// Helper method to get place details
+  Future<Map<String, dynamic>?> _getPlaceDetails(String placeId, String apiKey) async {
+    try {
+      final detailsUrl = Uri.https(
+        'maps.googleapis.com',
+        '/maps/api/place/details/json',
+        {
+          'place_id': placeId,
+          'fields': 'name,formatted_address,formatted_phone_number,website,photos,opening_hours,rating,reviews',
+          'key': apiKey,
+        },
+      );
+
+      final client = http.Client();
+      try {
+        final response = await client.get(detailsUrl);
+
+        if (response.statusCode != 200) {
+          return null;
+        }
+
+        final data = jsonDecode(response.body) as Map<String, dynamic>;
+
+        if (data['status'] != 'OK') {
+          return null;
+        }
+
+        return data['result'] as Map<String, dynamic>;
+      } finally {
+        client.close();
+      }
+    } catch (e) {
+      AppLogger.error('Error getting place details: $e');
+      return null;
     }
   }
 }

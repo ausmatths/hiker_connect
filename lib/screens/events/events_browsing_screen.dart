@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:provider/provider.dart';
 import '../../models/event_data.dart';
 import '../../models/event_filter.dart';
@@ -10,33 +11,41 @@ import 'events_filter_screen.dart';
 import 'events_grid_view.dart';
 import 'events_list_view.dart';
 import 'events_map_view.dart';
+import 'package:location/location.dart';
+import 'dart:math' as math;
 
 class EventsBrowsingScreen extends StatefulWidget {
   static const routeName = '/events-browsing';
 
   final bool showAppBar;
   final EventsViewType initialViewType;
-  final bool showFAB; // Parameter to control FAB visibility
+  final bool showFAB;
+  final bool inHomeContext;
 
   const EventsBrowsingScreen({
     Key? key,
     this.showAppBar = true,
     this.initialViewType = EventsViewType.list,
-    this.showFAB = true, // Default to showing FAB
+    this.showFAB = true,
+    this.inHomeContext = false,
   }) : super(key: key);
 
   @override
   State<EventsBrowsingScreen> createState() => _EventsBrowsingScreenState();
 }
 
-class _EventsBrowsingScreenState extends State<EventsBrowsingScreen> {
+class _EventsBrowsingScreenState extends State<EventsBrowsingScreen> with SingleTickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   late EventsViewType _currentViewType;
+  late TabController _tabController;
+  final Location _location = Location();
+  bool _isLocationRequested = false;
 
   @override
   void initState() {
     super.initState();
     _currentViewType = widget.initialViewType;
+    _tabController = TabController(length: 3, vsync: this);
 
     // Refresh events when screen loads
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -55,6 +64,7 @@ class _EventsBrowsingScreenState extends State<EventsBrowsingScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _tabController.dispose();
     super.dispose();
   }
 
@@ -76,6 +86,135 @@ class _EventsBrowsingScreenState extends State<EventsBrowsingScreen> {
 
     if (result != null) {
       provider.applyFilter(result);
+    }
+  }
+
+  Future<void> _getNearbyEvents() async {
+    try {
+      // Check if we already have permission, if not, request it
+      bool serviceEnabled = await _location.serviceEnabled();
+      if (!serviceEnabled) {
+        serviceEnabled = await _location.requestService();
+        if (!serviceEnabled) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location services are required to find nearby events')),
+          );
+          return;
+        }
+      }
+
+      PermissionStatus permission = await _location.hasPermission();
+      if (permission == PermissionStatus.denied) {
+        if (!_isLocationRequested) {
+          _isLocationRequested = true;
+          permission = await _location.requestPermission();
+        }
+        if (permission == PermissionStatus.denied) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permission is required to find nearby events')),
+          );
+          return;
+        }
+      }
+
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Finding nearby events...'),
+            ],
+          ),
+        ),
+      );
+
+      // Get current location
+      final locationData = await _location.getLocation();
+
+      // Set radius based on slider or default to 10km
+      final radius = 10.0;
+
+      // Close the loading dialog
+      Navigator.of(context).pop();
+
+      // Ask for confirmation with distance
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Find Nearby Events'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Search for events within ${radius.toStringAsFixed(1)} km of your current location?'),
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: SizedBox(
+                  height: 180,
+                  child: Stack(
+                    children: [
+                      Image.network(
+                        'https://maps.googleapis.com/maps/api/staticmap?center=${locationData.latitude},${locationData.longitude}&zoom=13&size=400x400&key=${dotenv.env['GOOGLE_MAPS_API_KEY']}',
+                        fit: BoxFit.cover,
+                        width: double.infinity,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey[300],
+                            child: const Icon(Icons.map, size: 64, color: Colors.grey),
+                          );
+                        },
+                      ),
+                      Center(
+                        child: Icon(
+                          Icons.location_on,
+                          color: Theme.of(context).colorScheme.primary,
+                          size: 40,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: const Text('Search'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm == true) {
+        // Use provider to fetch nearby events
+        final provider = Provider.of<EventsProvider>(context, listen: false);
+        await provider.fetchNearbyEvents(
+          latitude: locationData.latitude!,
+          longitude: locationData.longitude!,
+          radiusInKm: radius,
+        );
+      }
+    } catch (e) {
+      AppLogger.error('Error getting location: $e');
+
+      // Close any open dialogs first
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to get location: ${e.toString()}')),
+      );
     }
   }
 
@@ -163,10 +302,83 @@ class _EventsBrowsingScreenState extends State<EventsBrowsingScreen> {
     );
   }
 
+  Widget _buildTimeFilterChips(BuildContext context, EventsProvider provider) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Row(
+        children: [
+          FilterChip(
+            label: const Text('Upcoming'),
+            selected: provider.activeFilter?.includeFutureEvents == true &&
+                provider.activeFilter?.includePastEvents != true &&
+                provider.activeFilter?.includeCurrentEvents != true,
+            onSelected: (selected) {
+              if (selected) {
+                provider.fetchEventsByTimePeriod(false, false, true);
+              } else {
+                provider.clearFilters();
+              }
+            },
+          ),
+          const SizedBox(width: 8),
+          FilterChip(
+            label: const Text('Ongoing'),
+            selected: provider.activeFilter?.includeCurrentEvents == true &&
+                provider.activeFilter?.includePastEvents != true &&
+                provider.activeFilter?.includeFutureEvents != true,
+            onSelected: (selected) {
+              if (selected) {
+                provider.fetchEventsByTimePeriod(false, true, false);
+              } else {
+                provider.clearFilters();
+              }
+            },
+          ),
+          const SizedBox(width: 8),
+          FilterChip(
+            label: const Text('Past'),
+            selected: provider.activeFilter?.includePastEvents == true &&
+                provider.activeFilter?.includeCurrentEvents != true &&
+                provider.activeFilter?.includeFutureEvents != true,
+            onSelected: (selected) {
+              if (selected) {
+                provider.fetchEventsByTimePeriod(true, false, false);
+              } else {
+                provider.clearFilters();
+              }
+            },
+          ),
+          const SizedBox(width: 8),
+          FilterChip(
+            label: const Text('All'),
+            selected: provider.activeFilter?.includePastEvents == true &&
+                provider.activeFilter?.includeCurrentEvents == true &&
+                provider.activeFilter?.includeFutureEvents == true,
+            onSelected: (selected) {
+              if (selected) {
+                provider.fetchEventsByTimePeriod(true, true, true);
+              } else {
+                provider.clearFilters();
+              }
+            },
+          ),
+          const SizedBox(width: 8),
+          ActionChip(
+            avatar: const Icon(Icons.near_me, size: 18),
+            label: const Text('Nearby'),
+            onPressed: () => _getNearbyEvents(),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Determine if in HomeScreen context (based on initialViewType and showAppBar)
-    final bool isInHomeScreen = widget.initialViewType == EventsViewType.grid && !widget.showAppBar;
+    final bool isInHomeScreen = widget.inHomeContext ||
+        (widget.initialViewType == EventsViewType.grid && !widget.showAppBar);
 
     return Scaffold(
       appBar: widget.showAppBar ? AppBar(
@@ -196,6 +408,43 @@ class _EventsBrowsingScreenState extends State<EventsBrowsingScreen> {
         child: Column(
           children: [
             // Add sign-in banner when showing sample data and not authenticated
+            Consumer<EventsProvider>(
+              builder: (ctx, provider, _) {
+                if (provider.isUsingLocalData && !provider.isAuthenticated) {
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    child: Row(
+                      children: [
+                        const Icon(Icons.info_outline),
+                        const SizedBox(width: 8.0),
+                        Expanded(
+                          child: Text(
+                            'Using sample data. Sign in with Google to see real events.',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                        ),
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.login, size: 18),
+                          label: const Text('Sign in'),
+                          onPressed: () => provider.signIn(),
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            textStyle: const TextStyle(fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              },
+            ),
+
+            // Search bar and filter button
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Row(
@@ -223,45 +472,17 @@ class _EventsBrowsingScreenState extends State<EventsBrowsingScreen> {
                 ],
               ),
             ),
+
+            // Time period filter chips
             Consumer<EventsProvider>(
-              builder: (ctx, provider, _) {
-                if (provider.isUsingLocalData && !provider.isAuthenticated) {
-                  return Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    child: Row(
-                      children: [
-                        const Icon(Icons.info_outline),
-                        const SizedBox(width: 8.0),
-                        Expanded(
-                          child: Text(
-                            'Sign in with Google to see more events near you.',
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.onSecondaryContainer,
-                            ),
-                          ),
-                        ),
-                        ElevatedButton.icon(
-                          icon: const Icon(Icons.login, size: 18),
-                          label: const Text('Sign in'),
-                          onPressed: () => provider.signIn(),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                            textStyle: const TextStyle(fontSize: 14),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }
-                return const SizedBox.shrink();
-              },
+              builder: (ctx, provider, _) => _buildTimeFilterChips(context, provider),
             ),
+
+            // View type selector and event count
             Consumer<EventsProvider>(
               builder: (ctx, provider, _) {
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -295,7 +516,7 @@ class _EventsBrowsingScreenState extends State<EventsBrowsingScreen> {
                 );
               },
             ),
-            const SizedBox(height: 8.0),
+
             // Active filters display
             Consumer<EventsProvider>(
               builder: (ctx, provider, _) {
@@ -330,6 +551,8 @@ class _EventsBrowsingScreenState extends State<EventsBrowsingScreen> {
                                 _buildFilterChip(context, 'Favorites only'),
                               if (filter != null && filter.difficultyLevel != null)
                                 _buildFilterChip(context, 'Difficulty: ${filter.difficultyLevel}'),
+                              if (filter != null && filter.userLatitude != null && filter.userLongitude != null && filter.maxDistance != null)
+                                _buildFilterChip(context, 'Within: ${filter.maxDistance!.toStringAsFixed(1)} km'),
                             ],
                           ),
                         ),
@@ -344,7 +567,34 @@ class _EventsBrowsingScreenState extends State<EventsBrowsingScreen> {
                     : const SizedBox.shrink();
               },
             ),
+
             const Divider(),
+
+            // Tab bar for time-based filtering (alternative approach)
+            if (!isInHomeScreen)
+              Consumer<EventsProvider>(
+                builder: (ctx, provider, _) {
+                  return TabBar(
+                    controller: _tabController,
+                    onTap: (index) {
+                      // Apply time filter based on tab index
+                      if (index == 0) {
+                        provider.fetchEventsByTimePeriod(false, false, true);
+                      } else if (index == 1) {
+                        provider.fetchEventsByTimePeriod(false, true, false);
+                      } else if (index == 2) {
+                        provider.fetchEventsByTimePeriod(true, false, false);
+                      }
+                    },
+                    tabs: const [
+                      Tab(text: 'Upcoming'),
+                      Tab(text: 'Ongoing'),
+                      Tab(text: 'Past'),
+                    ],
+                  );
+                },
+              ),
+
             // Main content with loading indicator
             Expanded(
               child: Consumer<EventsProvider>(
@@ -440,41 +690,20 @@ class _EventsBrowsingScreenState extends State<EventsBrowsingScreen> {
                     );
                   }
 
-                  // Build the main event view
-                  return Column(
-                    children: [
-                      // Main content (events view)
-                      Expanded(
-                        child: _buildEventView(
-                          context,
-                          provider.currentViewType,
-                          provider.events,
-                        ),
-                      ),
-
-                      // Loading indicator at the bottom when loading more
-                      if (provider.isLoadingMore)
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                const Text('Loading more events...'),
-                              ],
-                            ),
-                          ),
-                        ),
-                    ],
-                  );
+                  // Build the main event view based on tab selection or filter
+                  if (!isInHomeScreen && _tabController.index == 0 &&
+                      provider.activeFilter?.includeFutureEvents == true) {
+                    return _buildEventView(context, provider.currentViewType, provider.futureEvents);
+                  } else if (!isInHomeScreen && _tabController.index == 1 &&
+                      provider.activeFilter?.includeCurrentEvents == true) {
+                    return _buildEventView(context, provider.currentViewType, provider.currentEvents);
+                  } else if (!isInHomeScreen && _tabController.index == 2 &&
+                      provider.activeFilter?.includePastEvents == true) {
+                    return _buildEventView(context, provider.currentViewType, provider.pastEvents);
+                  } else {
+                    // Default view or when not using tabs
+                    return _buildEventView(context, provider.currentViewType, provider.events);
+                  }
                 },
               ),
             ),
@@ -482,8 +711,14 @@ class _EventsBrowsingScreenState extends State<EventsBrowsingScreen> {
         ),
       ),
 
-      // IMPORTANT: Never show FAB in this screen
-      floatingActionButton: null,
+      // Only show FAB when specified
+      floatingActionButton: widget.showFAB ? FloatingActionButton(
+        onPressed: () {
+          // Navigate to event creation screen
+          Navigator.of(context).pushNamed('/event-form');
+        },
+        child: const Icon(Icons.add),
+      ) : null,
     );
   }
 

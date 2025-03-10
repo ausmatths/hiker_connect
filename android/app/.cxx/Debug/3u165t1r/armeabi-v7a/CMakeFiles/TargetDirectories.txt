@@ -1,0 +1,2 @@
+/Users/ausmatths/FlutterProjects/hiker_connect/android/app/.cxx/Debug/3u165t1r/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Users/ausmatths/FlutterProjects/hiker_connect/android/app/.cxx/Debug/3u165t1r/armeabi-v7a/CMakeFiles/rebuild_cache.dir

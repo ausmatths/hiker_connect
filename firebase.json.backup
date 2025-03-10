@@ -1,0 +1,149 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "hiker-connect",
+          "appId": "1:967683373829:android:1973708e7f1815f920956c",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "hiker-connect",
+          "appId": "1:967683373829:ios:6c3b56c7d7bc735e20956c",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "macos": {
+        "default": {
+          "projectId": "hiker-connect",
+          "appId": "1:967683373829:ios:c3e05838af84240820956c",
+          "uploadDebugSymbols": false,
+          "fileOutput": "macos/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "hiker-connect",
+          "configurations": {
+            "android": "1:967683373829:android:1973708e7f1815f920956c",
+            "ios": "1:967683373829:ios:6c3b56c7d7bc735e20956c",
+            "macos": "1:967683373829:ios:c3e05838af84240820956c",
+            "web": "1:967683373829:web:3397a9795c7c410c20956c",
+            "windows": "1:967683373829:web:839aaba95ca296af20956c"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "emulators": {
+    "dataconnect": {
+      "host": "127.0.0.1",
+      "port": 8999,
+      "dataDir": "dataconnect/.dataconnect/pgliteData"
+    },
+    "apphosting": {
+      "host": "127.0.0.1",
+      "port": 5010,
+      "rootDirectory": "./"
+    },
+    "auth": {
+      "host": "127.0.0.1",
+      "port": 9099
+    },
+    "functions": {
+      "host": "127.0.0.1",
+      "port": 5001
+    },
+    "firestore": {
+      "host": "127.0.0.1",
+      "port": 9199
+    },
+    "database": {
+      "host": "127.0.0.1",
+      "port": 9000
+    },
+    "hosting": {
+      "host": "127.0.0.1",
+      "port": 5011
+    },
+    "pubsub": {
+      "host": "127.0.0.1",
+      "port": 8085
+    },
+    "storage": {
+      "host": "127.0.0.1",
+      "port": 9195
+    },
+    "eventarc": {
+      "host": "127.0.0.1",
+      "port": 9299
+    },
+    "tasks": {
+      "host": "127.0.0.1",
+      "port": 9499
+    },
+    "ui": {
+      "enabled": true,
+      "host": "127.0.0.1"
+    },
+    "singleProjectMode": true
+  },
+  "dataconnect": {
+    "source": "dataconnect"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run lint",
+        "npm --prefix \"$RESOURCE_DIR\" run build"
+      ]
+    },
+    {
+      "source": "hiker_connect",
+      "codebase": "hiker_connect",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run lint"
+      ]
+    }
+  ],
+  "hosting": {
+    "public": "public",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "remoteconfig": {
+    "template": "remoteconfig.template.json"
+  },
+  "extensions": {},
+  "database": {
+    "rules": "database.rules.json"
+  }
+}

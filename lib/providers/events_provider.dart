@@ -5,9 +5,11 @@ import '../models/event_data.dart';
 import '../models/event_filter.dart';
 import '../services/google_events_service.dart';
 import '../models/events_view_type.dart';
+import '../services/databaseservice.dart';
 
 class EventsProvider with ChangeNotifier {
   final GoogleEventsService _googleEventsService;
+  final DatabaseService _databaseService;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   List<EventData> _events = [];
@@ -35,8 +37,12 @@ class EventsProvider with ChangeNotifier {
   bool get hasMoreEvents => _hasMoreEvents;
   bool get isLoadingMore => _isLoadingMore;
 
-  EventsProvider({GoogleEventsService? googleEventsService})
-      : _googleEventsService = googleEventsService ?? GoogleEventsService();
+  EventsProvider({
+    GoogleEventsService? googleEventsService,
+    DatabaseService? databaseService,
+  }) :
+        _googleEventsService = googleEventsService ?? GoogleEventsService(),
+        _databaseService = databaseService ?? DatabaseService();
 
   // Getters
   List<EventData> get events => _filteredEvents.isEmpty && _activeFilter == null
@@ -44,7 +50,36 @@ class EventsProvider with ChangeNotifier {
       : _filteredEvents;
 
   List<EventData> get allEvents => _events;
+
+  // Past events getter
+  List<EventData> get pastEvents {
+    final now = DateTime.now();
+    return events.where((event) {
+      final eventEnd = event.endDate ??
+          event.eventDate.add(event.duration ?? const Duration(hours: 2));
+      return eventEnd.isBefore(now);
+    }).toList();
+  }
+
+  // Current events getter
+  List<EventData> get currentEvents {
+    final now = DateTime.now();
+    return events.where((event) {
+      final eventStart = event.eventDate;
+      final eventEnd = event.endDate ??
+          event.eventDate.add(event.duration ?? const Duration(hours: 2));
+      return eventStart.isBefore(now) && eventEnd.isAfter(now);
+    }).toList();
+  }
+
+  // Future events getter
+  List<EventData> get futureEvents {
+    final now = DateTime.now();
+    return events.where((event) => event.eventDate.isAfter(now)).toList();
+  }
+
   List<EventData> get favoriteEvents => _events.where((e) => _favoriteEventIds.contains(e.id)).toList();
+
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get isUsingLocalData => _isUsingLocalData;
@@ -80,7 +115,7 @@ class EventsProvider with ChangeNotifier {
     }
   }
 
-  // Add to EventsProvider
+  // Create event method
   Future<bool> createEvent(EventData event) async {
     try {
       // If user is authenticated, use their ID
@@ -90,11 +125,11 @@ class EventsProvider with ChangeNotifier {
           // Create a copy with creator ID
           final eventWithCreator = event.copyWith(createdBy: userId);
 
-          // Add to Firestore
-          final docRef = await _firestore.collection('events').add(eventWithCreator.toMap());
+          // Add to Firestore via DatabaseService
+          final eventId = await _databaseService.createEvent(eventWithCreator);
 
           // Create a copy with the Firestore ID
-          final eventWithId = eventWithCreator.copyWith(id: docRef.id);
+          final eventWithId = eventWithCreator.copyWith(id: eventId);
 
           // Add to local events
           _events.add(eventWithId);
@@ -105,11 +140,10 @@ class EventsProvider with ChangeNotifier {
       }
 
       // For unauthenticated users or if getting userId fails
-      // Add to Firestore without user ID
-      final docRef = await _firestore.collection('events').add(event.toMap());
+      final eventId = await _databaseService.createEvent(event);
 
       // Create a copy with the Firestore ID
-      final eventWithId = event.copyWith(id: docRef.id);
+      final eventWithId = event.copyWith(id: eventId);
 
       // Add to local events
       _events.add(eventWithId);
@@ -126,40 +160,12 @@ class EventsProvider with ChangeNotifier {
   // Load favorites from local storage
   Future<void> _loadFavorites() async {
     try {
-      // Try to load favorites from Firestore if user is authenticated
-      if (_isAuthenticated) {
-        final userId = _googleEventsService.currentUserId;
-        if (userId != null) {
-          final doc = await _firestore.collection('users').doc(userId).get();
-          if (doc.exists && doc.data() != null) {
-            final data = doc.data()!;
-            if (data.containsKey('favoriteEvents') && data['favoriteEvents'] is List) {
-              _favoriteEventIds = List<String>.from(data['favoriteEvents']);
-            }
-          }
-        }
-      }
+      // Get favorites using DatabaseService
+      _favoriteEventIds = await _databaseService.getUserFavoriteEvents();
     } catch (e) {
       developer.log('Error loading favorites: $e', name: 'EventsProvider');
       // Continue without favorites if there's an error
-    }
-  }
-
-  // Save favorites to local storage
-  Future<void> _saveFavorites() async {
-    try {
-      // Save favorites to Firestore if user is authenticated
-      if (_isAuthenticated) {
-        final userId = _googleEventsService.currentUserId;
-        if (userId != null) {
-          await _firestore.collection('users').doc(userId).set({
-            'favoriteEvents': _favoriteEventIds,
-          }, SetOptions(merge: true));
-        }
-      }
-    } catch (e) {
-      developer.log('Error saving favorites: $e', name: 'EventsProvider');
-      // Continue without saving if there's an error
+      _favoriteEventIds = [];
     }
   }
 
@@ -175,7 +181,7 @@ class EventsProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Updated fetchEvents method to support pagination
+  // Updated fetchEvents method to support time filtering
   Future<void> fetchEvents({bool loadMore = false}) async {
     if (_isLoading) return;
     if (loadMore && (!_hasMoreEvents || _isLoadingMore)) return;
@@ -190,52 +196,34 @@ class EventsProvider with ChangeNotifier {
     }
 
     try {
-      developer.log('Fetching events from Google Events API', name: 'EventsProvider');
+      developer.log('Fetching events', name: 'EventsProvider');
 
-      // Check authentication status
-      if (!_isAuthenticated) {
-        developer.log('Not authenticated, attempting to sign in', name: 'EventsProvider');
-        final authSuccess = await signIn();
-        if (!authSuccess) {
-          developer.log('Authentication failed', name: 'EventsProvider');
-          // If authentication fails, try local events
-          await _fetchLocalEvents();
-          return;
-        }
-      }
+      // Create a default filter if none exists
+      EventFilter filter = _activeFilter ?? EventFilter(
+        includePastEvents: true,
+        includeCurrentEvents: true,
+        includeFutureEvents: true,
+      );
 
-      // Calculate what page we're on
-      final currentPage = loadMore ? (_events.length / _pageSize).floor() : 0;
-
-      // Add a short delay to ensure authentication is fully processed
-      await Future.delayed(const Duration(milliseconds: 300));
-
-      // Fetch events using the pagination method
-      final newEvents = await _fetchEventsPage(currentPage);
-
-      // Update hasMoreEvents flag
-      _hasMoreEvents = newEvents.length >= _pageSize;
+      // Fetch events using DatabaseService with filter
+      final fetchedEvents = await _databaseService.getFilteredEvents(filter);
 
       if (loadMore) {
         // Add to existing events
-        _events.addAll(newEvents);
+        _events.addAll(fetchedEvents);
       } else {
         // Replace existing events
-        _events = newEvents;
+        _events = fetchedEvents;
       }
 
-      // Apply any active filter to the new events
-      if (_activeFilter != null) {
-        await applyFilter(_activeFilter!);
-      } else {
-        _filteredEvents = [];
-      }
+      // Update hasMoreEvents flag - we'll assume there are more if we got a full page
+      _hasMoreEvents = fetchedEvents.length >= _pageSize;
 
       _isUsingLocalData = false;
-      developer.log('Fetched ${newEvents.length} events from Google Events API', name: 'EventsProvider');
+      developer.log('Fetched ${fetchedEvents.length} events', name: 'EventsProvider');
     } catch (e) {
-      developer.log('Error fetching events from Google Events API: $e', name: 'EventsProvider');
-      _setError('Failed to load events from Google. Using local data instead.');
+      developer.log('Error fetching events: $e', name: 'EventsProvider');
+      _setError('Failed to load events. Using local data instead.');
 
       // Try to fetch local events as fallback
       if (!loadMore) {
@@ -251,152 +239,110 @@ class EventsProvider with ChangeNotifier {
     }
   }
 
-  // Add this new method to fetch a specific page of events
-  Future<List<EventData>> _fetchEventsPage(int page) async {
-    // If authenticated, fetch from Google
-    if (_isAuthenticated) {
-      try {
-        // Check if GoogleEventsService supports pagination parameters
-        if (page == 0) {
-          // For first page, just use regular fetching
-          return await _googleEventsService.fetchEvents(limit: _pageSize);
-        } else {
-          // For subsequent pages, we'll need to handle pagination differently
-          // Since offset isn't directly supported, we'll use the existing events as a reference
-          // and filter out any duplicates
-          final newEvents = await _googleEventsService.fetchEvents(limit: _pageSize * 2);
-          final existingIds = _events.map((e) => e.id).toSet();
+  // Fetch events for a specific time period
+  Future<void> fetchEventsByTimePeriod(bool includePast, bool includeCurrent, bool includeFuture) async {
+    try {
+      _setLoading(true);
+      _setError(null);
 
-          // Filter out events we already have
-          final filteredEvents = newEvents
-              .where((event) => !existingIds.contains(event.id))
-              .take(_pageSize)
-              .toList();
+      // Create filter for time period
+      final filter = EventFilter(
+        includePastEvents: includePast,
+        includeCurrentEvents: includeCurrent,
+        includeFutureEvents: includeFuture,
+      );
 
-          return filteredEvents;
-        }
-      } catch (e) {
-        developer.log('Error fetching from Google: $e', name: 'EventsProvider');
-        throw e;
-      }
-    } else {
-      // Otherwise fetch from Firestore
-      try {
-        final query = _firestore.collection('events')
-            .orderBy('eventDate')
-            .limit(_pageSize);
+      // Save as active filter
+      _activeFilter = filter;
 
-        // Add startAfter for pagination if not the first page
-        final QuerySnapshot snapshot;
-        if (page > 0 && _events.isNotEmpty) {
-          // Get the last document from the previous page
-          final lastEventDate = _events.last.eventDate;
-          snapshot = await query.startAfter([Timestamp.fromDate(lastEventDate)]).get();
-        } else {
-          snapshot = await query.get();
-        }
+      // Fetch events with the filter
+      final filteredEvents = await _databaseService.getFilteredEvents(filter);
 
-        return snapshot.docs.map((doc) {
-          final data = doc.data() as Map<String, dynamic>;
-          data['id'] = doc.id;
-          return EventData.fromMap(data);
-        }).toList();
-      } catch (e) {
-        developer.log('Error fetching from Firestore: $e', name: 'EventsProvider');
-        throw e;
-      }
+      _events = filteredEvents;
+      _filteredEvents = [];
+      _hasMoreEvents = false; // Time-filtered results don't support pagination currently
+
+      developer.log('Fetched ${filteredEvents.length} events for time period', name: 'EventsProvider');
+    } catch (e) {
+      developer.log('Error fetching events by time period: $e', name: 'EventsProvider');
+      _setError('Failed to load events for selected time period');
+    } finally {
+      _setLoading(false);
+      notifyListeners();
     }
   }
 
-  // Fetch events from local Firestore database
+  // Get nearby events from Google Places API
+  Future<void> fetchNearbyEvents({
+    required double latitude,
+    required double longitude,
+    required double radiusInKm,
+    String? keyword,
+  }) async {
+    try {
+      _setLoading(true);
+      _setError(null);
+
+      developer.log('Fetching nearby events', name: 'EventsProvider');
+
+      // Fetch nearby events/places using GoogleEventsService
+      final nearbyEvents = await _googleEventsService.getNearbyEvents(
+        latitude: latitude,
+        longitude: longitude,
+        radiusInKm: radiusInKm,
+        keyword: keyword,
+      );
+
+      _events = nearbyEvents;
+      _filteredEvents = [];
+      _activeFilter = null;
+      _hasMoreEvents = false; // Nearby results don't support pagination
+      _isUsingLocalData = false;
+
+      developer.log('Fetched ${nearbyEvents.length} nearby events', name: 'EventsProvider');
+    } catch (e) {
+      developer.log('Error fetching nearby events: $e', name: 'EventsProvider');
+      _setError('Failed to load nearby events');
+
+      // Try to fetch regular events as fallback
+      await _fetchLocalEvents();
+    } finally {
+      _setLoading(false);
+      notifyListeners();
+    }
+  }
+
+  // Fetch local events using the DatabaseService
   Future<void> _fetchLocalEvents() async {
     try {
-      developer.log('Fetching local events from Firestore', name: 'EventsProvider');
+      developer.log('Fetching local events', name: 'EventsProvider');
 
-      // Check if we already have events
-      final snapshot = await _firestore.collection('events').limit(_pageSize).get();
+      // Create a default filter for local events
+      final filter = EventFilter(
+        includePastEvents: true,
+        includeCurrentEvents: true,
+        includeFutureEvents: true,
+      );
 
-      if (snapshot.docs.isNotEmpty) {
-        // We have local events, use them
-        final localEvents = snapshot.docs.map((doc) {
-          final data = doc.data();
-          // Add the document ID to the data
-          data['id'] = doc.id;
-          // Convert to EventData
-          return EventData.fromMap(data);
-        }).toList();
+      // Get events from database service
+      final localEvents = await _databaseService.getFilteredEvents(filter);
 
+      if (localEvents.isNotEmpty) {
         _events = localEvents;
-        // Set pagination state
+        _filteredEvents = [];
+        _activeFilter = null;
         _hasMoreEvents = localEvents.length >= _pageSize;
-
-        // Apply any active filter to the new events
-        if (_activeFilter != null) {
-          await applyFilter(_activeFilter!);
-        } else {
-          _filteredEvents = [];
-        }
-
         _isUsingLocalData = true;
-        developer.log('Loaded ${localEvents.length} local events from Firestore', name: 'EventsProvider');
+
+        developer.log('Loaded ${localEvents.length} local events', name: 'EventsProvider');
       } else {
-        // No local events found, let's try to create a test event
-        await _createTestEventIfNoEvents();
+        // No local events found, try sample events
+        _useInMemorySampleEvents();
       }
     } catch (e) {
       developer.log('Error fetching local events: $e', name: 'EventsProvider');
 
       // Use in-memory sample events as final fallback
-      _useInMemorySampleEvents();
-    }
-  }
-
-  // Create a test event in Firestore if none exist
-  Future<void> _createTestEventIfNoEvents() async {
-    try {
-      developer.log('Creating test event in Firestore', name: 'EventsProvider');
-
-      // Create a sample event
-      final now = DateTime.now();
-      final sampleEvent = {
-        'title': 'Mountain Trail Hike',
-        'description': 'Join us for a beautiful morning hike on the scenic mountain trails. Perfect for all experience levels!',
-        'eventDate': Timestamp.fromDate(now.add(const Duration(days: 3))),
-        'endDate': Timestamp.fromDate(now.add(const Duration(days: 3, hours: 3))),
-        'location': 'Mountain Trail Park',
-        'imageUrl': 'https://images.unsplash.com/photo-1551632811-561732d1e306',
-        'organizer': 'Hiking Adventures Club',
-        'category': 'Hiking',
-        'difficulty': 2,
-        'participantLimit': 15,
-        'duration': 180, // in minutes
-        'latitude': 40.0150,
-        'longitude': -105.2705,
-        'attendees': [],
-        'createdBy': 'system',
-        'isFree': true,
-      };
-
-      // Add to Firestore
-      final docRef = await _firestore.collection('events').add(sampleEvent);
-
-      // Get the ID and update the event data
-      sampleEvent['id'] = docRef.id;
-
-      // Create EventData object
-      final event = EventData.fromMap(sampleEvent);
-
-      // Update provider state
-      _events = [event];
-      _filteredEvents = [];
-      _hasMoreEvents = false; // Only one sample event
-      _isUsingLocalData = true;
-      _setError('Using local events. Sign in with Google to see more events.');
-      developer.log('Created test event in Firestore with ID: ${docRef.id}', name: 'EventsProvider');
-    } catch (e) {
-      developer.log('Error creating test event: $e', name: 'EventsProvider');
-
-      // Use in-memory sample events if Firestore fails
       _useInMemorySampleEvents();
     }
   }
@@ -465,6 +411,43 @@ class EventsProvider with ChangeNotifier {
           isFree: false,
           price: '\$45',
         ),
+        EventData(
+          id: 'sample-4',
+          title: 'Weekend Backpacking Trip',
+          description: 'A weekend-long backpacking adventure through pristine wilderness. Experience required.',
+          eventDate: now.add(const Duration(days: 1)),
+          endDate: now.add(const Duration(days: 3)),
+          location: 'Rocky Mountain National Park',
+          imageUrl: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4',
+          category: 'Backpacking',
+          difficulty: 4,
+          duration: const Duration(hours: 48),
+          participantLimit: 10,
+          attendees: ['hiker3@example.com', 'hiker4@example.com'],
+          latitude: 40.3428,
+          longitude: -105.6836,
+          organizer: 'Wilderness Explorers',
+          isFree: false,
+          price: '\$120',
+        ),
+        EventData(
+          id: 'sample-5',
+          title: 'Sunset Photography Hike',
+          description: 'Capture breathtaking sunset photos from a scenic mountain viewpoint.',
+          eventDate: now.subtract(const Duration(days: 2, hours: 17)),
+          endDate: now.subtract(const Duration(days: 2, hours: 14)),
+          location: 'Eagle View Summit',
+          imageUrl: 'https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9',
+          category: 'Photography',
+          difficulty: 2,
+          duration: const Duration(hours: 3),
+          participantLimit: 15,
+          attendees: ['photo1@example.com', 'photo2@example.com'],
+          latitude: 39.5501,
+          longitude: -105.1097,
+          organizer: 'Nature Photographers Guild',
+          isFree: true,
+        ),
       ];
 
       // Since these are sample events, no more are available
@@ -513,15 +496,28 @@ class EventsProvider with ChangeNotifier {
         _isUsingLocalData = false;
         developer.log('Found ${searchResults.length} events matching query', name: 'EventsProvider');
       } else {
-        // If not authenticated, search local events
-        await _searchLocalEvents(query);
+        // If not authenticated, search local events via DatabaseService
+        final filter = EventFilter(searchQuery: query);
+        final localResults = await _databaseService.getFilteredEvents(filter);
+
+        _events = localResults;
+        _hasMoreEvents = false;
+        _isUsingLocalData = true;
+        developer.log('Found ${localResults.length} local events matching query', name: 'EventsProvider');
       }
     } catch (e) {
       developer.log('Error searching events: $e', name: 'EventsProvider');
       _setError('Search failed. Using local results instead.');
 
-      // Try local search as fallback
-      await _searchLocalEvents(query);
+      // Try local search as fallback via filter
+      final filter = EventFilter(searchQuery: query);
+      try {
+        final localResults = await _databaseService.getFilteredEvents(filter);
+        _events = localResults;
+      } catch (e2) {
+        developer.log('Error with fallback search: $e2', name: 'EventsProvider');
+        _useFilteredInMemorySampleEvents(query);
+      }
     } finally {
       _setLoading(false);
     }
@@ -537,9 +533,50 @@ class EventsProvider with ChangeNotifier {
     try {
       developer.log('Applying filter: ${filter.toString()}', name: 'EventsProvider');
 
-      List<EventData> filtered = List.from(_events);
+      // Use DatabaseService to apply filter
+      final filteredEvents = await _databaseService.getFilteredEvents(filter);
 
-      // Filter by date range
+      _events = filteredEvents;
+      _filteredEvents = [];
+      _hasMoreEvents = false; // Filtered results don't support pagination currently
+
+      developer.log('Filter applied, ${filteredEvents.length} events match the criteria', name: 'EventsProvider');
+    } catch (e) {
+      developer.log('Error applying filter: $e', name: 'EventsProvider');
+      _setError('Error applying filter');
+
+      // Apply filter in memory as fallback
+      _applyFilterLocally(filter);
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Apply filter locally in memory as a fallback
+  void _applyFilterLocally(EventFilter filter) {
+    try {
+      List<EventData> filtered = List.from(_events);
+      final now = DateTime.now();
+
+      // Apply time-based filtering
+      filtered = filtered.where((event) {
+        final isPast = event.endDate != null
+            ? event.endDate!.isBefore(now)
+            : event.eventDate.add(event.duration ?? const Duration(hours: 2)).isBefore(now);
+
+        final isCurrent = event.eventDate.isBefore(now) &&
+            (event.endDate != null
+                ? event.endDate!.isAfter(now)
+                : event.eventDate.add(event.duration ?? const Duration(hours: 2)).isAfter(now));
+
+        final isFuture = event.eventDate.isAfter(now);
+
+        return (isPast && filter.includePastEvents) ||
+            (isCurrent && filter.includeCurrentEvents) ||
+            (isFuture && filter.includeFutureEvents);
+      }).toList();
+
+      // Apply date range filters
       if (filter.startDate != null) {
         filtered = filtered.where((event) =>
         event.eventDate.isAfter(filter.startDate!) ||
@@ -552,14 +589,14 @@ class EventsProvider with ChangeNotifier {
             event.eventDate.isAtSameMomentAs(filter.endDate!)).toList();
       }
 
-      // Filter by category
+      // Apply category filter
       if (filter.categories.isNotEmpty) {
         filtered = filtered.where((event) =>
         event.category != null &&
             filter.categories.contains(event.category!.toLowerCase())).toList();
       }
 
-      // Filter by difficulty
+      // Apply difficulty filter
       if (filter.minDifficulty != null) {
         filtered = filtered.where((event) =>
         event.difficulty != null &&
@@ -572,47 +609,45 @@ class EventsProvider with ChangeNotifier {
             event.difficulty! <= filter.maxDifficulty!).toList();
       }
 
-      // Filter by location text
-      if (filter.location != null && filter.location!.isNotEmpty) {
-        final locationLower = filter.location!.toLowerCase();
+      // Apply location text filter
+      if (filter.locationQuery != null && filter.locationQuery!.isNotEmpty) {
+        final locationLower = filter.locationQuery!.toLowerCase();
         filtered = filtered.where((event) =>
         event.location != null &&
             event.location!.toLowerCase().contains(locationLower)).toList();
       }
 
-      // Filter by distance (need user location)
-      if (filter.maxDistance != null && filter.userLatitude != null && filter.userLongitude != null) {
-        filtered = filtered.where((event) {
-          if (event.latitude == null || event.longitude == null) return false;
+      // Apply distance filter
+      if (filter.userLatitude != null && filter.userLongitude != null &&
+          (filter.maxDistance != null || filter.radiusInKm != null)) {
+        final maxDistance = filter.maxDistance ?? filter.radiusInKm;
+        if (maxDistance != null) {
+          filtered = filtered.where((event) {
+            if (event.latitude == null || event.longitude == null) return false;
 
-          // Calculate distance using Haversine formula
-          final distance = _calculateDistance(
-              filter.userLatitude!,
-              filter.userLongitude!,
-              event.latitude!,
-              event.longitude!
-          );
+            // Calculate distance using Haversine formula
+            final distance = _calculateDistance(
+                filter.userLatitude!,
+                filter.userLongitude!,
+                event.latitude!,
+                event.longitude!
+            );
 
-          return distance <= filter.maxDistance!;
-        }).toList();
+            return distance <= maxDistance;
+          }).toList();
+        }
       }
 
-      // Filter by favorites
-      if (filter.favoritesOnly) {
+      // Apply favorites filter
+      if (filter.favoritesOnly || filter.showOnlyFavorites) {
         filtered = filtered.where((event) =>
             _favoriteEventIds.contains(event.id)).toList();
       }
 
       _filteredEvents = filtered;
-      // No pagination for filtered results
-      _hasMoreEvents = false;
-      developer.log('Filter applied, ${filtered.length} events match the criteria', name: 'EventsProvider');
     } catch (e) {
-      developer.log('Error applying filter: $e', name: 'EventsProvider');
-      _setError('Error applying filter');
+      developer.log('Error applying filter locally: $e', name: 'EventsProvider');
       _filteredEvents = _events;
-    } finally {
-      _setLoading(false);
     }
   }
 
@@ -625,7 +660,7 @@ class EventsProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Add the setViewType method here
+  // Set the current view type
   void setViewType(EventsViewType viewType) {
     _currentViewType = viewType;
     notifyListeners();
@@ -661,64 +696,7 @@ class EventsProvider with ChangeNotifier {
   double sqrt(double x) => x <= 0 ? 0 : _sqrt(x, 1);
   double _sqrt(double x, double guess) => (guess * guess - x).abs() < 0.0001 ? guess : _sqrt(x, (guess + x / guess) / 2);
 
-  // Search local events in Firestore
-  Future<void> _searchLocalEvents(String query) async {
-    try {
-      developer.log('Searching local events in Firestore', name: 'EventsProvider');
-
-      if (query.isEmpty) {
-        // If empty query, just load all local events
-        await _fetchLocalEvents();
-        return;
-      }
-
-      // Create a query for case-insensitive search
-      // Note: Firestore doesn't support real text search, so this is a simple approach
-      final queryLower = query.toLowerCase();
-
-      // Get all events and filter in memory (not efficient for large datasets)
-      final snapshot = await _firestore.collection('events').get();
-
-      if (snapshot.docs.isNotEmpty) {
-        // Filter events that match the query in title, description, or location
-        final filteredEvents = snapshot.docs
-            .map((doc) {
-          final data = doc.data();
-          data['id'] = doc.id;
-          return EventData.fromMap(data);
-        })
-            .where((event) =>
-        event.title.toLowerCase().contains(queryLower) ||
-            (event.description?.toLowerCase().contains(queryLower) ?? false) ||
-            (event.location?.toLowerCase().contains(queryLower) ?? false) ||
-            (event.category?.toLowerCase().contains(queryLower) ?? false)
-        )
-            .toList();
-
-        if (filteredEvents.isNotEmpty) {
-          _events = filteredEvents;
-          _filteredEvents = [];
-          _activeFilter = null;
-          _hasMoreEvents = false; // No pagination for search results
-          _isUsingLocalData = true;
-          developer.log('Found ${filteredEvents.length} local events matching query', name: 'EventsProvider');
-        } else {
-          // If no matches in Firestore, use filtered in-memory samples
-          _useFilteredInMemorySampleEvents(query);
-        }
-      } else {
-        // If no events in Firestore, use filtered in-memory samples
-        _useFilteredInMemorySampleEvents(query);
-      }
-    } catch (e) {
-      developer.log('Error searching local events: $e', name: 'EventsProvider');
-
-      // Use filtered in-memory samples as fallback
-      _useFilteredInMemorySampleEvents(query);
-    }
-  }
-
-  // Use filtered in-memory sample events
+  // Use filtered in-memory sample events as a fallback
   void _useFilteredInMemorySampleEvents(String query) {
     try {
       developer.log('Using filtered in-memory sample events', name: 'EventsProvider');
@@ -828,14 +806,11 @@ class EventsProvider with ChangeNotifier {
         }
       }
 
-      // If not in current list and not a sample event, try to get from Firestore
+      // If not found in current list, use the DatabaseService
       if (!eventId.startsWith('sample-')) {
-        final doc = await _firestore.collection('events').doc(eventId).get();
-
-        if (doc.exists && doc.data() != null) {
-          final data = doc.data()!;
-          data['id'] = doc.id;
-          return EventData.fromMap(data);
+        final event = await _databaseService.getEvent(eventId);
+        if (event != null) {
+          return event;
         }
       }
 
@@ -925,19 +900,19 @@ class EventsProvider with ChangeNotifier {
   Future<void> toggleFavorite(String eventId) async {
     try {
       if (_favoriteEventIds.contains(eventId)) {
+        await _databaseService.removeEventFromFavorites(eventId);
         _favoriteEventIds.remove(eventId);
       } else {
+        await _databaseService.addEventToFavorites(eventId);
         _favoriteEventIds.add(eventId);
       }
 
       // If we have an active filter for favorites only, update the filtered events
-      if (_activeFilter != null && _activeFilter!.favoritesOnly) {
+      if (_activeFilter != null && (_activeFilter!.favoritesOnly || _activeFilter!.showOnlyFavorites)) {
         await applyFilter(_activeFilter!);
       }
 
-      // Save favorites to storage
       notifyListeners();
-      await _saveFavorites();
     } catch (e) {
       developer.log('Error toggling favorite: $e', name: 'EventsProvider');
       // Revert the change if there was an error

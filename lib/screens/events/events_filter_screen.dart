@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../../models/event_filter.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../../widgets/location_picker.dart';
 
 class EventsFilterScreen extends StatefulWidget {
   final EventFilter initialFilter;
@@ -18,6 +20,7 @@ class _EventsFilterScreenState extends State<EventsFilterScreen> {
   late EventFilter _currentFilter;
   final TextEditingController _locationController = TextEditingController();
   final DateFormat _dateFormat = DateFormat('MMM d, yyyy');
+  final DateFormat _timeFormat = DateFormat('h:mm a');
 
   // Sample categories - replace with actual data from your database
   final List<String> _categories = [
@@ -31,6 +34,14 @@ class _EventsFilterScreenState extends State<EventsFilterScreen> {
     'Cleanup',
     'Educational',
     'Social',
+  ];
+
+  // Time periods for filtering
+  final List<String> _timePeriods = [
+    'Morning',
+    'Afternoon',
+    'Evening',
+    'Any Time'
   ];
 
   @override
@@ -58,8 +69,18 @@ class _EventsFilterScreenState extends State<EventsFilterScreen> {
     );
 
     if (picked != null) {
+      // After selecting date, prompt for time
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: _currentFilter.startTime ?? TimeOfDay.now(),
+      );
+
       setState(() {
         _currentFilter = _currentFilter.copyWith(startDate: picked);
+
+        if (pickedTime != null) {
+          _currentFilter = _currentFilter.copyWith(startTime: pickedTime);
+        }
 
         // If end date is before start date, adjust it
         if (_currentFilter.endDate != null &&
@@ -84,8 +105,18 @@ class _EventsFilterScreenState extends State<EventsFilterScreen> {
     );
 
     if (picked != null) {
+      // After selecting date, prompt for time
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: _currentFilter.endTime ?? TimeOfDay.now(),
+      );
+
       setState(() {
         _currentFilter = _currentFilter.copyWith(endDate: picked);
+
+        if (pickedTime != null) {
+          _currentFilter = _currentFilter.copyWith(endTime: pickedTime);
+        }
       });
     }
   }
@@ -95,8 +126,70 @@ class _EventsFilterScreenState extends State<EventsFilterScreen> {
       _currentFilter = _currentFilter.copyWith(
         startDate: null,
         endDate: null,
+        startTime: null,
+        endTime: null,
       );
     });
+  }
+
+  void _selectTimePeriod(String period) {
+    TimeOfDay? startTime;
+    TimeOfDay? endTime;
+
+    switch(period) {
+      case 'Morning':
+        startTime = const TimeOfDay(hour: 6, minute: 0);
+        endTime = const TimeOfDay(hour: 12, minute: 0);
+        break;
+      case 'Afternoon':
+        startTime = const TimeOfDay(hour: 12, minute: 0);
+        endTime = const TimeOfDay(hour: 17, minute: 0);
+        break;
+      case 'Evening':
+        startTime = const TimeOfDay(hour: 17, minute: 0);
+        endTime = const TimeOfDay(hour: 23, minute: 0);
+        break;
+      case 'Any Time':
+        startTime = null;
+        endTime = null;
+        break;
+    }
+
+    setState(() {
+      _currentFilter = _currentFilter.copyWith(
+        timePeriod: period != 'Any Time' ? period : null,
+        startTime: startTime,
+        endTime: endTime,
+      );
+    });
+  }
+
+  void _selectLocation(LatLng location, double radius) {
+    setState(() {
+      _currentFilter = _currentFilter.copyWith(
+        searchLocation: location,
+        searchRadius: radius,
+      );
+    });
+  }
+
+  void _openLocationPicker() async {
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LocationPicker(
+          initialLocation: _currentFilter.searchLocation,
+          initialRadius: _currentFilter.searchRadius ?? 10.0,
+        ),
+      ),
+    );
+
+    if (result != null) {
+      _selectLocation(
+        result['location'] as LatLng,
+        result['radius'] as double,
+      );
+    }
   }
 
   void _applyFilters() {
@@ -143,7 +236,7 @@ class _EventsFilterScreenState extends State<EventsFilterScreen> {
                       onTap: () => _selectStartDate(context),
                       child: InputDecorator(
                         decoration: const InputDecoration(
-                          labelText: 'Start Date',
+                          labelText: 'Start Date & Time',
                           border: OutlineInputBorder(),
                           contentPadding: EdgeInsets.symmetric(
                             horizontal: 12.0,
@@ -152,8 +245,8 @@ class _EventsFilterScreenState extends State<EventsFilterScreen> {
                         ),
                         child: Text(
                           _currentFilter.startDate != null
-                              ? _dateFormat.format(_currentFilter.startDate!)
-                              : 'Select date',
+                              ? '${_dateFormat.format(_currentFilter.startDate!)} ${_currentFilter.startTime != null ? "@ ${_currentFilter.startTime!.format(context)}" : ""}'
+                              : 'Select date & time',
                         ),
                       ),
                     ),
@@ -164,7 +257,7 @@ class _EventsFilterScreenState extends State<EventsFilterScreen> {
                       onTap: () => _selectEndDate(context),
                       child: InputDecorator(
                         decoration: const InputDecoration(
-                          labelText: 'End Date',
+                          labelText: 'End Date & Time',
                           border: OutlineInputBorder(),
                           contentPadding: EdgeInsets.symmetric(
                             horizontal: 12.0,
@@ -173,8 +266,8 @@ class _EventsFilterScreenState extends State<EventsFilterScreen> {
                         ),
                         child: Text(
                           _currentFilter.endDate != null
-                              ? _dateFormat.format(_currentFilter.endDate!)
-                              : 'Select date',
+                              ? '${_dateFormat.format(_currentFilter.endDate!)} ${_currentFilter.endTime != null ? "@ ${_currentFilter.endTime!.format(context)}" : ""}'
+                              : 'Select date & time',
                         ),
                       ),
                     ),
@@ -189,6 +282,31 @@ class _EventsFilterScreenState extends State<EventsFilterScreen> {
                     child: const Text('Clear Dates'),
                   ),
                 ),
+
+              const SizedBox(height: 16.0),
+
+              // Time period section
+              _buildSectionTitle('Time of Day'),
+              const SizedBox(height: 8.0),
+              Wrap(
+                spacing: 8.0,
+                runSpacing: 8.0,
+                children: _timePeriods.map((period) {
+                  final isSelected = _currentFilter.timePeriod == period ||
+                      (period == 'Any Time' && _currentFilter.timePeriod == null);
+                  return FilterChip(
+                    label: Text(period),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      if (selected) {
+                        _selectTimePeriod(period);
+                      }
+                    },
+                    backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                    selectedColor: Theme.of(context).colorScheme.primaryContainer,
+                  );
+                }).toList(),
+              ),
 
               const SizedBox(height: 16.0),
 
@@ -251,15 +369,48 @@ class _EventsFilterScreenState extends State<EventsFilterScreen> {
               // Location search section
               _buildSectionTitle('Location'),
               const SizedBox(height: 8.0),
-              TextField(
-                controller: _locationController,
-                decoration: const InputDecoration(
-                  labelText: 'Search by location',
-                  hintText: 'City, park, trail name...',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.location_on_outlined),
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _locationController,
+                      decoration: const InputDecoration(
+                        labelText: 'Search by location',
+                        hintText: 'City, park, trail name...',
+                        border: OutlineInputBorder(),
+                        prefixIcon: Icon(Icons.location_on_outlined),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8.0),
+                  IconButton(
+                    onPressed: _openLocationPicker,
+                    icon: const Icon(Icons.map),
+                    tooltip: 'Select on map',
+                    style: IconButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                    ),
+                  ),
+                ],
               ),
+
+              if (_currentFilter.searchLocation != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Chip(
+                    label: Text(
+                      'Area selected: ${_currentFilter.searchRadius?.toStringAsFixed(1)} km radius',
+                    ),
+                    onDeleted: () {
+                      setState(() {
+                        _currentFilter = _currentFilter.copyWith(
+                          searchLocation: null,
+                          searchRadius: null,
+                        );
+                      });
+                    },
+                  ),
+                ),
 
               const SizedBox(height: 16.0),
 
@@ -293,7 +444,7 @@ class _EventsFilterScreenState extends State<EventsFilterScreen> {
 
               const SizedBox(height: 16.0),
 
-              // Favorites only section
+              // Additional filters
               SwitchListTile(
                 title: const Text('Show only favorites'),
                 value: _currentFilter.showOnlyFavorites,
@@ -301,6 +452,32 @@ class _EventsFilterScreenState extends State<EventsFilterScreen> {
                   setState(() {
                     _currentFilter = _currentFilter.copyWith(
                       showOnlyFavorites: value,
+                    );
+                  });
+                },
+                activeColor: Theme.of(context).colorScheme.primary,
+              ),
+
+              SwitchListTile(
+                title: const Text('Include Google events'),
+                value: _currentFilter.includeGoogleEvents,
+                onChanged: (value) {
+                  setState(() {
+                    _currentFilter = _currentFilter.copyWith(
+                      includeGoogleEvents: value,
+                    );
+                  });
+                },
+                activeColor: Theme.of(context).colorScheme.primary,
+              ),
+
+              SwitchListTile(
+                title: const Text('Include past events'),
+                value: _currentFilter.includePastEvents,
+                onChanged: (value) {
+                  setState(() {
+                    _currentFilter = _currentFilter.copyWith(
+                      includePastEvents: value,
                     );
                   });
                 },
