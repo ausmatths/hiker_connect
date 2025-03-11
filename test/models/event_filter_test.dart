@@ -165,5 +165,49 @@ void main() {
       expect(modified.categories, equals(original.categories));
       expect(modified.difficultyLevel, equals(original.difficultyLevel));
     });
+
+    // Additional tests for edge cases
+
+    test('handles null values in toMap and fromMap', () {
+      final filter = EventFilter(); // All nullable fields are null
+      final map = filter.toMap();
+      final restored = EventFilter.fromMap(map);
+
+      // Verify all nullable fields remain null
+      expect(restored.searchQuery, isNull);
+      expect(restored.startDate, isNull);
+      expect(restored.endDate, isNull);
+      expect(restored.location, isNull);
+      expect(restored.category, isNull);
+      expect(restored.locationQuery, isNull);
+    });
+
+    test('date/time serialization handles timezone correctly', () {
+      final originalDate = DateTime.utc(2023, 6, 15, 10, 30); // UTC time
+      final filter = EventFilter(startDate: originalDate);
+
+      final map = filter.toMap();
+      final restored = EventFilter.fromMap(map);
+
+      // Verify the date is preserved, including hours and minutes
+      expect(restored.startDate?.year, equals(originalDate.year));
+      expect(restored.startDate?.month, equals(originalDate.month));
+      expect(restored.startDate?.day, equals(originalDate.day));
+      expect(restored.startDate?.hour, equals(originalDate.hour));
+      expect(restored.startDate?.minute, equals(originalDate.minute));
+    });
+
+    test('copyWith handles complex nested objects', () {
+      final location = LatLng(42.3601, -71.0589); // Boston
+      final original = EventFilter(searchLocation: location);
+
+      // Create a new LatLng
+      final newLocation = LatLng(40.7128, -74.0060); // New York
+      final modified = original.copyWith(searchLocation: newLocation);
+
+      // Verify the location was updated
+      expect(modified.searchLocation?.latitude, equals(40.7128));
+      expect(modified.searchLocation?.longitude, equals(-74.0060));
+    });
   });
 }
