@@ -143,7 +143,7 @@ void main() {
       expect(firestoreData['uploaderId'], 'user456');
       expect(firestoreData['caption'], 'Test caption');
 
-      // uploadDate should be a Timestamp
+
       expect(firestoreData['uploadDate'], isA<Timestamp>());
       final timestamp = firestoreData['uploadDate'] as Timestamp;
       final convertedDate = timestamp.toDate();
