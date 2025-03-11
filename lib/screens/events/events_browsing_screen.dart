@@ -389,14 +389,25 @@ class _EventsBrowsingScreenState extends State<EventsBrowsingScreen> with Single
           onPressed: () => _showJoinEventDialog(context),
         ),
         title: const Text('Browse Events'),
+        // In the AppBar actions array
         actions: [
-          // Add this consumer to show the sign-in button
+          // Only show sign-in/sign-out button when authenticated
           Consumer<EventsProvider>(
-            builder: (ctx, provider, _) => IconButton(
-              icon: Icon(provider.isAuthenticated ? Icons.logout : Icons.login),
-              tooltip: provider.isAuthenticated ? 'Sign out' : 'Sign in with Google',
-              onPressed: () => provider.isAuthenticated ? provider.signOut() : provider.signIn(),
-            ),
+            builder: (ctx, provider, _) => provider.isAuthenticated
+                ? IconButton(
+              icon: const Icon(Icons.logout),
+              tooltip: 'Sign out',
+              onPressed: () async {
+                // First sign out through the provider
+                await provider.signOut();
+
+                // Then manually navigate to login screen
+                if (context.mounted) {
+                  Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+                }
+              },
+            )
+                : const SizedBox.shrink(), // Hide the button when not authenticated
           ),
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -590,8 +601,6 @@ class _EventsBrowsingScreenState extends State<EventsBrowsingScreen> with Single
             ),
 
             const Divider(),
-
-            // REMOVED: Duplicate tab bar section that was here
 
             // Main content with loading indicator
             Expanded(
