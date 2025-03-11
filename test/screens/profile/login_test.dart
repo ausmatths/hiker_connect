@@ -3,13 +3,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:hiker_connect/models/user_model.dart';
+import 'package:hiker_connect/providers/events_provider.dart';
 import 'package:mockito/mockito.dart';
-import 'package:provider/provider.dart';
 import 'package:hiker_connect/services/firebase_auth.dart';
 import 'package:hiker_connect/screens/auth//login_screen.dart';
-import 'package:hiker_connect/services/firebase_auth.dart';
 import 'package:hiker_connect/services/google_events_service.dart';
-
+import 'package:hiker_connect/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class MockAuthService extends Mock implements AuthService {}
 class MockGoogleEventsService extends Mock implements GoogleEventsService {}
@@ -22,23 +22,27 @@ void main() {
   setUp(() {
     mockAuthService = MockAuthService();
     mockGoogleEventsService = MockGoogleEventsService();
+
   });
 
-  testWidgets('LoginScreen renders correctly', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: MultiProvider(
+  Widget createTestWidget() {
+    return MaterialApp(
+      home: HikerAuthProvider( // Use your custom provider
+        authService: mockAuthService,
+        child: MultiProvider(
           providers: [
-            Provider<AuthService>.value(value: mockAuthService),
             Provider<GoogleEventsService>.value(value: mockGoogleEventsService),
           ],
           child: const LoginScreen(),
         ),
-      ),
+        ),
     );
+  }
 
+  testWidgets('LoginScreen renders correctly', (WidgetTester tester) async {
+    await tester.pumpWidget(createTestWidget());
 
-    expect(find.text('Login'), findsOneWidget);
+    expect(find.text('Login'), findsNWidgets(2));
     expect(find.text('Hiker Connect'), findsOneWidget);
     expect(find.byType(TextFormField), findsNWidgets(2));
     expect(find.text('Forgot Password?'), findsOneWidget);
@@ -46,21 +50,12 @@ void main() {
     expect(find.text("Don't have an account?"), findsOneWidget);
     expect(find.text('Sign Up'), findsOneWidget);
   });
+
   testWidgets('Form validation shows errors for invalid input', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      MaterialApp(
-        home: MultiProvider(
-          providers: [
-            Provider<AuthService>.value(value: mockAuthService),
-            Provider<GoogleEventsService>.value(value: mockGoogleEventsService),
-          ],
-          child: const LoginScreen(),
-        ),
-      ),
-    );
+    await tester.pumpWidget(createTestWidget());
 
     // Tap the login button without entering any input
-    await tester.tap(find.text('Login'));
+    await tester.tap(find.byKey(const Key('loginButton')));
     await tester.pump();
 
     // Verify error messages
@@ -69,13 +64,13 @@ void main() {
 
     // Enter invalid email
     await tester.enterText(find.byType(TextFormField).first, 'invalid-email');
-    await tester.tap(find.text('Login'));
+    await tester.tap(find.byKey(const Key('loginButton')));
     await tester.pump();
 
     // Verify error message for invalid email
     expect(find.text('Please enter a valid email'), findsOneWidget);
   });
-  //GeoPoint geo = GeoPoint(37.7749, -122.4194);
+
   testWidgets('Login with valid email and password', (WidgetTester tester) async {
     when(mockAuthService.signInWithEmailAndPassword(
       email: 'test@example.com',
@@ -87,7 +82,7 @@ void main() {
       bio: 'Test bio',
       photoUrl: null,
       location: UserLocation(
-        geoPoint: GeoPoint(37.7749, -122.4194) ?? null,
+        geoPoint: GeoPoint(37.7749, -122.4194),
         address: '123 Test St',
       ),
       createdAt: DateTime.now(),
@@ -106,20 +101,9 @@ void main() {
       ],
       interests: [],
       socialLinks: {},
-    )
-    );
+    ));
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: MultiProvider(
-          providers: [
-            Provider<AuthService>.value(value: mockAuthService),
-            Provider<GoogleEventsService>.value(value: mockGoogleEventsService),
-          ],
-          child: const LoginScreen(),
-        ),
-      ),
-    );
+    await tester.pumpWidget(createTestWidget());
 
     // Enter valid email and password
     await tester.enterText(find.byType(TextFormField).first, 'test@example.com');
@@ -133,6 +117,7 @@ void main() {
       password: 'password123',
     )).called(1);
   });
+
   testWidgets('Sign in with Google', (WidgetTester tester) async {
     when(mockAuthService.signInWithGoogle()).thenAnswer((_) async => UserModel(
       uid: 'test-uid',
@@ -162,17 +147,7 @@ void main() {
       socialLinks: {},
     ));
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: MultiProvider(
-          providers: [
-            Provider<AuthService>.value(value: mockAuthService),
-            Provider<GoogleEventsService>.value(value: mockGoogleEventsService),
-          ],
-          child: const LoginScreen(),
-        ),
-      ),
-    );
+    await tester.pumpWidget(createTestWidget());
 
     // Tap the Google sign-in button
     await tester.tap(find.text('Sign in with Google'));
@@ -181,23 +156,14 @@ void main() {
     // Verify that the Google sign-in method was called
     verify(mockAuthService.signInWithGoogle()).called(1);
   });
+
   testWidgets('Error message is shown when login fails', (WidgetTester tester) async {
     when(mockAuthService.signInWithEmailAndPassword(
       email: 'test@example.com',
       password: 'wrongpassword',
     )).thenThrow(FirebaseAuthException(code: 'wrong-password'));
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: MultiProvider(
-          providers: [
-            Provider<AuthService>.value(value: mockAuthService),
-            Provider<GoogleEventsService>.value(value: mockGoogleEventsService),
-          ],
-          child: const LoginScreen(),
-        ),
-      ),
-    );
+    await tester.pumpWidget(createTestWidget());
 
     // Enter valid email and wrong password
     await tester.enterText(find.byType(TextFormField).first, 'test@example.com');
@@ -208,20 +174,11 @@ void main() {
     // Verify error message
     expect(find.text('Incorrect password. Please try again.'), findsOneWidget);
   });
+
   testWidgets('Forgot password sends reset email', (WidgetTester tester) async {
     when(mockAuthService.resetPassword('test@example.com')).thenAnswer((_) async => true);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: MultiProvider(
-          providers: [
-            Provider<AuthService>.value(value: mockAuthService),
-            Provider<GoogleEventsService>.value(value: mockGoogleEventsService),
-          ],
-          child: const LoginScreen(),
-        ),
-      ),
-    );
+    await tester.pumpWidget(createTestWidget());
 
     // Enter email
     await tester.enterText(find.byType(TextFormField).first, 'test@example.com');
@@ -231,23 +188,14 @@ void main() {
     // Verify that the reset password method was called
     verify(mockAuthService.resetPassword('test@example.com')).called(1);
   });
+
   testWidgets('Network error message is shown', (WidgetTester tester) async {
     when(mockAuthService.signInWithEmailAndPassword(
       email: 'test@example.com',
       password: 'password123',
     )).thenThrow(FirebaseAuthException(code: 'network-request-failed'));
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: MultiProvider(
-          providers: [
-            Provider<AuthService>.value(value: mockAuthService),
-            Provider<GoogleEventsService>.value(value: mockGoogleEventsService),
-          ],
-          child: const LoginScreen(),
-        ),
-      ),
-    );
+    await tester.pumpWidget(createTestWidget());
 
     // Enter valid email and password
     await tester.enterText(find.byType(TextFormField).first, 'test@example.com');
