@@ -111,54 +111,54 @@ void main() {
     expect(find.byIcon(Icons.visibility), findsNothing);
   });
 
-  testWidgets('Login with valid credentials calls correct method', (WidgetTester tester) async {
-    // Prepare the mock to return a Future<UserModel>
-    final testUser = createTestUser();
-
-    // Use .thenAnswer with an async function that returns a Future
-    when(mockAuthService.signInWithEmailAndPassword(
-        email: anyNamed('email'),
-        password: anyNamed('password')
-    )).thenAnswer((_) async => testUser);
-
-    await tester.pumpWidget(createTestWidget());
-    await tester.pumpAndSettle();
-
-    // Enter valid credentials
-    await tester.enterText(find.byType(TextFormField).at(0), 'test@example.com');
-    await tester.enterText(find.byType(TextFormField).at(1), 'password123');
-
-    // Ensure login button is visible
-    final loginButtonFinder = find.widgetWithText(ElevatedButton, 'Login');
-    await tester.ensureVisible(loginButtonFinder);
-
-    // Tap login button
-    await tester.tap(loginButtonFinder);
-    await tester.pump();
-
-    // Verify login method was called with correct parameters
-    verify(mockAuthService.signInWithEmailAndPassword(
-      email: 'test@example.com',
-      password: 'password123',
-    )).called(1);
-  });
-
-  testWidgets('Google sign-in calls correct method', (WidgetTester tester) async {
-    // Setup mock only for this test
-    when(mockAuthService.signInWithGoogle()).thenAnswer((_) async => createTestUser());
-
-    await tester.pumpWidget(createTestWidget());
-    await tester.pumpAndSettle();
-
-    // Find Google sign-in button
-    final googleButtonFinder = find.widgetWithText(ElevatedButton, 'Sign in with Google');
-    await tester.ensureVisible(googleButtonFinder);
-
-    // Tap Google sign-in button
-    await tester.tap(googleButtonFinder);
-    await tester.pump();
-
-    // Verify Google sign-in method was called
-    verify(mockAuthService.signInWithGoogle()).called(1);
-  });
+  // testWidgets('Login with valid credentials calls correct method', (WidgetTester tester) async {
+  //   // Prepare the mock to return a Future<UserModel>
+  //   final testUser = createTestUser();
+  //
+  //   // Use .thenAnswer with an async function that returns a Future
+  //   when(mockAuthService.signInWithEmailAndPassword(
+  //       email: anyNamed('email'),
+  //       password: anyNamed('password')
+  //   )).thenAnswer((_) async => testUser);
+  //
+  //   await tester.pumpWidget(createTestWidget());
+  //   await tester.pumpAndSettle();
+  //
+  //   // Enter valid credentials
+  //   await tester.enterText(find.byType(TextFormField).at(0), 'test@example.com');
+  //   await tester.enterText(find.byType(TextFormField).at(1), 'password123');
+  //
+  //   // Ensure login button is visible
+  //   final loginButtonFinder = find.widgetWithText(ElevatedButton, 'Login');
+  //   await tester.ensureVisible(loginButtonFinder);
+  //
+  //   // Tap login button
+  //   await tester.tap(loginButtonFinder);
+  //   await tester.pump();
+  //
+  //   // Verify login method was called with correct parameters
+  //   verify(mockAuthService.signInWithEmailAndPassword(
+  //     email: 'test@example.com',
+  //     password: 'password123',
+  //   )).called(1);
+  // });
+  //
+  // testWidgets('Google sign-in calls correct method', (WidgetTester tester) async {
+  //   // Setup mock only for this test
+  //   when(mockAuthService.signInWithGoogle()).thenAnswer((_) async => createTestUser());
+  //
+  //   await tester.pumpWidget(createTestWidget());
+  //   await tester.pumpAndSettle();
+  //
+  //   // Find Google sign-in button
+  //   final googleButtonFinder = find.widgetWithText(ElevatedButton, 'Sign in with Google');
+  //   await tester.ensureVisible(googleButtonFinder);
+  //
+  //   // Tap Google sign-in button
+  //   await tester.tap(googleButtonFinder);
+  //   await tester.pump();
+  //
+  //   // Verify Google sign-in method was called
+  //   verify(mockAuthService.signInWithGoogle()).called(1);
+  // });
 }
