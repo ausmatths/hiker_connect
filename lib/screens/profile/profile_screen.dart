@@ -155,6 +155,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     try {
       final authService = context.read<AuthService>();
       await authService.signOut();
+
+      // Navigate to login explicitly instead of waiting for the AuthWrapper
+      if (mounted) {
+        // Use pushNamedAndRemoveUntil to clear the entire navigation stack
+        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+      }
     } catch (e) {
       AppLogger.error('Unexpected error during sign out: ${e.toString()}');
       ScaffoldMessenger.of(context).showSnackBar(
@@ -162,6 +168,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
       );
     }
   }
+
   Future<void> _loadSavedImages() async {
     print('Loading saved images for user: ${widget.userId}');
     final doc = await FirebaseFirestore.instance.collection('users').doc(widget.userId).get();

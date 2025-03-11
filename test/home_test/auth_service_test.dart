@@ -1,17 +1,24 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/annotations.dart';
 import 'package:mockito/mockito.dart';
 
-class MockFirebaseAuth extends Mock implements FirebaseAuth {}
+// Generate mock classes
+@GenerateMocks([FirebaseAuth])
+import 'auth_service_test.mocks.dart';
 
 // Fake implementation of UserCredential for mocking
-class FakeUserCredential extends Fake implements UserCredential {
+class FakeUserCredential implements UserCredential {
   @override
-  User get user => FakeUser();
+  User? get user => FakeUser();
+
+  // Implement other required methods/properties
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 // Fake implementation of User for mocking
-class FakeUser extends Fake implements User {
+class FakeUser implements User {
   @override
   String get uid => 'fakeUid';
 
@@ -20,6 +27,10 @@ class FakeUser extends Fake implements User {
 
   @override
   String? get displayName => 'Fake User';
+
+  // Implement other required methods/properties
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 // Define AuthenticationService (assuming this is your service class)
@@ -52,10 +63,13 @@ void main() {
     });
 
     test('signUpUser returns a User if signup is successful', () async {
+      // Use the properly typed return value
+      final fakeCredential = FakeUserCredential();
+
       when(mockFirebaseAuth.createUserWithEmailAndPassword(
-        email: any(named: 'email'),
-        password: any(named: 'password'),
-      )).thenAnswer((_) async => FakeUserCredential());
+        email: anyNamed('email'),
+        password: anyNamed('password'),
+      )).thenAnswer((_) async => fakeCredential);
 
       // Call the signUpUser method
       final result = await authService.signUpUser('test@example.com', 'password');
@@ -69,8 +83,8 @@ void main() {
     test('signUpUser returns null if signup fails', () async {
       // Mock the createUserWithEmailAndPassword method to throw an exception
       when(mockFirebaseAuth.createUserWithEmailAndPassword(
-        email: any(named: 'email'),
-        password: any(named: 'password'),
+        email: anyNamed('email'),
+        password: anyNamed('password'),
       )).thenThrow(FirebaseAuthException(code: 'error'));
 
       // Call the signUpUser method

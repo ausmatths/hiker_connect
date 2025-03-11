@@ -473,9 +473,30 @@ class _EventsBrowsingScreenState extends State<EventsBrowsingScreen> with Single
               ),
             ),
 
-            // Time period filter chips
+            // MODIFIED: Only show time filter chips or tab bar, not both
             Consumer<EventsProvider>(
-              builder: (ctx, provider, _) => _buildTimeFilterChips(context, provider),
+              builder: (ctx, provider, _) {
+                return isInHomeScreen
+                    ? _buildTimeFilterChips(context, provider)
+                    : TabBar(
+                  controller: _tabController,
+                  onTap: (index) {
+                    // Apply time filter based on tab index
+                    if (index == 0) {
+                      provider.fetchEventsByTimePeriod(false, false, true);
+                    } else if (index == 1) {
+                      provider.fetchEventsByTimePeriod(false, true, false);
+                    } else if (index == 2) {
+                      provider.fetchEventsByTimePeriod(true, false, false);
+                    }
+                  },
+                  tabs: const [
+                    Tab(text: 'Upcoming'),
+                    Tab(text: 'Ongoing'),
+                    Tab(text: 'Past'),
+                  ],
+                );
+              },
             ),
 
             // View type selector and event count
@@ -570,30 +591,7 @@ class _EventsBrowsingScreenState extends State<EventsBrowsingScreen> with Single
 
             const Divider(),
 
-            // Tab bar for time-based filtering (alternative approach)
-            if (!isInHomeScreen)
-              Consumer<EventsProvider>(
-                builder: (ctx, provider, _) {
-                  return TabBar(
-                    controller: _tabController,
-                    onTap: (index) {
-                      // Apply time filter based on tab index
-                      if (index == 0) {
-                        provider.fetchEventsByTimePeriod(false, false, true);
-                      } else if (index == 1) {
-                        provider.fetchEventsByTimePeriod(false, true, false);
-                      } else if (index == 2) {
-                        provider.fetchEventsByTimePeriod(true, false, false);
-                      }
-                    },
-                    tabs: const [
-                      Tab(text: 'Upcoming'),
-                      Tab(text: 'Ongoing'),
-                      Tab(text: 'Past'),
-                    ],
-                  );
-                },
-              ),
+            // REMOVED: Duplicate tab bar section that was here
 
             // Main content with loading indicator
             Expanded(
