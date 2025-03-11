@@ -31,13 +31,13 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntryLo">0.0&nbsp;%</td>
+            <td class="headerCovTableEntryLo">16.8&nbsp;%</td>
             <td class="headerCovTableEntry">274</td>
-            <td class="headerCovTableEntry">0</td>
+            <td class="headerCovTableEntry">46</td>
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2025-03-10 15:47:05</td>
+            <td class="headerValue">2025-03-10 23:31:58</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">-</td>
@@ -118,7 +118,7 @@
 <span id="L56"><span class="lineNum">      56</span>              :   String? _userId;</span>
 <span id="L57"><span class="lineNum">      57</span>              : </span>
 <span id="L58"><span class="lineNum">      58</span>              :   // Constructor</span>
-<span id="L59"><span class="lineNum">      59</span> <span class="tlaUNC">           0 :   GoogleEventsService();</span></span>
+<span id="L59"><span class="lineNum">      59</span> <span class="tlaGNC">           1 :   GoogleEventsService();</span></span>
 <span id="L60"><span class="lineNum">      60</span>              : </span>
 <span id="L61"><span class="lineNum">      61</span>              :   /// Get the current user ID</span>
 <span id="L62"><span class="lineNum">      62</span> <span class="tlaUNC">           0 :   String? get currentUserId =&gt; _userId;</span></span>
@@ -127,12 +127,12 @@
 <span id="L65"><span class="lineNum">      65</span> <span class="tlaUNC">           0 :   String get apiKey =&gt; dotenv.env['GOOGLE_MAPS_API_KEY'] ?? '';</span></span>
 <span id="L66"><span class="lineNum">      66</span>              : </span>
 <span id="L67"><span class="lineNum">      67</span>              :   /// Initialize the service</span>
-<span id="L68"><span class="lineNum">      68</span> <span class="tlaUNC">           0 :   Future&lt;bool&gt; initialize() async {</span></span>
+<span id="L68"><span class="lineNum">      68</span> <span class="tlaGNC">           1 :   Future&lt;bool&gt; initialize() async {</span></span>
 <span id="L69"><span class="lineNum">      69</span>              :     try {</span>
-<span id="L70"><span class="lineNum">      70</span> <span class="tlaUNC">           0 :       AppLogger.info('Initializing Google Events Service');</span></span>
+<span id="L70"><span class="lineNum">      70</span> <span class="tlaGNC">           1 :       AppLogger.info('Initializing Google Events Service');</span></span>
 <span id="L71"><span class="lineNum">      71</span>              : </span>
 <span id="L72"><span class="lineNum">      72</span>              :       // Check if we already have tokens</span>
-<span id="L73"><span class="lineNum">      73</span> <span class="tlaUNC">           0 :       final token = await _secureStorage.read(key: _tokenKey);</span></span>
+<span id="L73"><span class="lineNum">      73</span> <span class="tlaGNC">           2 :       final token = await _secureStorage.read(key: _tokenKey);</span></span>
 <span id="L74"><span class="lineNum">      74</span> <span class="tlaUNC">           0 :       final refreshToken = await _secureStorage.read(key: _refreshTokenKey);</span></span>
 <span id="L75"><span class="lineNum">      75</span>              : </span>
 <span id="L76"><span class="lineNum">      76</span>              :       // Load stored user ID if available</span>
@@ -146,7 +146,7 @@
 <span id="L84"><span class="lineNum">      84</span> <span class="tlaUNC">           0 :       _isInitialized = true;</span></span>
 <span id="L85"><span class="lineNum">      85</span>              :       return true;</span>
 <span id="L86"><span class="lineNum">      86</span>              :     } catch (e) {</span>
-<span id="L87"><span class="lineNum">      87</span> <span class="tlaUNC">           0 :       AppLogger.error('Error initializing Google Events Service: $e');</span></span>
+<span id="L87"><span class="lineNum">      87</span> <span class="tlaGNC">           2 :       AppLogger.error('Error initializing Google Events Service: $e');</span></span>
 <span id="L88"><span class="lineNum">      88</span>              :       return false;</span>
 <span id="L89"><span class="lineNum">      89</span>              :     }</span>
 <span id="L90"><span class="lineNum">      90</span>              :   }</span>
@@ -179,13 +179,13 @@
 <span id="L117"><span class="lineNum">     117</span>              :   }</span>
 <span id="L118"><span class="lineNum">     118</span>              : </span>
 <span id="L119"><span class="lineNum">     119</span>              :   // Add this to GoogleEventsService</span>
-<span id="L120"><span class="lineNum">     120</span> <span class="tlaUNC">           0 :   Future&lt;bool&gt; signInSilently() async {</span></span>
+<span id="L120"><span class="lineNum">     120</span> <span class="tlaGNC">           1 :   Future&lt;bool&gt; signInSilently() async {</span></span>
 <span id="L121"><span class="lineNum">     121</span>              :     try {</span>
-<span id="L122"><span class="lineNum">     122</span> <span class="tlaUNC">           0 :       AppLogger.info('Attempting silent Google sign-in');</span></span>
+<span id="L122"><span class="lineNum">     122</span> <span class="tlaGNC">           1 :       AppLogger.info('Attempting silent Google sign-in');</span></span>
 <span id="L123"><span class="lineNum">     123</span>              : </span>
-<span id="L124"><span class="lineNum">     124</span> <span class="tlaUNC">           0 :       final account = await _googleSignIn.signInSilently();</span></span>
+<span id="L124"><span class="lineNum">     124</span> <span class="tlaGNC">           2 :       final account = await _googleSignIn.signInSilently();</span></span>
 <span id="L125"><span class="lineNum">     125</span>              :       if (account == null) {</span>
-<span id="L126"><span class="lineNum">     126</span> <span class="tlaUNC">           0 :         AppLogger.warning('Silent sign-in failed');</span></span>
+<span id="L126"><span class="lineNum">     126</span> <span class="tlaGNC">           1 :         AppLogger.warning('Silent sign-in failed');</span></span>
 <span id="L127"><span class="lineNum">     127</span>              :         return false;</span>
 <span id="L128"><span class="lineNum">     128</span>              :       }</span>
 <span id="L129"><span class="lineNum">     129</span>              : </span>
@@ -218,12 +218,12 @@
 <span id="L156"><span class="lineNum">     156</span>              :     }</span>
 <span id="L157"><span class="lineNum">     157</span>              :   }</span>
 <span id="L158"><span class="lineNum">     158</span>              : </span>
-<span id="L159"><span class="lineNum">     159</span> <span class="tlaUNC">           0 :   Future&lt;bool&gt; signIn() async {</span></span>
+<span id="L159"><span class="lineNum">     159</span> <span class="tlaGNC">           1 :   Future&lt;bool&gt; signIn() async {</span></span>
 <span id="L160"><span class="lineNum">     160</span>              :     try {</span>
-<span id="L161"><span class="lineNum">     161</span> <span class="tlaUNC">           0 :       AppLogger.info('Attempting Google sign-in');</span></span>
+<span id="L161"><span class="lineNum">     161</span> <span class="tlaGNC">           1 :       AppLogger.info('Attempting Google sign-in');</span></span>
 <span id="L162"><span class="lineNum">     162</span>              : </span>
 <span id="L163"><span class="lineNum">     163</span>              :       // Make sure we're not already signed in</span>
-<span id="L164"><span class="lineNum">     164</span> <span class="tlaUNC">           0 :       if (await _googleSignIn.isSignedIn()) {</span></span>
+<span id="L164"><span class="lineNum">     164</span> <span class="tlaGNC">           2 :       if (await _googleSignIn.isSignedIn()) {</span></span>
 <span id="L165"><span class="lineNum">     165</span> <span class="tlaUNC">           0 :         await _googleSignIn.signOut();</span></span>
 <span id="L166"><span class="lineNum">     166</span>              :       }</span>
 <span id="L167"><span class="lineNum">     167</span>              : </span>
@@ -266,7 +266,7 @@
 <span id="L204"><span class="lineNum">     204</span>              : </span>
 <span id="L205"><span class="lineNum">     205</span> <span class="tlaUNC">           0 :       return _isAuthenticated;</span></span>
 <span id="L206"><span class="lineNum">     206</span>              :     } catch (e) {</span>
-<span id="L207"><span class="lineNum">     207</span> <span class="tlaUNC">           0 :       AppLogger.error('Error during Google sign-in: $e');</span></span>
+<span id="L207"><span class="lineNum">     207</span> <span class="tlaGNC">           2 :       AppLogger.error('Error during Google sign-in: $e');</span></span>
 <span id="L208"><span class="lineNum">     208</span>              :       return false;</span>
 <span id="L209"><span class="lineNum">     209</span>              :     }</span>
 <span id="L210"><span class="lineNum">     210</span>              :   }</span>
@@ -673,88 +673,88 @@
 <span id="L611"><span class="lineNum">     611</span>              :     return 'https://maps.gstatic.com/mapfiles/place_api/icons/v1/png_71/generic_business-71.png';</span>
 <span id="L612"><span class="lineNum">     612</span>              :   }</span>
 <span id="L613"><span class="lineNum">     613</span>              : </span>
-<span id="L614"><span class="lineNum">     614</span> <span class="tlaUNC">           0 :   List&lt;EventData&gt; getSampleEvents() {</span></span>
+<span id="L614"><span class="lineNum">     614</span> <span class="tlaGNC">           1 :   List&lt;EventData&gt; getSampleEvents() {</span></span>
 <span id="L615"><span class="lineNum">     615</span>              :     // Current time for reference</span>
-<span id="L616"><span class="lineNum">     616</span> <span class="tlaUNC">           0 :     final now = DateTime.now();</span></span>
+<span id="L616"><span class="lineNum">     616</span> <span class="tlaGNC">           1 :     final now = DateTime.now();</span></span>
 <span id="L617"><span class="lineNum">     617</span>              : </span>
-<span id="L618"><span class="lineNum">     618</span> <span class="tlaUNC">           0 :     return [</span></span>
-<span id="L619"><span class="lineNum">     619</span> <span class="tlaUNC">           0 :       EventData(</span></span>
+<span id="L618"><span class="lineNum">     618</span> <span class="tlaGNC">           1 :     return [</span></span>
+<span id="L619"><span class="lineNum">     619</span> <span class="tlaGNC">           1 :       EventData(</span></span>
 <span id="L620"><span class="lineNum">     620</span>              :         id: 'sample1',</span>
 <span id="L621"><span class="lineNum">     621</span>              :         title: 'Mountain Trail Hike',</span>
 <span id="L622"><span class="lineNum">     622</span>              :         description: 'Join us for an early morning hike on the beautiful mountain trails. Perfect for beginners!',</span>
-<span id="L623"><span class="lineNum">     623</span> <span class="tlaUNC">           0 :         eventDate: DateTime(now.year, now.month, now.day + 3, 8, 0),</span></span>
-<span id="L624"><span class="lineNum">     624</span> <span class="tlaUNC">           0 :         endDate: DateTime(now.year, now.month, now.day + 3, 11, 0),</span></span>
-<span id="L625"><span class="lineNum">     625</span> <span class="tlaUNC">           0 :         duration: Duration(hours: 3),</span></span>
+<span id="L623"><span class="lineNum">     623</span> <span class="tlaGNC">           5 :         eventDate: DateTime(now.year, now.month, now.day + 3, 8, 0),</span></span>
+<span id="L624"><span class="lineNum">     624</span> <span class="tlaGNC">           5 :         endDate: DateTime(now.year, now.month, now.day + 3, 11, 0),</span></span>
+<span id="L625"><span class="lineNum">     625</span> <span class="tlaGNC">           1 :         duration: Duration(hours: 3),</span></span>
 <span id="L626"><span class="lineNum">     626</span>              :         location: 'Mountain View Trail, Colorado',</span>
 <span id="L627"><span class="lineNum">     627</span>              :         category: 'Hiking',</span>
 <span id="L628"><span class="lineNum">     628</span>              :         difficulty: 2,</span>
 <span id="L629"><span class="lineNum">     629</span>              :         latitude: 39.7392,</span>
-<span id="L630"><span class="lineNum">     630</span> <span class="tlaUNC">           0 :         longitude: -104.9903,</span></span>
-<span id="L631"><span class="lineNum">     631</span> <span class="tlaUNC">           0 :         attendees: ['hiker1@example.com', 'hiker2@example.com'],</span></span>
+<span id="L630"><span class="lineNum">     630</span> <span class="tlaGNC">           1 :         longitude: -104.9903,</span></span>
+<span id="L631"><span class="lineNum">     631</span> <span class="tlaGNC">           1 :         attendees: ['hiker1@example.com', 'hiker2@example.com'],</span></span>
 <span id="L632"><span class="lineNum">     632</span>              :         imageUrl: 'https://images.unsplash.com/photo-1551632811-561732d1e306',</span>
 <span id="L633"><span class="lineNum">     633</span>              :       ),</span>
 <span id="L634"><span class="lineNum">     634</span>              : </span>
-<span id="L635"><span class="lineNum">     635</span> <span class="tlaUNC">           0 :       EventData(</span></span>
+<span id="L635"><span class="lineNum">     635</span> <span class="tlaGNC">           1 :       EventData(</span></span>
 <span id="L636"><span class="lineNum">     636</span>              :         id: 'sample2',</span>
 <span id="L637"><span class="lineNum">     637</span>              :         title: 'Advanced Alpine Climb',</span>
 <span id="L638"><span class="lineNum">     638</span>              :         description: 'Challenge yourself with this advanced alpine climbing experience. Experienced hikers only.',</span>
-<span id="L639"><span class="lineNum">     639</span> <span class="tlaUNC">           0 :         eventDate: DateTime(now.year, now.month, now.day + 7, 7, 30),</span></span>
-<span id="L640"><span class="lineNum">     640</span> <span class="tlaUNC">           0 :         endDate: DateTime(now.year, now.month, now.day + 7, 16, 0),</span></span>
-<span id="L641"><span class="lineNum">     641</span> <span class="tlaUNC">           0 :         duration: Duration(hours: 8, minutes: 30),</span></span>
+<span id="L639"><span class="lineNum">     639</span> <span class="tlaGNC">           5 :         eventDate: DateTime(now.year, now.month, now.day + 7, 7, 30),</span></span>
+<span id="L640"><span class="lineNum">     640</span> <span class="tlaGNC">           5 :         endDate: DateTime(now.year, now.month, now.day + 7, 16, 0),</span></span>
+<span id="L641"><span class="lineNum">     641</span> <span class="tlaGNC">           1 :         duration: Duration(hours: 8, minutes: 30),</span></span>
 <span id="L642"><span class="lineNum">     642</span>              :         location: 'Alpine Ridge, Boulder, Colorado',</span>
 <span id="L643"><span class="lineNum">     643</span>              :         category: 'Climbing',</span>
 <span id="L644"><span class="lineNum">     644</span>              :         difficulty: 5,</span>
 <span id="L645"><span class="lineNum">     645</span>              :         latitude: 40.0150,</span>
-<span id="L646"><span class="lineNum">     646</span> <span class="tlaUNC">           0 :         longitude: -105.2705,</span></span>
-<span id="L647"><span class="lineNum">     647</span> <span class="tlaUNC">           0 :         attendees: ['climber1@example.com', 'climber2@example.com', 'climber3@example.com'],</span></span>
+<span id="L646"><span class="lineNum">     646</span> <span class="tlaGNC">           1 :         longitude: -105.2705,</span></span>
+<span id="L647"><span class="lineNum">     647</span> <span class="tlaGNC">           1 :         attendees: ['climber1@example.com', 'climber2@example.com', 'climber3@example.com'],</span></span>
 <span id="L648"><span class="lineNum">     648</span>              :         imageUrl: 'https://images.unsplash.com/photo-1564769662533-4f00a87b4056',</span>
 <span id="L649"><span class="lineNum">     649</span>              :       ),</span>
 <span id="L650"><span class="lineNum">     650</span>              : </span>
-<span id="L651"><span class="lineNum">     651</span> <span class="tlaUNC">           0 :       EventData(</span></span>
+<span id="L651"><span class="lineNum">     651</span> <span class="tlaGNC">           1 :       EventData(</span></span>
 <span id="L652"><span class="lineNum">     652</span>              :         id: 'sample3',</span>
 <span id="L653"><span class="lineNum">     653</span>              :         title: 'Family Nature Walk',</span>
 <span id="L654"><span class="lineNum">     654</span>              :         description: 'A relaxed nature walk perfect for families with children. Learn about local flora and fauna.',</span>
-<span id="L655"><span class="lineNum">     655</span> <span class="tlaUNC">           0 :         eventDate: DateTime(now.year, now.month, now.day + 5, 10, 0),</span></span>
-<span id="L656"><span class="lineNum">     656</span> <span class="tlaUNC">           0 :         endDate: DateTime(now.year, now.month, now.day + 5, 12, 0),</span></span>
-<span id="L657"><span class="lineNum">     657</span> <span class="tlaUNC">           0 :         duration: Duration(hours: 2),</span></span>
+<span id="L655"><span class="lineNum">     655</span> <span class="tlaGNC">           5 :         eventDate: DateTime(now.year, now.month, now.day + 5, 10, 0),</span></span>
+<span id="L656"><span class="lineNum">     656</span> <span class="tlaGNC">           5 :         endDate: DateTime(now.year, now.month, now.day + 5, 12, 0),</span></span>
+<span id="L657"><span class="lineNum">     657</span> <span class="tlaGNC">           1 :         duration: Duration(hours: 2),</span></span>
 <span id="L658"><span class="lineNum">     658</span>              :         location: 'City Park Nature Trail',</span>
 <span id="L659"><span class="lineNum">     659</span>              :         category: 'Nature Walk',</span>
 <span id="L660"><span class="lineNum">     660</span>              :         difficulty: 1,</span>
 <span id="L661"><span class="lineNum">     661</span>              :         latitude: 39.7508,</span>
-<span id="L662"><span class="lineNum">     662</span> <span class="tlaUNC">           0 :         longitude: -104.9490,</span></span>
-<span id="L663"><span class="lineNum">     663</span> <span class="tlaUNC">           0 :         attendees: ['family1@example.com', 'family2@example.com'],</span></span>
+<span id="L662"><span class="lineNum">     662</span> <span class="tlaGNC">           1 :         longitude: -104.9490,</span></span>
+<span id="L663"><span class="lineNum">     663</span> <span class="tlaGNC">           1 :         attendees: ['family1@example.com', 'family2@example.com'],</span></span>
 <span id="L664"><span class="lineNum">     664</span>              :         imageUrl: 'https://images.unsplash.com/photo-1541807360-7b16088fcb28',</span>
 <span id="L665"><span class="lineNum">     665</span>              :       ),</span>
 <span id="L666"><span class="lineNum">     666</span>              : </span>
-<span id="L667"><span class="lineNum">     667</span> <span class="tlaUNC">           0 :       EventData(</span></span>
+<span id="L667"><span class="lineNum">     667</span> <span class="tlaGNC">           1 :       EventData(</span></span>
 <span id="L668"><span class="lineNum">     668</span>              :         id: 'sample4',</span>
 <span id="L669"><span class="lineNum">     669</span>              :         title: 'Overnight Backpacking Adventure',</span>
 <span id="L670"><span class="lineNum">     670</span>              :         description: 'Experience the wilderness with an overnight backpacking trip. Camping equipment required.',</span>
-<span id="L671"><span class="lineNum">     671</span> <span class="tlaUNC">           0 :         eventDate: DateTime(now.year, now.month, now.day + 14, 9, 0),</span></span>
-<span id="L672"><span class="lineNum">     672</span> <span class="tlaUNC">           0 :         endDate: DateTime(now.year, now.month, now.day + 15, 16, 0),</span></span>
-<span id="L673"><span class="lineNum">     673</span> <span class="tlaUNC">           0 :         duration: Duration(hours: 31),</span></span>
+<span id="L671"><span class="lineNum">     671</span> <span class="tlaGNC">           5 :         eventDate: DateTime(now.year, now.month, now.day + 14, 9, 0),</span></span>
+<span id="L672"><span class="lineNum">     672</span> <span class="tlaGNC">           5 :         endDate: DateTime(now.year, now.month, now.day + 15, 16, 0),</span></span>
+<span id="L673"><span class="lineNum">     673</span> <span class="tlaGNC">           1 :         duration: Duration(hours: 31),</span></span>
 <span id="L674"><span class="lineNum">     674</span>              :         location: 'Rocky Mountain National Park',</span>
 <span id="L675"><span class="lineNum">     675</span>              :         category: 'Backpacking',</span>
 <span id="L676"><span class="lineNum">     676</span>              :         difficulty: 4,</span>
 <span id="L677"><span class="lineNum">     677</span>              :         latitude: 40.3428,</span>
-<span id="L678"><span class="lineNum">     678</span> <span class="tlaUNC">           0 :         longitude: -105.6836,</span></span>
-<span id="L679"><span class="lineNum">     679</span> <span class="tlaUNC">           0 :         attendees: ['backpacker1@example.com', 'backpacker2@example.com'],</span></span>
+<span id="L678"><span class="lineNum">     678</span> <span class="tlaGNC">           1 :         longitude: -105.6836,</span></span>
+<span id="L679"><span class="lineNum">     679</span> <span class="tlaGNC">           1 :         attendees: ['backpacker1@example.com', 'backpacker2@example.com'],</span></span>
 <span id="L680"><span class="lineNum">     680</span>              :         imageUrl: 'https://images.unsplash.com/photo-1504280390367-361c6d9f38f4',</span>
 <span id="L681"><span class="lineNum">     681</span>              :       ),</span>
 <span id="L682"><span class="lineNum">     682</span>              : </span>
-<span id="L683"><span class="lineNum">     683</span> <span class="tlaUNC">           0 :       EventData(</span></span>
+<span id="L683"><span class="lineNum">     683</span> <span class="tlaGNC">           1 :       EventData(</span></span>
 <span id="L684"><span class="lineNum">     684</span>              :         id: 'sample5',</span>
 <span id="L685"><span class="lineNum">     685</span>              :         title: 'Trail Running Workshop',</span>
 <span id="L686"><span class="lineNum">     686</span>              :         description: 'Learn proper trail running techniques and safety tips from experienced instructors.',</span>
-<span id="L687"><span class="lineNum">     687</span> <span class="tlaUNC">           0 :         eventDate: DateTime(now.year, now.month, now.day + 10, 7, 0),</span></span>
-<span id="L688"><span class="lineNum">     688</span> <span class="tlaUNC">           0 :         endDate: DateTime(now.year, now.month, now.day + 10, 9, 0),</span></span>
-<span id="L689"><span class="lineNum">     689</span> <span class="tlaUNC">           0 :         duration: Duration(hours: 2),</span></span>
+<span id="L687"><span class="lineNum">     687</span> <span class="tlaGNC">           5 :         eventDate: DateTime(now.year, now.month, now.day + 10, 7, 0),</span></span>
+<span id="L688"><span class="lineNum">     688</span> <span class="tlaGNC">           5 :         endDate: DateTime(now.year, now.month, now.day + 10, 9, 0),</span></span>
+<span id="L689"><span class="lineNum">     689</span> <span class="tlaGNC">           1 :         duration: Duration(hours: 2),</span></span>
 <span id="L690"><span class="lineNum">     690</span>              :         location: 'Foothills Trail System',</span>
 <span id="L691"><span class="lineNum">     691</span>              :         category: 'Trail Running',</span>
 <span id="L692"><span class="lineNum">     692</span>              :         difficulty: 3,</span>
 <span id="L693"><span class="lineNum">     693</span>              :         latitude: 39.6645,</span>
-<span id="L694"><span class="lineNum">     694</span> <span class="tlaUNC">           0 :         longitude: -105.2059,</span></span>
-<span id="L695"><span class="lineNum">     695</span> <span class="tlaUNC">           0 :         attendees: ['runner1@example.com', 'runner2@example.com'],</span></span>
+<span id="L694"><span class="lineNum">     694</span> <span class="tlaGNC">           1 :         longitude: -105.2059,</span></span>
+<span id="L695"><span class="lineNum">     695</span> <span class="tlaGNC">           1 :         attendees: ['runner1@example.com', 'runner2@example.com'],</span></span>
 <span id="L696"><span class="lineNum">     696</span>              :         imageUrl: 'https://images.unsplash.com/photo-1541252260730-0412e8e2108e',</span>
 <span id="L697"><span class="lineNum">     697</span>              :       ),</span>
 <span id="L698"><span class="lineNum">     698</span>              :     ];</span>

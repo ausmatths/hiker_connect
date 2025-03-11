@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2025-03-10 15:47:05</td>
+            <td class="headerValue">2025-03-10 23:31:58</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">-</td>
@@ -74,7 +74,7 @@
 <span id="L12"><span class="lineNum">      12</span>              :   @HiveField(1)</span>
 <span id="L13"><span class="lineNum">      13</span>              :   final String? address;</span>
 <span id="L14"><span class="lineNum">      14</span>              : </span>
-<span id="L15"><span class="lineNum">      15</span> <span class="tlaGNC">           3 :   UserLocation({this.geoPoint, this.address});</span></span>
+<span id="L15"><span class="lineNum">      15</span> <span class="tlaGNC">           4 :   UserLocation({this.geoPoint, this.address});</span></span>
 <span id="L16"><span class="lineNum">      16</span>              : </span>
 <span id="L17"><span class="lineNum">      17</span> <span class="tlaGNC">           2 :   Map&lt;String, dynamic&gt; toMap() {</span></span>
 <span id="L18"><span class="lineNum">      18</span> <span class="tlaGNC">           2 :     return {</span></span>
@@ -105,7 +105,7 @@
 <span id="L43"><span class="lineNum">      43</span>              :   @HiveField(2)</span>
 <span id="L44"><span class="lineNum">      44</span>              :   final String phoneNumber;</span>
 <span id="L45"><span class="lineNum">      45</span>              : </span>
-<span id="L46"><span class="lineNum">      46</span> <span class="tlaGNC">           3 :   EmergencyContact({</span></span>
+<span id="L46"><span class="lineNum">      46</span> <span class="tlaGNC">           4 :   EmergencyContact({</span></span>
 <span id="L47"><span class="lineNum">      47</span>              :     required this.name,</span>
 <span id="L48"><span class="lineNum">      48</span>              :     required this.relationship,</span>
 <span id="L49"><span class="lineNum">      49</span>              :     required this.phoneNumber,</span>
@@ -158,7 +158,7 @@
 <span id="L96"><span class="lineNum">      96</span>              :   @HiveField(5)</span>
 <span id="L97"><span class="lineNum">      97</span>              :   final bool notifyEventReminders;</span>
 <span id="L98"><span class="lineNum">      98</span>              : </span>
-<span id="L99"><span class="lineNum">      99</span> <span class="tlaGNC">           3 :   EventPreferences({</span></span>
+<span id="L99"><span class="lineNum">      99</span> <span class="tlaGNC">           4 :   EventPreferences({</span></span>
 <span id="L100"><span class="lineNum">     100</span>              :     this.preferredCategories = const [],</span>
 <span id="L101"><span class="lineNum">     101</span>              :     this.preferredDifficulty,</span>
 <span id="L102"><span class="lineNum">     102</span>              :     this.maxDistance,</span>
@@ -328,7 +328,7 @@
 <span id="L266"><span class="lineNum">     266</span>              :   @HiveField(30)</span>
 <span id="L267"><span class="lineNum">     267</span>              :   final List&lt;String&gt; galleryImageUrls;</span>
 <span id="L268"><span class="lineNum">     268</span>              : </span>
-<span id="L269"><span class="lineNum">     269</span> <span class="tlaGNC">           3 :   UserModel({</span></span>
+<span id="L269"><span class="lineNum">     269</span> <span class="tlaGNC">           4 :   UserModel({</span></span>
 <span id="L270"><span class="lineNum">     270</span>              :     required this.uid,</span>
 <span id="L271"><span class="lineNum">     271</span>              :     required this.email,</span>
 <span id="L272"><span class="lineNum">     272</span>              :     required this.displayName,</span>
@@ -361,7 +361,7 @@
 <span id="L299"><span class="lineNum">     299</span>              :     this.eventReminders,</span>
 <span id="L300"><span class="lineNum">     300</span>              :     this.lastViewedFilters,</span>
 <span id="L301"><span class="lineNum">     301</span>              :   }) : photoUrl = photoUrl ?? '',</span>
-<span id="L302"><span class="lineNum">     302</span> <span class="tlaGNC">           3 :         eventPreferences = eventPreferences ?? EventPreferences(); // Provide a default empty string</span></span>
+<span id="L302"><span class="lineNum">     302</span> <span class="tlaGNC">           4 :         eventPreferences = eventPreferences ?? EventPreferences(); // Provide a default empty string</span></span>
 <span id="L303"><span class="lineNum">     303</span>              : </span>
 <span id="L304"><span class="lineNum">     304</span>              :   // Create a copy of the user with some modified fields</span>
 <span id="L305"><span class="lineNum">     305</span> <span class="tlaUNC">           0 :   UserModel copyWith({</span></span>

@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2025-03-10 15:47:05</td>
+            <td class="headerValue">2025-03-10 23:31:58</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">-</td>
@@ -130,28 +130,28 @@
 <span id="L68"><span class="lineNum">      68</span>              : // JsonSerializableGenerator</span>
 <span id="L69"><span class="lineNum">      69</span>              : // **************************************************************************</span>
 <span id="L70"><span class="lineNum">      70</span>              : </span>
-<span id="L71"><span class="lineNum">      71</span> <span class="tlaGNC">           2 : PhotoData _$PhotoDataFromJson(Map&lt;String, dynamic&gt; json) =&gt; PhotoData(</span></span>
-<span id="L72"><span class="lineNum">      72</span> <span class="tlaGNC">           1 :       id: json['id'] as String,</span></span>
-<span id="L73"><span class="lineNum">      73</span> <span class="tlaGNC">           1 :       url: json['url'] as String,</span></span>
-<span id="L74"><span class="lineNum">      74</span> <span class="tlaGNC">           1 :       thumbnailUrl: json['thumbnailUrl'] as String?,</span></span>
-<span id="L75"><span class="lineNum">      75</span> <span class="tlaGNC">           1 :       uploaderId: json['uploaderId'] as String,</span></span>
-<span id="L76"><span class="lineNum">      76</span> <span class="tlaGNC">           1 :       trailId: json['trailId'] as String?,</span></span>
-<span id="L77"><span class="lineNum">      77</span> <span class="tlaGNC">           1 :       eventId: json['eventId'] as String?,</span></span>
-<span id="L78"><span class="lineNum">      78</span> <span class="tlaGNC">           2 :       uploadDate: DateTime.parse(json['uploadDate'] as String),</span></span>
-<span id="L79"><span class="lineNum">      79</span> <span class="tlaGNC">           1 :       caption: json['caption'] as String?,</span></span>
-<span id="L80"><span class="lineNum">      80</span> <span class="tlaGNC">           1 :       localPath: json['localPath'] as String?,</span></span>
+<span id="L71"><span class="lineNum">      71</span> <span class="tlaGNC">           4 : PhotoData _$PhotoDataFromJson(Map&lt;String, dynamic&gt; json) =&gt; PhotoData(</span></span>
+<span id="L72"><span class="lineNum">      72</span> <span class="tlaGNC">           2 :       id: json['id'] as String,</span></span>
+<span id="L73"><span class="lineNum">      73</span> <span class="tlaGNC">           2 :       url: json['url'] as String,</span></span>
+<span id="L74"><span class="lineNum">      74</span> <span class="tlaGNC">           2 :       thumbnailUrl: json['thumbnailUrl'] as String?,</span></span>
+<span id="L75"><span class="lineNum">      75</span> <span class="tlaGNC">           2 :       uploaderId: json['uploaderId'] as String,</span></span>
+<span id="L76"><span class="lineNum">      76</span> <span class="tlaGNC">           2 :       trailId: json['trailId'] as String?,</span></span>
+<span id="L77"><span class="lineNum">      77</span> <span class="tlaGNC">           2 :       eventId: json['eventId'] as String?,</span></span>
+<span id="L78"><span class="lineNum">      78</span> <span class="tlaGNC">           4 :       uploadDate: DateTime.parse(json['uploadDate'] as String),</span></span>
+<span id="L79"><span class="lineNum">      79</span> <span class="tlaGNC">           2 :       caption: json['caption'] as String?,</span></span>
+<span id="L80"><span class="lineNum">      80</span> <span class="tlaGNC">           2 :       localPath: json['localPath'] as String?,</span></span>
 <span id="L81"><span class="lineNum">      81</span>              :     );</span>
 <span id="L82"><span class="lineNum">      82</span>              : </span>
-<span id="L83"><span class="lineNum">      83</span> <span class="tlaGNC">           2 : Map&lt;String, dynamic&gt; _$PhotoDataToJson(PhotoData instance) =&gt; &lt;String, dynamic&gt;{</span></span>
-<span id="L84"><span class="lineNum">      84</span> <span class="tlaGNC">           1 :       'id': instance.id,</span></span>
-<span id="L85"><span class="lineNum">      85</span> <span class="tlaGNC">           1 :       'url': instance.url,</span></span>
-<span id="L86"><span class="lineNum">      86</span> <span class="tlaGNC">           1 :       'thumbnailUrl': instance.thumbnailUrl,</span></span>
-<span id="L87"><span class="lineNum">      87</span> <span class="tlaGNC">           1 :       'uploaderId': instance.uploaderId,</span></span>
-<span id="L88"><span class="lineNum">      88</span> <span class="tlaGNC">           1 :       'trailId': instance.trailId,</span></span>
-<span id="L89"><span class="lineNum">      89</span> <span class="tlaGNC">           1 :       'eventId': instance.eventId,</span></span>
-<span id="L90"><span class="lineNum">      90</span> <span class="tlaGNC">           2 :       'uploadDate': instance.uploadDate.toIso8601String(),</span></span>
-<span id="L91"><span class="lineNum">      91</span> <span class="tlaGNC">           1 :       'caption': instance.caption,</span></span>
-<span id="L92"><span class="lineNum">      92</span> <span class="tlaGNC">           1 :       'localPath': instance.localPath,</span></span>
+<span id="L83"><span class="lineNum">      83</span> <span class="tlaGNC">           4 : Map&lt;String, dynamic&gt; _$PhotoDataToJson(PhotoData instance) =&gt; &lt;String, dynamic&gt;{</span></span>
+<span id="L84"><span class="lineNum">      84</span> <span class="tlaGNC">           2 :       'id': instance.id,</span></span>
+<span id="L85"><span class="lineNum">      85</span> <span class="tlaGNC">           2 :       'url': instance.url,</span></span>
+<span id="L86"><span class="lineNum">      86</span> <span class="tlaGNC">           2 :       'thumbnailUrl': instance.thumbnailUrl,</span></span>
+<span id="L87"><span class="lineNum">      87</span> <span class="tlaGNC">           2 :       'uploaderId': instance.uploaderId,</span></span>
+<span id="L88"><span class="lineNum">      88</span> <span class="tlaGNC">           2 :       'trailId': instance.trailId,</span></span>
+<span id="L89"><span class="lineNum">      89</span> <span class="tlaGNC">           2 :       'eventId': instance.eventId,</span></span>
+<span id="L90"><span class="lineNum">      90</span> <span class="tlaGNC">           4 :       'uploadDate': instance.uploadDate.toIso8601String(),</span></span>
+<span id="L91"><span class="lineNum">      91</span> <span class="tlaGNC">           2 :       'caption': instance.caption,</span></span>
+<span id="L92"><span class="lineNum">      92</span> <span class="tlaGNC">           2 :       'localPath': instance.localPath,</span></span>
 <span id="L93"><span class="lineNum">      93</span>              :     };</span>
         </pre>
               </td>

@@ -31,13 +31,13 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntryLo">0.3&nbsp;%</td>
-            <td class="headerCovTableEntry">296</td>
-            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntryLo">0.7&nbsp;%</td>
+            <td class="headerCovTableEntry">297</td>
+            <td class="headerCovTableEntry">2</td>
           </tr>
           <tr>
             <td class="headerItem">Test Date:</td>
-            <td class="headerValue">2025-03-10 15:47:05</td>
+            <td class="headerValue">2025-03-10 23:31:58</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntryHi">-</td>
@@ -84,13 +84,13 @@
 <span id="L22"><span class="lineNum">      22</span>              :   final bool showFAB;</span>
 <span id="L23"><span class="lineNum">      23</span>              :   final bool inHomeContext;</span>
 <span id="L24"><span class="lineNum">      24</span>              : </span>
-<span id="L25"><span class="lineNum">      25</span> <span class="tlaGNC">           9 :   const EventsBrowsingScreen({</span></span>
+<span id="L25"><span class="lineNum">      25</span> <span class="tlaGNC">          15 :   const EventsBrowsingScreen({</span></span>
 <span id="L26"><span class="lineNum">      26</span>              :     Key? key,</span>
 <span id="L27"><span class="lineNum">      27</span>              :     this.showAppBar = true,</span>
 <span id="L28"><span class="lineNum">      28</span>              :     this.initialViewType = EventsViewType.list,</span>
 <span id="L29"><span class="lineNum">      29</span>              :     this.showFAB = true,</span>
 <span id="L30"><span class="lineNum">      30</span>              :     this.inHomeContext = false,</span>
-<span id="L31"><span class="lineNum">      31</span> <span class="tlaUNC">           0 :   }) : super(key: key);</span></span>
+<span id="L31"><span class="lineNum">      31</span> <span class="tlaGNC">           1 :   }) : super(key: key);</span></span>
 <span id="L32"><span class="lineNum">      32</span>              : </span>
 <span id="L33"><span class="lineNum">      33</span> <span class="tlaUNC">           0 :   @override</span></span>
 <span id="L34"><span class="lineNum">      34</span> <span class="tlaUNC">           0 :   State&lt;EventsBrowsingScreen&gt; createState() =&gt; _EventsBrowsingScreenState();</span></span>
@@ -451,354 +451,361 @@
 <span id="L389"><span class="lineNum">     389</span> <span class="tlaUNC">           0 :           onPressed: () =&gt; _showJoinEventDialog(context),</span></span>
 <span id="L390"><span class="lineNum">     390</span>              :         ),</span>
 <span id="L391"><span class="lineNum">     391</span>              :         title: const Text('Browse Events'),</span>
-<span id="L392"><span class="lineNum">     392</span> <span class="tlaUNC">           0 :         actions: [</span></span>
-<span id="L393"><span class="lineNum">     393</span>              :           // Add this consumer to show the sign-in button</span>
-<span id="L394"><span class="lineNum">     394</span> <span class="tlaUNC">           0 :           Consumer&lt;EventsProvider&gt;(</span></span>
-<span id="L395"><span class="lineNum">     395</span> <span class="tlaUNC">           0 :             builder: (ctx, provider, _) =&gt; IconButton(</span></span>
-<span id="L396"><span class="lineNum">     396</span> <span class="tlaUNC">           0 :               icon: Icon(provider.isAuthenticated ? Icons.logout : Icons.login),</span></span>
-<span id="L397"><span class="lineNum">     397</span> <span class="tlaUNC">           0 :               tooltip: provider.isAuthenticated ? 'Sign out' : 'Sign in with Google',</span></span>
-<span id="L398"><span class="lineNum">     398</span> <span class="tlaUNC">           0 :               onPressed: () =&gt; provider.isAuthenticated ? provider.signOut() : provider.signIn(),</span></span>
-<span id="L399"><span class="lineNum">     399</span>              :             ),</span>
-<span id="L400"><span class="lineNum">     400</span>              :           ),</span>
-<span id="L401"><span class="lineNum">     401</span> <span class="tlaUNC">           0 :           IconButton(</span></span>
-<span id="L402"><span class="lineNum">     402</span>              :             icon: const Icon(Icons.refresh),</span>
-<span id="L403"><span class="lineNum">     403</span> <span class="tlaUNC">           0 :             onPressed: () =&gt; Provider.of&lt;EventsProvider&gt;(context, listen: false).refresh(),</span></span>
-<span id="L404"><span class="lineNum">     404</span>              :           ),</span>
-<span id="L405"><span class="lineNum">     405</span>              :         ],</span>
-<span id="L406"><span class="lineNum">     406</span>              :       ) : null,</span>
-<span id="L407"><span class="lineNum">     407</span> <span class="tlaUNC">           0 :       body: SafeArea(  // Added SafeArea to fix the top overflow issue</span></span>
-<span id="L408"><span class="lineNum">     408</span> <span class="tlaUNC">           0 :         child: Column(</span></span>
-<span id="L409"><span class="lineNum">     409</span> <span class="tlaUNC">           0 :           children: [</span></span>
-<span id="L410"><span class="lineNum">     410</span>              :             // Add sign-in banner when showing sample data and not authenticated</span>
-<span id="L411"><span class="lineNum">     411</span> <span class="tlaUNC">           0 :             Consumer&lt;EventsProvider&gt;(</span></span>
-<span id="L412"><span class="lineNum">     412</span> <span class="tlaUNC">           0 :               builder: (ctx, provider, _) {</span></span>
-<span id="L413"><span class="lineNum">     413</span> <span class="tlaUNC">           0 :                 if (provider.isUsingLocalData &amp;&amp; !provider.isAuthenticated) {</span></span>
-<span id="L414"><span class="lineNum">     414</span> <span class="tlaUNC">           0 :                   return Container(</span></span>
-<span id="L415"><span class="lineNum">     415</span>              :                     width: double.infinity,</span>
-<span id="L416"><span class="lineNum">     416</span>              :                     padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),</span>
-<span id="L417"><span class="lineNum">     417</span> <span class="tlaUNC">           0 :                     color: Theme.of(context).colorScheme.primaryContainer,</span></span>
-<span id="L418"><span class="lineNum">     418</span> <span class="tlaUNC">           0 :                     child: Row(</span></span>
-<span id="L419"><span class="lineNum">     419</span> <span class="tlaUNC">           0 :                       children: [</span></span>
-<span id="L420"><span class="lineNum">     420</span>              :                         const Icon(Icons.info_outline),</span>
-<span id="L421"><span class="lineNum">     421</span>              :                         const SizedBox(width: 8.0),</span>
-<span id="L422"><span class="lineNum">     422</span> <span class="tlaUNC">           0 :                         Expanded(</span></span>
-<span id="L423"><span class="lineNum">     423</span> <span class="tlaUNC">           0 :                           child: Text(</span></span>
-<span id="L424"><span class="lineNum">     424</span>              :                             'Using sample data. Sign in with Google to see real events.',</span>
-<span id="L425"><span class="lineNum">     425</span> <span class="tlaUNC">           0 :                             style: TextStyle(</span></span>
-<span id="L426"><span class="lineNum">     426</span> <span class="tlaUNC">           0 :                               color: Theme.of(context).colorScheme.onPrimaryContainer,</span></span>
-<span id="L427"><span class="lineNum">     427</span>              :                             ),</span>
-<span id="L428"><span class="lineNum">     428</span>              :                           ),</span>
-<span id="L429"><span class="lineNum">     429</span>              :                         ),</span>
-<span id="L430"><span class="lineNum">     430</span> <span class="tlaUNC">           0 :                         ElevatedButton.icon(</span></span>
-<span id="L431"><span class="lineNum">     431</span>              :                           icon: const Icon(Icons.login, size: 18),</span>
-<span id="L432"><span class="lineNum">     432</span>              :                           label: const Text('Sign in'),</span>
-<span id="L433"><span class="lineNum">     433</span> <span class="tlaUNC">           0 :                           onPressed: () =&gt; provider.signIn(),</span></span>
-<span id="L434"><span class="lineNum">     434</span> <span class="tlaUNC">           0 :                           style: ElevatedButton.styleFrom(</span></span>
-<span id="L435"><span class="lineNum">     435</span>              :                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),</span>
-<span id="L436"><span class="lineNum">     436</span>              :                             textStyle: const TextStyle(fontSize: 14),</span>
-<span id="L437"><span class="lineNum">     437</span>              :                           ),</span>
-<span id="L438"><span class="lineNum">     438</span>              :                         ),</span>
-<span id="L439"><span class="lineNum">     439</span>              :                       ],</span>
-<span id="L440"><span class="lineNum">     440</span>              :                     ),</span>
-<span id="L441"><span class="lineNum">     441</span>              :                   );</span>
-<span id="L442"><span class="lineNum">     442</span>              :                 }</span>
-<span id="L443"><span class="lineNum">     443</span>              :                 return const SizedBox.shrink();</span>
-<span id="L444"><span class="lineNum">     444</span>              :               },</span>
-<span id="L445"><span class="lineNum">     445</span>              :             ),</span>
-<span id="L446"><span class="lineNum">     446</span>              : </span>
-<span id="L447"><span class="lineNum">     447</span>              :             // Search bar and filter button</span>
-<span id="L448"><span class="lineNum">     448</span> <span class="tlaUNC">           0 :             Padding(</span></span>
-<span id="L449"><span class="lineNum">     449</span>              :               padding: const EdgeInsets.all(16.0),</span>
-<span id="L450"><span class="lineNum">     450</span> <span class="tlaUNC">           0 :               child: Row(</span></span>
-<span id="L451"><span class="lineNum">     451</span> <span class="tlaUNC">           0 :                 children: [</span></span>
-<span id="L452"><span class="lineNum">     452</span> <span class="tlaUNC">           0 :                   Expanded(</span></span>
-<span id="L453"><span class="lineNum">     453</span> <span class="tlaUNC">           0 :                     child: TextField(</span></span>
-<span id="L454"><span class="lineNum">     454</span> <span class="tlaUNC">           0 :                       controller: _searchController,</span></span>
-<span id="L455"><span class="lineNum">     455</span> <span class="tlaUNC">           0 :                       decoration: InputDecoration(</span></span>
-<span id="L456"><span class="lineNum">     456</span>              :                         hintText: 'Search events...',</span>
-<span id="L457"><span class="lineNum">     457</span>              :                         prefixIcon: const Icon(Icons.search),</span>
-<span id="L458"><span class="lineNum">     458</span> <span class="tlaUNC">           0 :                         border: OutlineInputBorder(</span></span>
-<span id="L459"><span class="lineNum">     459</span> <span class="tlaUNC">           0 :                           borderRadius: BorderRadius.circular(8.0),</span></span>
-<span id="L460"><span class="lineNum">     460</span>              :                         ),</span>
-<span id="L461"><span class="lineNum">     461</span>              :                         contentPadding: const EdgeInsets.symmetric(vertical: 0.0),</span>
-<span id="L462"><span class="lineNum">     462</span>              :                       ),</span>
-<span id="L463"><span class="lineNum">     463</span> <span class="tlaUNC">           0 :                       onSubmitted: (_) =&gt; _handleSearchSubmit(context),</span></span>
-<span id="L464"><span class="lineNum">     464</span>              :                     ),</span>
-<span id="L465"><span class="lineNum">     465</span>              :                   ),</span>
-<span id="L466"><span class="lineNum">     466</span>              :                   const SizedBox(width: 8.0),</span>
-<span id="L467"><span class="lineNum">     467</span> <span class="tlaUNC">           0 :                   IconButton(</span></span>
-<span id="L468"><span class="lineNum">     468</span>              :                     icon: const Icon(Icons.filter_list),</span>
-<span id="L469"><span class="lineNum">     469</span> <span class="tlaUNC">           0 :                     onPressed: () =&gt; _openFilterScreen(context),</span></span>
-<span id="L470"><span class="lineNum">     470</span>              :                     tooltip: 'Filter events',</span>
-<span id="L471"><span class="lineNum">     471</span>              :                   ),</span>
-<span id="L472"><span class="lineNum">     472</span>              :                 ],</span>
-<span id="L473"><span class="lineNum">     473</span>              :               ),</span>
-<span id="L474"><span class="lineNum">     474</span>              :             ),</span>
-<span id="L475"><span class="lineNum">     475</span>              : </span>
-<span id="L476"><span class="lineNum">     476</span>              :             // Time period filter chips</span>
-<span id="L477"><span class="lineNum">     477</span> <span class="tlaUNC">           0 :             Consumer&lt;EventsProvider&gt;(</span></span>
-<span id="L478"><span class="lineNum">     478</span> <span class="tlaUNC">           0 :               builder: (ctx, provider, _) =&gt; _buildTimeFilterChips(context, provider),</span></span>
-<span id="L479"><span class="lineNum">     479</span>              :             ),</span>
-<span id="L480"><span class="lineNum">     480</span>              : </span>
-<span id="L481"><span class="lineNum">     481</span>              :             // View type selector and event count</span>
-<span id="L482"><span class="lineNum">     482</span> <span class="tlaUNC">           0 :             Consumer&lt;EventsProvider&gt;(</span></span>
-<span id="L483"><span class="lineNum">     483</span> <span class="tlaUNC">           0 :               builder: (ctx, provider, _) {</span></span>
-<span id="L484"><span class="lineNum">     484</span> <span class="tlaUNC">           0 :                 return Padding(</span></span>
-<span id="L485"><span class="lineNum">     485</span>              :                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),</span>
-<span id="L486"><span class="lineNum">     486</span> <span class="tlaUNC">           0 :                   child: Row(</span></span>
-<span id="L487"><span class="lineNum">     487</span>              :                     mainAxisAlignment: MainAxisAlignment.spaceBetween,</span>
-<span id="L488"><span class="lineNum">     488</span> <span class="tlaUNC">           0 :                     children: [</span></span>
-<span id="L489"><span class="lineNum">     489</span> <span class="tlaUNC">           0 :                       Text('${provider.events.length} events found'),</span></span>
-<span id="L490"><span class="lineNum">     490</span>              :                       // View type toggle</span>
-<span id="L491"><span class="lineNum">     491</span> <span class="tlaUNC">           0 :                       SegmentedButton&lt;EventsViewType&gt;(</span></span>
-<span id="L492"><span class="lineNum">     492</span>              :                         segments: const [</span>
-<span id="L493"><span class="lineNum">     493</span>              :                           ButtonSegment&lt;EventsViewType&gt;(</span>
-<span id="L494"><span class="lineNum">     494</span>              :                             value: EventsViewType.list,</span>
-<span id="L495"><span class="lineNum">     495</span>              :                             icon: Icon(Icons.list),</span>
-<span id="L496"><span class="lineNum">     496</span>              :                           ),</span>
-<span id="L497"><span class="lineNum">     497</span>              :                           ButtonSegment&lt;EventsViewType&gt;(</span>
-<span id="L498"><span class="lineNum">     498</span>              :                             value: EventsViewType.grid,</span>
-<span id="L499"><span class="lineNum">     499</span>              :                             icon: Icon(Icons.grid_view),</span>
-<span id="L500"><span class="lineNum">     500</span>              :                           ),</span>
-<span id="L501"><span class="lineNum">     501</span>              :                           ButtonSegment&lt;EventsViewType&gt;(</span>
-<span id="L502"><span class="lineNum">     502</span>              :                             value: EventsViewType.map,</span>
-<span id="L503"><span class="lineNum">     503</span>              :                             icon: Icon(Icons.map),</span>
-<span id="L504"><span class="lineNum">     504</span>              :                           ),</span>
-<span id="L505"><span class="lineNum">     505</span>              :                         ],</span>
-<span id="L506"><span class="lineNum">     506</span> <span class="tlaUNC">           0 :                         selected: {provider.currentViewType},</span></span>
-<span id="L507"><span class="lineNum">     507</span> <span class="tlaUNC">           0 :                         onSelectionChanged: (newSelection) {</span></span>
-<span id="L508"><span class="lineNum">     508</span> <span class="tlaUNC">           0 :                           provider.setViewType(newSelection.first);</span></span>
-<span id="L509"><span class="lineNum">     509</span> <span class="tlaUNC">           0 :                           setState(() {</span></span>
-<span id="L510"><span class="lineNum">     510</span> <span class="tlaUNC">           0 :                             _currentViewType = newSelection.first;</span></span>
-<span id="L511"><span class="lineNum">     511</span>              :                           });</span>
-<span id="L512"><span class="lineNum">     512</span>              :                         },</span>
-<span id="L513"><span class="lineNum">     513</span>              :                       ),</span>
-<span id="L514"><span class="lineNum">     514</span>              :                     ],</span>
-<span id="L515"><span class="lineNum">     515</span>              :                   ),</span>
-<span id="L516"><span class="lineNum">     516</span>              :                 );</span>
-<span id="L517"><span class="lineNum">     517</span>              :               },</span>
-<span id="L518"><span class="lineNum">     518</span>              :             ),</span>
-<span id="L519"><span class="lineNum">     519</span>              : </span>
-<span id="L520"><span class="lineNum">     520</span>              :             // Active filters display</span>
-<span id="L521"><span class="lineNum">     521</span> <span class="tlaUNC">           0 :             Consumer&lt;EventsProvider&gt;(</span></span>
-<span id="L522"><span class="lineNum">     522</span> <span class="tlaUNC">           0 :               builder: (ctx, provider, _) {</span></span>
-<span id="L523"><span class="lineNum">     523</span> <span class="tlaUNC">           0 :                 final filter = provider.activeFilter;</span></span>
-<span id="L524"><span class="lineNum">     524</span>              :                 final hasActiveFilters = filter != null &amp;&amp; (</span>
-<span id="L525"><span class="lineNum">     525</span> <span class="tlaUNC">           0 :                     filter.searchQuery != null ||</span></span>
-<span id="L526"><span class="lineNum">     526</span> <span class="tlaUNC">           0 :                         filter.startDate != null ||</span></span>
-<span id="L527"><span class="lineNum">     527</span> <span class="tlaUNC">           0 :                         filter.endDate != null ||</span></span>
-<span id="L528"><span class="lineNum">     528</span> <span class="tlaUNC">           0 :                         filter.category != null ||</span></span>
-<span id="L529"><span class="lineNum">     529</span> <span class="tlaUNC">           0 :                         filter.showOnlyFavorites ||</span></span>
-<span id="L530"><span class="lineNum">     530</span> <span class="tlaUNC">           0 :                         filter.difficultyLevel != null);</span></span>
-<span id="L531"><span class="lineNum">     531</span>              : </span>
-<span id="L532"><span class="lineNum">     532</span>              :                 return hasActiveFilters</span>
-<span id="L533"><span class="lineNum">     533</span> <span class="tlaUNC">           0 :                     ? Padding(</span></span>
-<span id="L534"><span class="lineNum">     534</span>              :                   padding: const EdgeInsets.symmetric(horizontal: 16.0),</span>
-<span id="L535"><span class="lineNum">     535</span> <span class="tlaUNC">           0 :                   child: Row(</span></span>
-<span id="L536"><span class="lineNum">     536</span> <span class="tlaUNC">           0 :                     children: [</span></span>
-<span id="L537"><span class="lineNum">     537</span> <span class="tlaUNC">           0 :                       Expanded(</span></span>
-<span id="L538"><span class="lineNum">     538</span> <span class="tlaUNC">           0 :                         child: SingleChildScrollView(</span></span>
-<span id="L539"><span class="lineNum">     539</span>              :                           scrollDirection: Axis.horizontal,</span>
-<span id="L540"><span class="lineNum">     540</span> <span class="tlaUNC">           0 :                           child: Row(</span></span>
-<span id="L541"><span class="lineNum">     541</span> <span class="tlaUNC">           0 :                             children: [</span></span>
-<span id="L542"><span class="lineNum">     542</span> <span class="tlaUNC">           0 :                               if (filter != null &amp;&amp; filter.searchQuery != null &amp;&amp; filter.searchQuery!.isNotEmpty)</span></span>
-<span id="L543"><span class="lineNum">     543</span> <span class="tlaUNC">           0 :                                 _buildFilterChip(context, 'Search: ${filter.searchQuery}'),</span></span>
-<span id="L544"><span class="lineNum">     544</span> <span class="tlaUNC">           0 :                               if (filter != null &amp;&amp; filter.startDate != null)</span></span>
-<span id="L545"><span class="lineNum">     545</span> <span class="tlaUNC">           0 :                                 _buildFilterChip(context, 'From: ${_formatDate(filter.startDate!)}'),</span></span>
-<span id="L546"><span class="lineNum">     546</span> <span class="tlaUNC">           0 :                               if (filter != null &amp;&amp; filter.endDate != null)</span></span>
-<span id="L547"><span class="lineNum">     547</span> <span class="tlaUNC">           0 :                                 _buildFilterChip(context, 'To: ${_formatDate(filter.endDate!)}'),</span></span>
-<span id="L548"><span class="lineNum">     548</span> <span class="tlaUNC">           0 :                               if (filter != null &amp;&amp; filter.category != null)</span></span>
-<span id="L549"><span class="lineNum">     549</span> <span class="tlaUNC">           0 :                                 _buildFilterChip(context, 'Category: ${filter.category}'),</span></span>
-<span id="L550"><span class="lineNum">     550</span> <span class="tlaUNC">           0 :                               if (filter != null &amp;&amp; filter.showOnlyFavorites)</span></span>
-<span id="L551"><span class="lineNum">     551</span> <span class="tlaUNC">           0 :                                 _buildFilterChip(context, 'Favorites only'),</span></span>
-<span id="L552"><span class="lineNum">     552</span> <span class="tlaUNC">           0 :                               if (filter != null &amp;&amp; filter.difficultyLevel != null)</span></span>
-<span id="L553"><span class="lineNum">     553</span> <span class="tlaUNC">           0 :                                 _buildFilterChip(context, 'Difficulty: ${filter.difficultyLevel}'),</span></span>
-<span id="L554"><span class="lineNum">     554</span> <span class="tlaUNC">           0 :                               if (filter != null &amp;&amp; filter.userLatitude != null &amp;&amp; filter.userLongitude != null &amp;&amp; filter.maxDistance != null)</span></span>
-<span id="L555"><span class="lineNum">     555</span> <span class="tlaUNC">           0 :                                 _buildFilterChip(context, 'Within: ${filter.maxDistance!.toStringAsFixed(1)} km'),</span></span>
-<span id="L556"><span class="lineNum">     556</span>              :                             ],</span>
-<span id="L557"><span class="lineNum">     557</span>              :                           ),</span>
-<span id="L558"><span class="lineNum">     558</span>              :                         ),</span>
-<span id="L559"><span class="lineNum">     559</span>              :                       ),</span>
-<span id="L560"><span class="lineNum">     560</span> <span class="tlaUNC">           0 :                       TextButton(</span></span>
-<span id="L561"><span class="lineNum">     561</span> <span class="tlaUNC">           0 :                         onPressed: () =&gt; provider.clearFilters(),</span></span>
-<span id="L562"><span class="lineNum">     562</span>              :                         child: const Text('Clear All'),</span>
-<span id="L563"><span class="lineNum">     563</span>              :                       ),</span>
-<span id="L564"><span class="lineNum">     564</span>              :                     ],</span>
-<span id="L565"><span class="lineNum">     565</span>              :                   ),</span>
-<span id="L566"><span class="lineNum">     566</span>              :                 )</span>
-<span id="L567"><span class="lineNum">     567</span>              :                     : const SizedBox.shrink();</span>
-<span id="L568"><span class="lineNum">     568</span>              :               },</span>
-<span id="L569"><span class="lineNum">     569</span>              :             ),</span>
-<span id="L570"><span class="lineNum">     570</span>              : </span>
-<span id="L571"><span class="lineNum">     571</span>              :             const Divider(),</span>
-<span id="L572"><span class="lineNum">     572</span>              : </span>
-<span id="L573"><span class="lineNum">     573</span>              :             // Tab bar for time-based filtering (alternative approach)</span>
-<span id="L574"><span class="lineNum">     574</span>              :             if (!isInHomeScreen)</span>
-<span id="L575"><span class="lineNum">     575</span> <span class="tlaUNC">           0 :               Consumer&lt;EventsProvider&gt;(</span></span>
-<span id="L576"><span class="lineNum">     576</span> <span class="tlaUNC">           0 :                 builder: (ctx, provider, _) {</span></span>
-<span id="L577"><span class="lineNum">     577</span> <span class="tlaUNC">           0 :                   return TabBar(</span></span>
-<span id="L578"><span class="lineNum">     578</span> <span class="tlaUNC">           0 :                     controller: _tabController,</span></span>
-<span id="L579"><span class="lineNum">     579</span> <span class="tlaUNC">           0 :                     onTap: (index) {</span></span>
-<span id="L580"><span class="lineNum">     580</span>              :                       // Apply time filter based on tab index</span>
-<span id="L581"><span class="lineNum">     581</span> <span class="tlaUNC">           0 :                       if (index == 0) {</span></span>
-<span id="L582"><span class="lineNum">     582</span> <span class="tlaUNC">           0 :                         provider.fetchEventsByTimePeriod(false, false, true);</span></span>
-<span id="L583"><span class="lineNum">     583</span> <span class="tlaUNC">           0 :                       } else if (index == 1) {</span></span>
-<span id="L584"><span class="lineNum">     584</span> <span class="tlaUNC">           0 :                         provider.fetchEventsByTimePeriod(false, true, false);</span></span>
-<span id="L585"><span class="lineNum">     585</span> <span class="tlaUNC">           0 :                       } else if (index == 2) {</span></span>
-<span id="L586"><span class="lineNum">     586</span> <span class="tlaUNC">           0 :                         provider.fetchEventsByTimePeriod(true, false, false);</span></span>
-<span id="L587"><span class="lineNum">     587</span>              :                       }</span>
-<span id="L588"><span class="lineNum">     588</span>              :                     },</span>
-<span id="L589"><span class="lineNum">     589</span>              :                     tabs: const [</span>
-<span id="L590"><span class="lineNum">     590</span>              :                       Tab(text: 'Upcoming'),</span>
-<span id="L591"><span class="lineNum">     591</span>              :                       Tab(text: 'Ongoing'),</span>
-<span id="L592"><span class="lineNum">     592</span>              :                       Tab(text: 'Past'),</span>
-<span id="L593"><span class="lineNum">     593</span>              :                     ],</span>
-<span id="L594"><span class="lineNum">     594</span>              :                   );</span>
-<span id="L595"><span class="lineNum">     595</span>              :                 },</span>
-<span id="L596"><span class="lineNum">     596</span>              :               ),</span>
-<span id="L597"><span class="lineNum">     597</span>              : </span>
-<span id="L598"><span class="lineNum">     598</span>              :             // Main content with loading indicator</span>
-<span id="L599"><span class="lineNum">     599</span> <span class="tlaUNC">           0 :             Expanded(</span></span>
-<span id="L600"><span class="lineNum">     600</span> <span class="tlaUNC">           0 :               child: Consumer&lt;EventsProvider&gt;(</span></span>
-<span id="L601"><span class="lineNum">     601</span> <span class="tlaUNC">           0 :                 builder: (ctx, provider, _) {</span></span>
-<span id="L602"><span class="lineNum">     602</span> <span class="tlaUNC">           0 :                   if (provider.isLoading) {</span></span>
-<span id="L603"><span class="lineNum">     603</span> <span class="tlaUNC">           0 :                     return _buildShimmerLoading(context);</span></span>
-<span id="L604"><span class="lineNum">     604</span>              :                   }</span>
-<span id="L605"><span class="lineNum">     605</span>              : </span>
-<span id="L606"><span class="lineNum">     606</span> <span class="tlaUNC">           0 :                   if (provider.error != null &amp;&amp; !provider.isAuthenticated) {</span></span>
-<span id="L607"><span class="lineNum">     607</span> <span class="tlaUNC">           0 :                     return Center(</span></span>
-<span id="L608"><span class="lineNum">     608</span> <span class="tlaUNC">           0 :                       child: Column(</span></span>
-<span id="L609"><span class="lineNum">     609</span>              :                         mainAxisAlignment: MainAxisAlignment.center,</span>
-<span id="L610"><span class="lineNum">     610</span> <span class="tlaUNC">           0 :                         children: [</span></span>
-<span id="L611"><span class="lineNum">     611</span> <span class="tlaUNC">           0 :                           if (provider.error != null)</span></span>
-<span id="L612"><span class="lineNum">     612</span> <span class="tlaUNC">           0 :                             Padding(</span></span>
-<span id="L613"><span class="lineNum">     613</span>              :                               padding: const EdgeInsets.symmetric(horizontal: 24.0),</span>
-<span id="L614"><span class="lineNum">     614</span> <span class="tlaUNC">           0 :                               child: Text(</span></span>
-<span id="L615"><span class="lineNum">     615</span> <span class="tlaUNC">           0 :                                 'Error: ${provider.error}',</span></span>
-<span id="L616"><span class="lineNum">     616</span>              :                                 textAlign: TextAlign.center,</span>
-<span id="L617"><span class="lineNum">     617</span>              :                                 style: const TextStyle(color: Colors.red),</span>
-<span id="L618"><span class="lineNum">     618</span>              :                               ),</span>
-<span id="L619"><span class="lineNum">     619</span>              :                             ),</span>
-<span id="L620"><span class="lineNum">     620</span>              : </span>
-<span id="L621"><span class="lineNum">     621</span> <span class="tlaUNC">           0 :                           const SizedBox(height: 20),</span></span>
-<span id="L622"><span class="lineNum">     622</span>              : </span>
-<span id="L623"><span class="lineNum">     623</span> <span class="tlaUNC">           0 :                           const Icon(Icons.hiking, size: 64, color: Colors.green),</span></span>
-<span id="L624"><span class="lineNum">     624</span>              : </span>
-<span id="L625"><span class="lineNum">     625</span> <span class="tlaUNC">           0 :                           const SizedBox(height: 20),</span></span>
-<span id="L626"><span class="lineNum">     626</span>              : </span>
-<span id="L627"><span class="lineNum">     627</span> <span class="tlaUNC">           0 :                           const Text(</span></span>
-<span id="L628"><span class="lineNum">     628</span>              :                             'Sign in to access hiking events',</span>
-<span id="L629"><span class="lineNum">     629</span>              :                             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),</span>
-<span id="L630"><span class="lineNum">     630</span>              :                           ),</span>
+<span id="L392"><span class="lineNum">     392</span>              :         // In the AppBar actions array</span>
+<span id="L393"><span class="lineNum">     393</span> <span class="tlaUNC">           0 :         actions: [</span></span>
+<span id="L394"><span class="lineNum">     394</span>              :           // Only show sign-in/sign-out button when authenticated</span>
+<span id="L395"><span class="lineNum">     395</span> <span class="tlaUNC">           0 :           Consumer&lt;EventsProvider&gt;(</span></span>
+<span id="L396"><span class="lineNum">     396</span> <span class="tlaUNC">           0 :             builder: (ctx, provider, _) =&gt; provider.isAuthenticated</span></span>
+<span id="L397"><span class="lineNum">     397</span> <span class="tlaUNC">           0 :                 ? IconButton(</span></span>
+<span id="L398"><span class="lineNum">     398</span>              :               icon: const Icon(Icons.logout),</span>
+<span id="L399"><span class="lineNum">     399</span>              :               tooltip: 'Sign out',</span>
+<span id="L400"><span class="lineNum">     400</span> <span class="tlaUNC">           0 :               onPressed: () async {</span></span>
+<span id="L401"><span class="lineNum">     401</span>              :                 // First sign out through the provider</span>
+<span id="L402"><span class="lineNum">     402</span> <span class="tlaUNC">           0 :                 await provider.signOut();</span></span>
+<span id="L403"><span class="lineNum">     403</span>              : </span>
+<span id="L404"><span class="lineNum">     404</span>              :                 // Then manually navigate to login screen</span>
+<span id="L405"><span class="lineNum">     405</span> <span class="tlaUNC">           0 :                 if (context.mounted) {</span></span>
+<span id="L406"><span class="lineNum">     406</span> <span class="tlaUNC">           0 :                   Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) =&gt; false);</span></span>
+<span id="L407"><span class="lineNum">     407</span>              :                 }</span>
+<span id="L408"><span class="lineNum">     408</span>              :               },</span>
+<span id="L409"><span class="lineNum">     409</span>              :             )</span>
+<span id="L410"><span class="lineNum">     410</span>              :                 : const SizedBox.shrink(), // Hide the button when not authenticated</span>
+<span id="L411"><span class="lineNum">     411</span>              :           ),</span>
+<span id="L412"><span class="lineNum">     412</span> <span class="tlaUNC">           0 :           IconButton(</span></span>
+<span id="L413"><span class="lineNum">     413</span>              :             icon: const Icon(Icons.refresh),</span>
+<span id="L414"><span class="lineNum">     414</span> <span class="tlaUNC">           0 :             onPressed: () =&gt; Provider.of&lt;EventsProvider&gt;(context, listen: false).refresh(),</span></span>
+<span id="L415"><span class="lineNum">     415</span>              :           ),</span>
+<span id="L416"><span class="lineNum">     416</span>              :         ],</span>
+<span id="L417"><span class="lineNum">     417</span>              :       ) : null,</span>
+<span id="L418"><span class="lineNum">     418</span> <span class="tlaUNC">           0 :       body: SafeArea(  // Added SafeArea to fix the top overflow issue</span></span>
+<span id="L419"><span class="lineNum">     419</span> <span class="tlaUNC">           0 :         child: Column(</span></span>
+<span id="L420"><span class="lineNum">     420</span> <span class="tlaUNC">           0 :           children: [</span></span>
+<span id="L421"><span class="lineNum">     421</span>              :             // Add sign-in banner when showing sample data and not authenticated</span>
+<span id="L422"><span class="lineNum">     422</span> <span class="tlaUNC">           0 :             Consumer&lt;EventsProvider&gt;(</span></span>
+<span id="L423"><span class="lineNum">     423</span> <span class="tlaUNC">           0 :               builder: (ctx, provider, _) {</span></span>
+<span id="L424"><span class="lineNum">     424</span> <span class="tlaUNC">           0 :                 if (provider.isUsingLocalData &amp;&amp; !provider.isAuthenticated) {</span></span>
+<span id="L425"><span class="lineNum">     425</span> <span class="tlaUNC">           0 :                   return Container(</span></span>
+<span id="L426"><span class="lineNum">     426</span>              :                     width: double.infinity,</span>
+<span id="L427"><span class="lineNum">     427</span>              :                     padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),</span>
+<span id="L428"><span class="lineNum">     428</span> <span class="tlaUNC">           0 :                     color: Theme.of(context).colorScheme.primaryContainer,</span></span>
+<span id="L429"><span class="lineNum">     429</span> <span class="tlaUNC">           0 :                     child: Row(</span></span>
+<span id="L430"><span class="lineNum">     430</span> <span class="tlaUNC">           0 :                       children: [</span></span>
+<span id="L431"><span class="lineNum">     431</span>              :                         const Icon(Icons.info_outline),</span>
+<span id="L432"><span class="lineNum">     432</span>              :                         const SizedBox(width: 8.0),</span>
+<span id="L433"><span class="lineNum">     433</span> <span class="tlaUNC">           0 :                         Expanded(</span></span>
+<span id="L434"><span class="lineNum">     434</span> <span class="tlaUNC">           0 :                           child: Text(</span></span>
+<span id="L435"><span class="lineNum">     435</span>              :                             'Using sample data. Sign in with Google to see real events.',</span>
+<span id="L436"><span class="lineNum">     436</span> <span class="tlaUNC">           0 :                             style: TextStyle(</span></span>
+<span id="L437"><span class="lineNum">     437</span> <span class="tlaUNC">           0 :                               color: Theme.of(context).colorScheme.onPrimaryContainer,</span></span>
+<span id="L438"><span class="lineNum">     438</span>              :                             ),</span>
+<span id="L439"><span class="lineNum">     439</span>              :                           ),</span>
+<span id="L440"><span class="lineNum">     440</span>              :                         ),</span>
+<span id="L441"><span class="lineNum">     441</span> <span class="tlaUNC">           0 :                         ElevatedButton.icon(</span></span>
+<span id="L442"><span class="lineNum">     442</span>              :                           icon: const Icon(Icons.login, size: 18),</span>
+<span id="L443"><span class="lineNum">     443</span>              :                           label: const Text('Sign in'),</span>
+<span id="L444"><span class="lineNum">     444</span> <span class="tlaUNC">           0 :                           onPressed: () =&gt; provider.signIn(),</span></span>
+<span id="L445"><span class="lineNum">     445</span> <span class="tlaUNC">           0 :                           style: ElevatedButton.styleFrom(</span></span>
+<span id="L446"><span class="lineNum">     446</span>              :                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),</span>
+<span id="L447"><span class="lineNum">     447</span>              :                             textStyle: const TextStyle(fontSize: 14),</span>
+<span id="L448"><span class="lineNum">     448</span>              :                           ),</span>
+<span id="L449"><span class="lineNum">     449</span>              :                         ),</span>
+<span id="L450"><span class="lineNum">     450</span>              :                       ],</span>
+<span id="L451"><span class="lineNum">     451</span>              :                     ),</span>
+<span id="L452"><span class="lineNum">     452</span>              :                   );</span>
+<span id="L453"><span class="lineNum">     453</span>              :                 }</span>
+<span id="L454"><span class="lineNum">     454</span>              :                 return const SizedBox.shrink();</span>
+<span id="L455"><span class="lineNum">     455</span>              :               },</span>
+<span id="L456"><span class="lineNum">     456</span>              :             ),</span>
+<span id="L457"><span class="lineNum">     457</span>              : </span>
+<span id="L458"><span class="lineNum">     458</span>              :             // Search bar and filter button</span>
+<span id="L459"><span class="lineNum">     459</span> <span class="tlaUNC">           0 :             Padding(</span></span>
+<span id="L460"><span class="lineNum">     460</span>              :               padding: const EdgeInsets.all(16.0),</span>
+<span id="L461"><span class="lineNum">     461</span> <span class="tlaUNC">           0 :               child: Row(</span></span>
+<span id="L462"><span class="lineNum">     462</span> <span class="tlaUNC">           0 :                 children: [</span></span>
+<span id="L463"><span class="lineNum">     463</span> <span class="tlaUNC">           0 :                   Expanded(</span></span>
+<span id="L464"><span class="lineNum">     464</span> <span class="tlaUNC">           0 :                     child: TextField(</span></span>
+<span id="L465"><span class="lineNum">     465</span> <span class="tlaUNC">           0 :                       controller: _searchController,</span></span>
+<span id="L466"><span class="lineNum">     466</span> <span class="tlaUNC">           0 :                       decoration: InputDecoration(</span></span>
+<span id="L467"><span class="lineNum">     467</span>              :                         hintText: 'Search events...',</span>
+<span id="L468"><span class="lineNum">     468</span>              :                         prefixIcon: const Icon(Icons.search),</span>
+<span id="L469"><span class="lineNum">     469</span> <span class="tlaUNC">           0 :                         border: OutlineInputBorder(</span></span>
+<span id="L470"><span class="lineNum">     470</span> <span class="tlaUNC">           0 :                           borderRadius: BorderRadius.circular(8.0),</span></span>
+<span id="L471"><span class="lineNum">     471</span>              :                         ),</span>
+<span id="L472"><span class="lineNum">     472</span>              :                         contentPadding: const EdgeInsets.symmetric(vertical: 0.0),</span>
+<span id="L473"><span class="lineNum">     473</span>              :                       ),</span>
+<span id="L474"><span class="lineNum">     474</span> <span class="tlaUNC">           0 :                       onSubmitted: (_) =&gt; _handleSearchSubmit(context),</span></span>
+<span id="L475"><span class="lineNum">     475</span>              :                     ),</span>
+<span id="L476"><span class="lineNum">     476</span>              :                   ),</span>
+<span id="L477"><span class="lineNum">     477</span>              :                   const SizedBox(width: 8.0),</span>
+<span id="L478"><span class="lineNum">     478</span> <span class="tlaUNC">           0 :                   IconButton(</span></span>
+<span id="L479"><span class="lineNum">     479</span>              :                     icon: const Icon(Icons.filter_list),</span>
+<span id="L480"><span class="lineNum">     480</span> <span class="tlaUNC">           0 :                     onPressed: () =&gt; _openFilterScreen(context),</span></span>
+<span id="L481"><span class="lineNum">     481</span>              :                     tooltip: 'Filter events',</span>
+<span id="L482"><span class="lineNum">     482</span>              :                   ),</span>
+<span id="L483"><span class="lineNum">     483</span>              :                 ],</span>
+<span id="L484"><span class="lineNum">     484</span>              :               ),</span>
+<span id="L485"><span class="lineNum">     485</span>              :             ),</span>
+<span id="L486"><span class="lineNum">     486</span>              : </span>
+<span id="L487"><span class="lineNum">     487</span>              :             // MODIFIED: Only show time filter chips or tab bar, not both</span>
+<span id="L488"><span class="lineNum">     488</span> <span class="tlaUNC">           0 :             Consumer&lt;EventsProvider&gt;(</span></span>
+<span id="L489"><span class="lineNum">     489</span> <span class="tlaUNC">           0 :               builder: (ctx, provider, _) {</span></span>
+<span id="L490"><span class="lineNum">     490</span>              :                 return isInHomeScreen</span>
+<span id="L491"><span class="lineNum">     491</span> <span class="tlaUNC">           0 :                     ? _buildTimeFilterChips(context, provider)</span></span>
+<span id="L492"><span class="lineNum">     492</span> <span class="tlaUNC">           0 :                     : TabBar(</span></span>
+<span id="L493"><span class="lineNum">     493</span> <span class="tlaUNC">           0 :                   controller: _tabController,</span></span>
+<span id="L494"><span class="lineNum">     494</span> <span class="tlaUNC">           0 :                   onTap: (index) {</span></span>
+<span id="L495"><span class="lineNum">     495</span>              :                     // Apply time filter based on tab index</span>
+<span id="L496"><span class="lineNum">     496</span> <span class="tlaUNC">           0 :                     if (index == 0) {</span></span>
+<span id="L497"><span class="lineNum">     497</span> <span class="tlaUNC">           0 :                       provider.fetchEventsByTimePeriod(false, false, true);</span></span>
+<span id="L498"><span class="lineNum">     498</span> <span class="tlaUNC">           0 :                     } else if (index == 1) {</span></span>
+<span id="L499"><span class="lineNum">     499</span> <span class="tlaUNC">           0 :                       provider.fetchEventsByTimePeriod(false, true, false);</span></span>
+<span id="L500"><span class="lineNum">     500</span> <span class="tlaUNC">           0 :                     } else if (index == 2) {</span></span>
+<span id="L501"><span class="lineNum">     501</span> <span class="tlaUNC">           0 :                       provider.fetchEventsByTimePeriod(true, false, false);</span></span>
+<span id="L502"><span class="lineNum">     502</span>              :                     }</span>
+<span id="L503"><span class="lineNum">     503</span>              :                   },</span>
+<span id="L504"><span class="lineNum">     504</span>              :                   tabs: const [</span>
+<span id="L505"><span class="lineNum">     505</span>              :                     Tab(text: 'Upcoming'),</span>
+<span id="L506"><span class="lineNum">     506</span>              :                     Tab(text: 'Ongoing'),</span>
+<span id="L507"><span class="lineNum">     507</span>              :                     Tab(text: 'Past'),</span>
+<span id="L508"><span class="lineNum">     508</span>              :                   ],</span>
+<span id="L509"><span class="lineNum">     509</span>              :                 );</span>
+<span id="L510"><span class="lineNum">     510</span>              :               },</span>
+<span id="L511"><span class="lineNum">     511</span>              :             ),</span>
+<span id="L512"><span class="lineNum">     512</span>              : </span>
+<span id="L513"><span class="lineNum">     513</span>              :             // View type selector and event count</span>
+<span id="L514"><span class="lineNum">     514</span> <span class="tlaUNC">           0 :             Consumer&lt;EventsProvider&gt;(</span></span>
+<span id="L515"><span class="lineNum">     515</span> <span class="tlaUNC">           0 :               builder: (ctx, provider, _) {</span></span>
+<span id="L516"><span class="lineNum">     516</span> <span class="tlaUNC">           0 :                 return Padding(</span></span>
+<span id="L517"><span class="lineNum">     517</span>              :                   padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),</span>
+<span id="L518"><span class="lineNum">     518</span> <span class="tlaUNC">           0 :                   child: Row(</span></span>
+<span id="L519"><span class="lineNum">     519</span>              :                     mainAxisAlignment: MainAxisAlignment.spaceBetween,</span>
+<span id="L520"><span class="lineNum">     520</span> <span class="tlaUNC">           0 :                     children: [</span></span>
+<span id="L521"><span class="lineNum">     521</span> <span class="tlaUNC">           0 :                       Text('${provider.events.length} events found'),</span></span>
+<span id="L522"><span class="lineNum">     522</span>              :                       // View type toggle</span>
+<span id="L523"><span class="lineNum">     523</span> <span class="tlaUNC">           0 :                       SegmentedButton&lt;EventsViewType&gt;(</span></span>
+<span id="L524"><span class="lineNum">     524</span>              :                         segments: const [</span>
+<span id="L525"><span class="lineNum">     525</span>              :                           ButtonSegment&lt;EventsViewType&gt;(</span>
+<span id="L526"><span class="lineNum">     526</span>              :                             value: EventsViewType.list,</span>
+<span id="L527"><span class="lineNum">     527</span>              :                             icon: Icon(Icons.list),</span>
+<span id="L528"><span class="lineNum">     528</span>              :                           ),</span>
+<span id="L529"><span class="lineNum">     529</span>              :                           ButtonSegment&lt;EventsViewType&gt;(</span>
+<span id="L530"><span class="lineNum">     530</span>              :                             value: EventsViewType.grid,</span>
+<span id="L531"><span class="lineNum">     531</span>              :                             icon: Icon(Icons.grid_view),</span>
+<span id="L532"><span class="lineNum">     532</span>              :                           ),</span>
+<span id="L533"><span class="lineNum">     533</span>              :                           ButtonSegment&lt;EventsViewType&gt;(</span>
+<span id="L534"><span class="lineNum">     534</span>              :                             value: EventsViewType.map,</span>
+<span id="L535"><span class="lineNum">     535</span>              :                             icon: Icon(Icons.map),</span>
+<span id="L536"><span class="lineNum">     536</span>              :                           ),</span>
+<span id="L537"><span class="lineNum">     537</span>              :                         ],</span>
+<span id="L538"><span class="lineNum">     538</span> <span class="tlaUNC">           0 :                         selected: {provider.currentViewType},</span></span>
+<span id="L539"><span class="lineNum">     539</span> <span class="tlaUNC">           0 :                         onSelectionChanged: (newSelection) {</span></span>
+<span id="L540"><span class="lineNum">     540</span> <span class="tlaUNC">           0 :                           provider.setViewType(newSelection.first);</span></span>
+<span id="L541"><span class="lineNum">     541</span> <span class="tlaUNC">           0 :                           setState(() {</span></span>
+<span id="L542"><span class="lineNum">     542</span> <span class="tlaUNC">           0 :                             _currentViewType = newSelection.first;</span></span>
+<span id="L543"><span class="lineNum">     543</span>              :                           });</span>
+<span id="L544"><span class="lineNum">     544</span>              :                         },</span>
+<span id="L545"><span class="lineNum">     545</span>              :                       ),</span>
+<span id="L546"><span class="lineNum">     546</span>              :                     ],</span>
+<span id="L547"><span class="lineNum">     547</span>              :                   ),</span>
+<span id="L548"><span class="lineNum">     548</span>              :                 );</span>
+<span id="L549"><span class="lineNum">     549</span>              :               },</span>
+<span id="L550"><span class="lineNum">     550</span>              :             ),</span>
+<span id="L551"><span class="lineNum">     551</span>              : </span>
+<span id="L552"><span class="lineNum">     552</span>              :             // Active filters display</span>
+<span id="L553"><span class="lineNum">     553</span> <span class="tlaUNC">           0 :             Consumer&lt;EventsProvider&gt;(</span></span>
+<span id="L554"><span class="lineNum">     554</span> <span class="tlaUNC">           0 :               builder: (ctx, provider, _) {</span></span>
+<span id="L555"><span class="lineNum">     555</span> <span class="tlaUNC">           0 :                 final filter = provider.activeFilter;</span></span>
+<span id="L556"><span class="lineNum">     556</span>              :                 final hasActiveFilters = filter != null &amp;&amp; (</span>
+<span id="L557"><span class="lineNum">     557</span> <span class="tlaUNC">           0 :                     filter.searchQuery != null ||</span></span>
+<span id="L558"><span class="lineNum">     558</span> <span class="tlaUNC">           0 :                         filter.startDate != null ||</span></span>
+<span id="L559"><span class="lineNum">     559</span> <span class="tlaUNC">           0 :                         filter.endDate != null ||</span></span>
+<span id="L560"><span class="lineNum">     560</span> <span class="tlaUNC">           0 :                         filter.category != null ||</span></span>
+<span id="L561"><span class="lineNum">     561</span> <span class="tlaUNC">           0 :                         filter.showOnlyFavorites ||</span></span>
+<span id="L562"><span class="lineNum">     562</span> <span class="tlaUNC">           0 :                         filter.difficultyLevel != null);</span></span>
+<span id="L563"><span class="lineNum">     563</span>              : </span>
+<span id="L564"><span class="lineNum">     564</span>              :                 return hasActiveFilters</span>
+<span id="L565"><span class="lineNum">     565</span> <span class="tlaUNC">           0 :                     ? Padding(</span></span>
+<span id="L566"><span class="lineNum">     566</span>              :                   padding: const EdgeInsets.symmetric(horizontal: 16.0),</span>
+<span id="L567"><span class="lineNum">     567</span> <span class="tlaUNC">           0 :                   child: Row(</span></span>
+<span id="L568"><span class="lineNum">     568</span> <span class="tlaUNC">           0 :                     children: [</span></span>
+<span id="L569"><span class="lineNum">     569</span> <span class="tlaUNC">           0 :                       Expanded(</span></span>
+<span id="L570"><span class="lineNum">     570</span> <span class="tlaUNC">           0 :                         child: SingleChildScrollView(</span></span>
+<span id="L571"><span class="lineNum">     571</span>              :                           scrollDirection: Axis.horizontal,</span>
+<span id="L572"><span class="lineNum">     572</span> <span class="tlaUNC">           0 :                           child: Row(</span></span>
+<span id="L573"><span class="lineNum">     573</span> <span class="tlaUNC">           0 :                             children: [</span></span>
+<span id="L574"><span class="lineNum">     574</span> <span class="tlaUNC">           0 :                               if (filter != null &amp;&amp; filter.searchQuery != null &amp;&amp; filter.searchQuery!.isNotEmpty)</span></span>
+<span id="L575"><span class="lineNum">     575</span> <span class="tlaUNC">           0 :                                 _buildFilterChip(context, 'Search: ${filter.searchQuery}'),</span></span>
+<span id="L576"><span class="lineNum">     576</span> <span class="tlaUNC">           0 :                               if (filter != null &amp;&amp; filter.startDate != null)</span></span>
+<span id="L577"><span class="lineNum">     577</span> <span class="tlaUNC">           0 :                                 _buildFilterChip(context, 'From: ${_formatDate(filter.startDate!)}'),</span></span>
+<span id="L578"><span class="lineNum">     578</span> <span class="tlaUNC">           0 :                               if (filter != null &amp;&amp; filter.endDate != null)</span></span>
+<span id="L579"><span class="lineNum">     579</span> <span class="tlaUNC">           0 :                                 _buildFilterChip(context, 'To: ${_formatDate(filter.endDate!)}'),</span></span>
+<span id="L580"><span class="lineNum">     580</span> <span class="tlaUNC">           0 :                               if (filter != null &amp;&amp; filter.category != null)</span></span>
+<span id="L581"><span class="lineNum">     581</span> <span class="tlaUNC">           0 :                                 _buildFilterChip(context, 'Category: ${filter.category}'),</span></span>
+<span id="L582"><span class="lineNum">     582</span> <span class="tlaUNC">           0 :                               if (filter != null &amp;&amp; filter.showOnlyFavorites)</span></span>
+<span id="L583"><span class="lineNum">     583</span> <span class="tlaUNC">           0 :                                 _buildFilterChip(context, 'Favorites only'),</span></span>
+<span id="L584"><span class="lineNum">     584</span> <span class="tlaUNC">           0 :                               if (filter != null &amp;&amp; filter.difficultyLevel != null)</span></span>
+<span id="L585"><span class="lineNum">     585</span> <span class="tlaUNC">           0 :                                 _buildFilterChip(context, 'Difficulty: ${filter.difficultyLevel}'),</span></span>
+<span id="L586"><span class="lineNum">     586</span> <span class="tlaUNC">           0 :                               if (filter != null &amp;&amp; filter.userLatitude != null &amp;&amp; filter.userLongitude != null &amp;&amp; filter.maxDistance != null)</span></span>
+<span id="L587"><span class="lineNum">     587</span> <span class="tlaUNC">           0 :                                 _buildFilterChip(context, 'Within: ${filter.maxDistance!.toStringAsFixed(1)} km'),</span></span>
+<span id="L588"><span class="lineNum">     588</span>              :                             ],</span>
+<span id="L589"><span class="lineNum">     589</span>              :                           ),</span>
+<span id="L590"><span class="lineNum">     590</span>              :                         ),</span>
+<span id="L591"><span class="lineNum">     591</span>              :                       ),</span>
+<span id="L592"><span class="lineNum">     592</span> <span class="tlaUNC">           0 :                       TextButton(</span></span>
+<span id="L593"><span class="lineNum">     593</span> <span class="tlaUNC">           0 :                         onPressed: () =&gt; provider.clearFilters(),</span></span>
+<span id="L594"><span class="lineNum">     594</span>              :                         child: const Text('Clear All'),</span>
+<span id="L595"><span class="lineNum">     595</span>              :                       ),</span>
+<span id="L596"><span class="lineNum">     596</span>              :                     ],</span>
+<span id="L597"><span class="lineNum">     597</span>              :                   ),</span>
+<span id="L598"><span class="lineNum">     598</span>              :                 )</span>
+<span id="L599"><span class="lineNum">     599</span>              :                     : const SizedBox.shrink();</span>
+<span id="L600"><span class="lineNum">     600</span>              :               },</span>
+<span id="L601"><span class="lineNum">     601</span>              :             ),</span>
+<span id="L602"><span class="lineNum">     602</span>              : </span>
+<span id="L603"><span class="lineNum">     603</span>              :             const Divider(),</span>
+<span id="L604"><span class="lineNum">     604</span>              : </span>
+<span id="L605"><span class="lineNum">     605</span>              :             // Main content with loading indicator</span>
+<span id="L606"><span class="lineNum">     606</span> <span class="tlaUNC">           0 :             Expanded(</span></span>
+<span id="L607"><span class="lineNum">     607</span> <span class="tlaUNC">           0 :               child: Consumer&lt;EventsProvider&gt;(</span></span>
+<span id="L608"><span class="lineNum">     608</span> <span class="tlaUNC">           0 :                 builder: (ctx, provider, _) {</span></span>
+<span id="L609"><span class="lineNum">     609</span> <span class="tlaUNC">           0 :                   if (provider.isLoading) {</span></span>
+<span id="L610"><span class="lineNum">     610</span> <span class="tlaUNC">           0 :                     return _buildShimmerLoading(context);</span></span>
+<span id="L611"><span class="lineNum">     611</span>              :                   }</span>
+<span id="L612"><span class="lineNum">     612</span>              : </span>
+<span id="L613"><span class="lineNum">     613</span> <span class="tlaUNC">           0 :                   if (provider.error != null &amp;&amp; !provider.isAuthenticated) {</span></span>
+<span id="L614"><span class="lineNum">     614</span> <span class="tlaUNC">           0 :                     return Center(</span></span>
+<span id="L615"><span class="lineNum">     615</span> <span class="tlaUNC">           0 :                       child: Column(</span></span>
+<span id="L616"><span class="lineNum">     616</span>              :                         mainAxisAlignment: MainAxisAlignment.center,</span>
+<span id="L617"><span class="lineNum">     617</span> <span class="tlaUNC">           0 :                         children: [</span></span>
+<span id="L618"><span class="lineNum">     618</span> <span class="tlaUNC">           0 :                           if (provider.error != null)</span></span>
+<span id="L619"><span class="lineNum">     619</span> <span class="tlaUNC">           0 :                             Padding(</span></span>
+<span id="L620"><span class="lineNum">     620</span>              :                               padding: const EdgeInsets.symmetric(horizontal: 24.0),</span>
+<span id="L621"><span class="lineNum">     621</span> <span class="tlaUNC">           0 :                               child: Text(</span></span>
+<span id="L622"><span class="lineNum">     622</span> <span class="tlaUNC">           0 :                                 'Error: ${provider.error}',</span></span>
+<span id="L623"><span class="lineNum">     623</span>              :                                 textAlign: TextAlign.center,</span>
+<span id="L624"><span class="lineNum">     624</span>              :                                 style: const TextStyle(color: Colors.red),</span>
+<span id="L625"><span class="lineNum">     625</span>              :                               ),</span>
+<span id="L626"><span class="lineNum">     626</span>              :                             ),</span>
+<span id="L627"><span class="lineNum">     627</span>              : </span>
+<span id="L628"><span class="lineNum">     628</span> <span class="tlaUNC">           0 :                           const SizedBox(height: 20),</span></span>
+<span id="L629"><span class="lineNum">     629</span>              : </span>
+<span id="L630"><span class="lineNum">     630</span> <span class="tlaUNC">           0 :                           const Icon(Icons.hiking, size: 64, color: Colors.green),</span></span>
 <span id="L631"><span class="lineNum">     631</span>              : </span>
-<span id="L632"><span class="lineNum">     632</span> <span class="tlaUNC">           0 :                           const SizedBox(height: 8),</span></span>
+<span id="L632"><span class="lineNum">     632</span> <span class="tlaUNC">           0 :                           const SizedBox(height: 20),</span></span>
 <span id="L633"><span class="lineNum">     633</span>              : </span>
-<span id="L634"><span class="lineNum">     634</span> <span class="tlaUNC">           0 :                           const Padding(</span></span>
-<span id="L635"><span class="lineNum">     635</span>              :                             padding: EdgeInsets.symmetric(horizontal: 32),</span>
-<span id="L636"><span class="lineNum">     636</span>              :                             child: Text(</span>
-<span id="L637"><span class="lineNum">     637</span>              :                               'Connect with your Google account to discover hiking events and trails near you',</span>
-<span id="L638"><span class="lineNum">     638</span>              :                               textAlign: TextAlign.center,</span>
-<span id="L639"><span class="lineNum">     639</span>              :                               style: TextStyle(color: Colors.grey),</span>
-<span id="L640"><span class="lineNum">     640</span>              :                             ),</span>
-<span id="L641"><span class="lineNum">     641</span>              :                           ),</span>
-<span id="L642"><span class="lineNum">     642</span>              : </span>
-<span id="L643"><span class="lineNum">     643</span> <span class="tlaUNC">           0 :                           const SizedBox(height: 24),</span></span>
-<span id="L644"><span class="lineNum">     644</span>              : </span>
-<span id="L645"><span class="lineNum">     645</span> <span class="tlaUNC">           0 :                           ElevatedButton.icon(</span></span>
-<span id="L646"><span class="lineNum">     646</span>              :                             icon: const Icon(Icons.login),</span>
-<span id="L647"><span class="lineNum">     647</span>              :                             label: const Text('Sign in with Google'),</span>
-<span id="L648"><span class="lineNum">     648</span> <span class="tlaUNC">           0 :                             style: ElevatedButton.styleFrom(</span></span>
-<span id="L649"><span class="lineNum">     649</span>              :                               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),</span>
-<span id="L650"><span class="lineNum">     650</span>              :                               textStyle: const TextStyle(fontSize: 16),</span>
-<span id="L651"><span class="lineNum">     651</span>              :                             ),</span>
-<span id="L652"><span class="lineNum">     652</span> <span class="tlaUNC">           0 :                             onPressed: () =&gt; provider.signIn(),</span></span>
-<span id="L653"><span class="lineNum">     653</span>              :                           ),</span>
-<span id="L654"><span class="lineNum">     654</span>              : </span>
-<span id="L655"><span class="lineNum">     655</span> <span class="tlaUNC">           0 :                           const SizedBox(height: 16),</span></span>
-<span id="L656"><span class="lineNum">     656</span>              : </span>
-<span id="L657"><span class="lineNum">     657</span> <span class="tlaUNC">           0 :                           TextButton(</span></span>
-<span id="L658"><span class="lineNum">     658</span> <span class="tlaUNC">           0 :                             onPressed: () =&gt; provider.refresh(),</span></span>
-<span id="L659"><span class="lineNum">     659</span>              :                             child: const Text('Use sample data instead'),</span>
+<span id="L634"><span class="lineNum">     634</span> <span class="tlaUNC">           0 :                           const Text(</span></span>
+<span id="L635"><span class="lineNum">     635</span>              :                             'Sign in to access hiking events',</span>
+<span id="L636"><span class="lineNum">     636</span>              :                             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),</span>
+<span id="L637"><span class="lineNum">     637</span>              :                           ),</span>
+<span id="L638"><span class="lineNum">     638</span>              : </span>
+<span id="L639"><span class="lineNum">     639</span> <span class="tlaUNC">           0 :                           const SizedBox(height: 8),</span></span>
+<span id="L640"><span class="lineNum">     640</span>              : </span>
+<span id="L641"><span class="lineNum">     641</span> <span class="tlaUNC">           0 :                           const Padding(</span></span>
+<span id="L642"><span class="lineNum">     642</span>              :                             padding: EdgeInsets.symmetric(horizontal: 32),</span>
+<span id="L643"><span class="lineNum">     643</span>              :                             child: Text(</span>
+<span id="L644"><span class="lineNum">     644</span>              :                               'Connect with your Google account to discover hiking events and trails near you',</span>
+<span id="L645"><span class="lineNum">     645</span>              :                               textAlign: TextAlign.center,</span>
+<span id="L646"><span class="lineNum">     646</span>              :                               style: TextStyle(color: Colors.grey),</span>
+<span id="L647"><span class="lineNum">     647</span>              :                             ),</span>
+<span id="L648"><span class="lineNum">     648</span>              :                           ),</span>
+<span id="L649"><span class="lineNum">     649</span>              : </span>
+<span id="L650"><span class="lineNum">     650</span> <span class="tlaUNC">           0 :                           const SizedBox(height: 24),</span></span>
+<span id="L651"><span class="lineNum">     651</span>              : </span>
+<span id="L652"><span class="lineNum">     652</span> <span class="tlaUNC">           0 :                           ElevatedButton.icon(</span></span>
+<span id="L653"><span class="lineNum">     653</span>              :                             icon: const Icon(Icons.login),</span>
+<span id="L654"><span class="lineNum">     654</span>              :                             label: const Text('Sign in with Google'),</span>
+<span id="L655"><span class="lineNum">     655</span> <span class="tlaUNC">           0 :                             style: ElevatedButton.styleFrom(</span></span>
+<span id="L656"><span class="lineNum">     656</span>              :                               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),</span>
+<span id="L657"><span class="lineNum">     657</span>              :                               textStyle: const TextStyle(fontSize: 16),</span>
+<span id="L658"><span class="lineNum">     658</span>              :                             ),</span>
+<span id="L659"><span class="lineNum">     659</span> <span class="tlaUNC">           0 :                             onPressed: () =&gt; provider.signIn(),</span></span>
 <span id="L660"><span class="lineNum">     660</span>              :                           ),</span>
-<span id="L661"><span class="lineNum">     661</span>              :                         ],</span>
-<span id="L662"><span class="lineNum">     662</span>              :                       ),</span>
-<span id="L663"><span class="lineNum">     663</span>              :                     );</span>
-<span id="L664"><span class="lineNum">     664</span>              :                   }</span>
-<span id="L665"><span class="lineNum">     665</span>              : </span>
-<span id="L666"><span class="lineNum">     666</span> <span class="tlaUNC">           0 :                   if (provider.events.isEmpty) {</span></span>
-<span id="L667"><span class="lineNum">     667</span> <span class="tlaUNC">           0 :                     return Center(</span></span>
-<span id="L668"><span class="lineNum">     668</span> <span class="tlaUNC">           0 :                       child: Column(</span></span>
-<span id="L669"><span class="lineNum">     669</span>              :                         mainAxisAlignment: MainAxisAlignment.center,</span>
-<span id="L670"><span class="lineNum">     670</span> <span class="tlaUNC">           0 :                         children: [</span></span>
-<span id="L671"><span class="lineNum">     671</span>              :                           const Icon(Icons.search_off, size: 48, color: Colors.grey),</span>
-<span id="L672"><span class="lineNum">     672</span>              :                           const SizedBox(height: 16),</span>
-<span id="L673"><span class="lineNum">     673</span>              :                           const Text(</span>
-<span id="L674"><span class="lineNum">     674</span>              :                             'No events found',</span>
-<span id="L675"><span class="lineNum">     675</span>              :                             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),</span>
-<span id="L676"><span class="lineNum">     676</span>              :                           ),</span>
-<span id="L677"><span class="lineNum">     677</span>              :                           const SizedBox(height: 8),</span>
-<span id="L678"><span class="lineNum">     678</span>              :                           const Text(</span>
-<span id="L679"><span class="lineNum">     679</span>              :                             'Try changing your search or filters',</span>
-<span id="L680"><span class="lineNum">     680</span>              :                             style: TextStyle(color: Colors.grey),</span>
-<span id="L681"><span class="lineNum">     681</span>              :                           ),</span>
-<span id="L682"><span class="lineNum">     682</span>              :                           const SizedBox(height: 16),</span>
-<span id="L683"><span class="lineNum">     683</span> <span class="tlaUNC">           0 :                           ElevatedButton.icon(</span></span>
-<span id="L684"><span class="lineNum">     684</span>              :                             icon: const Icon(Icons.refresh),</span>
-<span id="L685"><span class="lineNum">     685</span>              :                             label: const Text('Refresh'),</span>
-<span id="L686"><span class="lineNum">     686</span> <span class="tlaUNC">           0 :                             onPressed: () =&gt; provider.refresh(),</span></span>
-<span id="L687"><span class="lineNum">     687</span>              :                           ),</span>
-<span id="L688"><span class="lineNum">     688</span>              :                         ],</span>
-<span id="L689"><span class="lineNum">     689</span>              :                       ),</span>
-<span id="L690"><span class="lineNum">     690</span>              :                     );</span>
-<span id="L691"><span class="lineNum">     691</span>              :                   }</span>
-<span id="L692"><span class="lineNum">     692</span>              : </span>
-<span id="L693"><span class="lineNum">     693</span>              :                   // Build the main event view based on tab selection or filter</span>
-<span id="L694"><span class="lineNum">     694</span> <span class="tlaUNC">           0 :                   if (!isInHomeScreen &amp;&amp; _tabController.index == 0 &amp;&amp;</span></span>
-<span id="L695"><span class="lineNum">     695</span> <span class="tlaUNC">           0 :                       provider.activeFilter?.includeFutureEvents == true) {</span></span>
-<span id="L696"><span class="lineNum">     696</span> <span class="tlaUNC">           0 :                     return _buildEventView(context, provider.currentViewType, provider.futureEvents);</span></span>
-<span id="L697"><span class="lineNum">     697</span> <span class="tlaUNC">           0 :                   } else if (!isInHomeScreen &amp;&amp; _tabController.index == 1 &amp;&amp;</span></span>
-<span id="L698"><span class="lineNum">     698</span> <span class="tlaUNC">           0 :                       provider.activeFilter?.includeCurrentEvents == true) {</span></span>
-<span id="L699"><span class="lineNum">     699</span> <span class="tlaUNC">           0 :                     return _buildEventView(context, provider.currentViewType, provider.currentEvents);</span></span>
-<span id="L700"><span class="lineNum">     700</span> <span class="tlaUNC">           0 :                   } else if (!isInHomeScreen &amp;&amp; _tabController.index == 2 &amp;&amp;</span></span>
-<span id="L701"><span class="lineNum">     701</span> <span class="tlaUNC">           0 :                       provider.activeFilter?.includePastEvents == true) {</span></span>
-<span id="L702"><span class="lineNum">     702</span> <span class="tlaUNC">           0 :                     return _buildEventView(context, provider.currentViewType, provider.pastEvents);</span></span>
-<span id="L703"><span class="lineNum">     703</span>              :                   } else {</span>
-<span id="L704"><span class="lineNum">     704</span>              :                     // Default view or when not using tabs</span>
-<span id="L705"><span class="lineNum">     705</span> <span class="tlaUNC">           0 :                     return _buildEventView(context, provider.currentViewType, provider.events);</span></span>
-<span id="L706"><span class="lineNum">     706</span>              :                   }</span>
-<span id="L707"><span class="lineNum">     707</span>              :                 },</span>
-<span id="L708"><span class="lineNum">     708</span>              :               ),</span>
-<span id="L709"><span class="lineNum">     709</span>              :             ),</span>
-<span id="L710"><span class="lineNum">     710</span>              :           ],</span>
-<span id="L711"><span class="lineNum">     711</span>              :         ),</span>
-<span id="L712"><span class="lineNum">     712</span>              :       ),</span>
-<span id="L713"><span class="lineNum">     713</span>              : </span>
-<span id="L714"><span class="lineNum">     714</span>              :       // Only show FAB when specified</span>
-<span id="L715"><span class="lineNum">     715</span> <span class="tlaUNC">           0 :       floatingActionButton: widget.showFAB ? FloatingActionButton(</span></span>
-<span id="L716"><span class="lineNum">     716</span> <span class="tlaUNC">           0 :         onPressed: () {</span></span>
-<span id="L717"><span class="lineNum">     717</span>              :           // Navigate to event creation screen</span>
-<span id="L718"><span class="lineNum">     718</span> <span class="tlaUNC">           0 :           Navigator.of(context).pushNamed('/event-form');</span></span>
-<span id="L719"><span class="lineNum">     719</span>              :         },</span>
-<span id="L720"><span class="lineNum">     720</span>              :         child: const Icon(Icons.add),</span>
-<span id="L721"><span class="lineNum">     721</span>              :       ) : null,</span>
-<span id="L722"><span class="lineNum">     722</span>              :     );</span>
-<span id="L723"><span class="lineNum">     723</span>              :   }</span>
-<span id="L724"><span class="lineNum">     724</span>              : </span>
-<span id="L725"><span class="lineNum">     725</span> <span class="tlaUNC">           0 :   Widget _buildFilterChip(BuildContext context, String label) {</span></span>
-<span id="L726"><span class="lineNum">     726</span> <span class="tlaUNC">           0 :     return Padding(</span></span>
-<span id="L727"><span class="lineNum">     727</span>              :       padding: const EdgeInsets.only(right: 8.0),</span>
-<span id="L728"><span class="lineNum">     728</span> <span class="tlaUNC">           0 :       child: Chip(</span></span>
-<span id="L729"><span class="lineNum">     729</span> <span class="tlaUNC">           0 :         label: Text(label, style: const TextStyle(fontSize: 12)),</span></span>
-<span id="L730"><span class="lineNum">     730</span> <span class="tlaUNC">           0 :         backgroundColor: Theme.of(context).colorScheme.primaryContainer,</span></span>
-<span id="L731"><span class="lineNum">     731</span>              :         visualDensity: VisualDensity.compact,</span>
-<span id="L732"><span class="lineNum">     732</span>              :       ),</span>
-<span id="L733"><span class="lineNum">     733</span>              :     );</span>
-<span id="L734"><span class="lineNum">     734</span>              :   }</span>
-<span id="L735"><span class="lineNum">     735</span>              : </span>
-<span id="L736"><span class="lineNum">     736</span> <span class="tlaUNC">           0 :   String _formatDate(DateTime date) {</span></span>
-<span id="L737"><span class="lineNum">     737</span> <span class="tlaUNC">           0 :     return '${date.day}/${date.month}/${date.year}';</span></span>
-<span id="L738"><span class="lineNum">     738</span>              :   }</span>
-<span id="L739"><span class="lineNum">     739</span>              : }</span>
+<span id="L661"><span class="lineNum">     661</span>              : </span>
+<span id="L662"><span class="lineNum">     662</span> <span class="tlaUNC">           0 :                           const SizedBox(height: 16),</span></span>
+<span id="L663"><span class="lineNum">     663</span>              : </span>
+<span id="L664"><span class="lineNum">     664</span> <span class="tlaUNC">           0 :                           TextButton(</span></span>
+<span id="L665"><span class="lineNum">     665</span> <span class="tlaUNC">           0 :                             onPressed: () =&gt; provider.refresh(),</span></span>
+<span id="L666"><span class="lineNum">     666</span>              :                             child: const Text('Use sample data instead'),</span>
+<span id="L667"><span class="lineNum">     667</span>              :                           ),</span>
+<span id="L668"><span class="lineNum">     668</span>              :                         ],</span>
+<span id="L669"><span class="lineNum">     669</span>              :                       ),</span>
+<span id="L670"><span class="lineNum">     670</span>              :                     );</span>
+<span id="L671"><span class="lineNum">     671</span>              :                   }</span>
+<span id="L672"><span class="lineNum">     672</span>              : </span>
+<span id="L673"><span class="lineNum">     673</span> <span class="tlaUNC">           0 :                   if (provider.events.isEmpty) {</span></span>
+<span id="L674"><span class="lineNum">     674</span> <span class="tlaUNC">           0 :                     return Center(</span></span>
+<span id="L675"><span class="lineNum">     675</span> <span class="tlaUNC">           0 :                       child: Column(</span></span>
+<span id="L676"><span class="lineNum">     676</span>              :                         mainAxisAlignment: MainAxisAlignment.center,</span>
+<span id="L677"><span class="lineNum">     677</span> <span class="tlaUNC">           0 :                         children: [</span></span>
+<span id="L678"><span class="lineNum">     678</span>              :                           const Icon(Icons.search_off, size: 48, color: Colors.grey),</span>
+<span id="L679"><span class="lineNum">     679</span>              :                           const SizedBox(height: 16),</span>
+<span id="L680"><span class="lineNum">     680</span>              :                           const Text(</span>
+<span id="L681"><span class="lineNum">     681</span>              :                             'No events found',</span>
+<span id="L682"><span class="lineNum">     682</span>              :                             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),</span>
+<span id="L683"><span class="lineNum">     683</span>              :                           ),</span>
+<span id="L684"><span class="lineNum">     684</span>              :                           const SizedBox(height: 8),</span>
+<span id="L685"><span class="lineNum">     685</span>              :                           const Text(</span>
+<span id="L686"><span class="lineNum">     686</span>              :                             'Try changing your search or filters',</span>
+<span id="L687"><span class="lineNum">     687</span>              :                             style: TextStyle(color: Colors.grey),</span>
+<span id="L688"><span class="lineNum">     688</span>              :                           ),</span>
+<span id="L689"><span class="lineNum">     689</span>              :                           const SizedBox(height: 16),</span>
+<span id="L690"><span class="lineNum">     690</span> <span class="tlaUNC">           0 :                           ElevatedButton.icon(</span></span>
+<span id="L691"><span class="lineNum">     691</span>              :                             icon: const Icon(Icons.refresh),</span>
+<span id="L692"><span class="lineNum">     692</span>              :                             label: const Text('Refresh'),</span>
+<span id="L693"><span class="lineNum">     693</span> <span class="tlaUNC">           0 :                             onPressed: () =&gt; provider.refresh(),</span></span>
+<span id="L694"><span class="lineNum">     694</span>              :                           ),</span>
+<span id="L695"><span class="lineNum">     695</span>              :                         ],</span>
+<span id="L696"><span class="lineNum">     696</span>              :                       ),</span>
+<span id="L697"><span class="lineNum">     697</span>              :                     );</span>
+<span id="L698"><span class="lineNum">     698</span>              :                   }</span>
+<span id="L699"><span class="lineNum">     699</span>              : </span>
+<span id="L700"><span class="lineNum">     700</span>              :                   // Build the main event view based on tab selection or filter</span>
+<span id="L701"><span class="lineNum">     701</span> <span class="tlaUNC">           0 :                   if (!isInHomeScreen &amp;&amp; _tabController.index == 0 &amp;&amp;</span></span>
+<span id="L702"><span class="lineNum">     702</span> <span class="tlaUNC">           0 :                       provider.activeFilter?.includeFutureEvents == true) {</span></span>
+<span id="L703"><span class="lineNum">     703</span> <span class="tlaUNC">           0 :                     return _buildEventView(context, provider.currentViewType, provider.futureEvents);</span></span>
+<span id="L704"><span class="lineNum">     704</span> <span class="tlaUNC">           0 :                   } else if (!isInHomeScreen &amp;&amp; _tabController.index == 1 &amp;&amp;</span></span>
+<span id="L705"><span class="lineNum">     705</span> <span class="tlaUNC">           0 :                       provider.activeFilter?.includeCurrentEvents == true) {</span></span>
+<span id="L706"><span class="lineNum">     706</span> <span class="tlaUNC">           0 :                     return _buildEventView(context, provider.currentViewType, provider.currentEvents);</span></span>
+<span id="L707"><span class="lineNum">     707</span> <span class="tlaUNC">           0 :                   } else if (!isInHomeScreen &amp;&amp; _tabController.index == 2 &amp;&amp;</span></span>
+<span id="L708"><span class="lineNum">     708</span> <span class="tlaUNC">           0 :                       provider.activeFilter?.includePastEvents == true) {</span></span>
+<span id="L709"><span class="lineNum">     709</span> <span class="tlaUNC">           0 :                     return _buildEventView(context, provider.currentViewType, provider.pastEvents);</span></span>
+<span id="L710"><span class="lineNum">     710</span>              :                   } else {</span>
+<span id="L711"><span class="lineNum">     711</span>              :                     // Default view or when not using tabs</span>
+<span id="L712"><span class="lineNum">     712</span> <span class="tlaUNC">           0 :                     return _buildEventView(context, provider.currentViewType, provider.events);</span></span>
+<span id="L713"><span class="lineNum">     713</span>              :                   }</span>
+<span id="L714"><span class="lineNum">     714</span>              :                 },</span>
+<span id="L715"><span class="lineNum">     715</span>              :               ),</span>
+<span id="L716"><span class="lineNum">     716</span>              :             ),</span>
+<span id="L717"><span class="lineNum">     717</span>              :           ],</span>
+<span id="L718"><span class="lineNum">     718</span>              :         ),</span>
+<span id="L719"><span class="lineNum">     719</span>              :       ),</span>
+<span id="L720"><span class="lineNum">     720</span>              : </span>
+<span id="L721"><span class="lineNum">     721</span>              :       // Only show FAB when specified</span>
+<span id="L722"><span class="lineNum">     722</span> <span class="tlaUNC">           0 :       floatingActionButton: widget.showFAB ? FloatingActionButton(</span></span>
+<span id="L723"><span class="lineNum">     723</span> <span class="tlaUNC">           0 :         onPressed: () {</span></span>
+<span id="L724"><span class="lineNum">     724</span>              :           // Navigate to event creation screen</span>
+<span id="L725"><span class="lineNum">     725</span> <span class="tlaUNC">           0 :           Navigator.of(context).pushNamed('/event-form');</span></span>
+<span id="L726"><span class="lineNum">     726</span>              :         },</span>
+<span id="L727"><span class="lineNum">     727</span>              :         child: const Icon(Icons.add),</span>
+<span id="L728"><span class="lineNum">     728</span>              :       ) : null,</span>
+<span id="L729"><span class="lineNum">     729</span>              :     );</span>
+<span id="L730"><span class="lineNum">     730</span>              :   }</span>
+<span id="L731"><span class="lineNum">     731</span>              : </span>
+<span id="L732"><span class="lineNum">     732</span> <span class="tlaUNC">           0 :   Widget _buildFilterChip(BuildContext context, String label) {</span></span>
+<span id="L733"><span class="lineNum">     733</span> <span class="tlaUNC">           0 :     return Padding(</span></span>
+<span id="L734"><span class="lineNum">     734</span>              :       padding: const EdgeInsets.only(right: 8.0),</span>
+<span id="L735"><span class="lineNum">     735</span> <span class="tlaUNC">           0 :       child: Chip(</span></span>
+<span id="L736"><span class="lineNum">     736</span> <span class="tlaUNC">           0 :         label: Text(label, style: const TextStyle(fontSize: 12)),</span></span>
+<span id="L737"><span class="lineNum">     737</span> <span class="tlaUNC">           0 :         backgroundColor: Theme.of(context).colorScheme.primaryContainer,</span></span>
+<span id="L738"><span class="lineNum">     738</span>              :         visualDensity: VisualDensity.compact,</span>
+<span id="L739"><span class="lineNum">     739</span>              :       ),</span>
+<span id="L740"><span class="lineNum">     740</span>              :     );</span>
+<span id="L741"><span class="lineNum">     741</span>              :   }</span>
+<span id="L742"><span class="lineNum">     742</span>              : </span>
+<span id="L743"><span class="lineNum">     743</span> <span class="tlaUNC">           0 :   String _formatDate(DateTime date) {</span></span>
+<span id="L744"><span class="lineNum">     744</span> <span class="tlaUNC">           0 :     return '${date.day}/${date.month}/${date.year}';</span></span>
+<span id="L745"><span class="lineNum">     745</span>              :   }</span>
+<span id="L746"><span class="lineNum">     746</span>              : }</span>
         </pre>
               </td>
             </tr>
