@@ -13,12 +13,10 @@ import 'package:provider/provider.dart';
 
 class ProfileScreen extends StatefulWidget {
   final String? userId;
-  final Future<UserModel?>? testUserFuture; // Add this parameter for testing
 
   const ProfileScreen({
     super.key,
     this.userId,
-    this.testUserFuture, // Add this parameter
   });
 
   @override
@@ -43,9 +41,7 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         setState(() {});
       }
     });
-
-    // Use the testUserFuture if provided, otherwise default to Future.value(null)
-    _userFuture = widget.testUserFuture ?? Future.value(null);
+    _userFuture = Future.value(null);
     _loadSavedImages();
   }
 
@@ -58,24 +54,17 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-
-    // Only attempt to load user data if we haven't already started loading it
-    if (_userFuture == Future.value(null)) {
-      print("Loading user data in didChangeDependencies");
-      AsyncContextHandler.safeAsyncOperation(
-        context,
-            () async {
-          final authService = context.read<AuthService>();
-          await _loadUserData(authService);
-        },
-        onError: (error) {
-          AppLogger.error('Error loading user dependencies: ${error.toString()}');
-          _handleInitializationError(error);
-        },
-      );
-    } else {
-      print("User data already loading, skipping in didChangeDependencies");
-    }
+    AsyncContextHandler.safeAsyncOperation(
+      context,
+          () async {
+        final authService = context.read<AuthService>();
+        await _loadUserData(authService);
+      },
+      onError: (error) {
+        AppLogger.error('Error loading user dependencies: ${error.toString()}');
+        _handleInitializationError(error);
+      },
+    );
   }
 
   Future<void> _loadUserData(AuthService authService) async {
@@ -146,8 +135,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     });
   }
 
-
-
   Future<void> _editProfile(UserModel user) async {
     final result = await Navigator.push(
       context,
@@ -164,8 +151,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     }
   }
 
-
-
   Future<void> _handleSignOut() async {
     try {
       final authService = context.read<AuthService>();
@@ -178,23 +163,12 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
     }
   }
   Future<void> _loadSavedImages() async {
-    try {
-      print('Loading saved images for user: ${widget.userId}');
-      // Use the context to get the instance, which allows us to provide a mock in tests
-      final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
-      if (widget.userId != null) {
-        final doc = await firestore.collection('users').doc(widget.userId).get();
-        if (doc.exists && doc.data()!.containsKey('galleryImages')) {
-          if (mounted) {
-            setState(() {
-              _imageUrls = List<String>.from(doc['galleryImages']);
-            });
-          }
-        }
-      }
-    } catch (e) {
-      print('Error loading saved images: $e');
-      // We'll silently handle errors here to avoid crashing in tests
+    print('Loading saved images for user: ${widget.userId}');
+    final doc = await FirebaseFirestore.instance.collection('users').doc(widget.userId).get();
+    if (doc.exists && doc.data()!.containsKey('galleryImages')) {
+      setState(() {
+        _imageUrls = List<String>.from(doc['galleryImages']);
+      });
     }
   }
   // Future<void> _pickImage(picker.ImageSource source) async {
@@ -206,20 +180,15 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
   Future<void> _saveImages(File imageFile) async {
     try {
-      // Use the context to get the instance, which allows us to provide a mock in tests
-      final storage = Provider.of<FirebaseStorage>(context, listen: false);
-      final firestore = Provider.of<FirebaseFirestore>(context, listen: false);
-
       String fileName = 'gallery/${widget.userId}/${DateTime.now().millisecondsSinceEpoch}.jpg';
-      UploadTask uploadTask = storage.ref(fileName).putFile(imageFile);
-      TaskSnapshot snapshot = await uploadTask.snapshot;
+      TaskSnapshot snapshot = await FirebaseStorage.instance.ref(fileName).putFile(imageFile);
       String downloadUrl = await snapshot.ref.getDownloadURL();
 
       setState(() {
         _imageUrls.add(downloadUrl);
       });
 
-      await firestore.collection('users').doc(widget.userId).set({
+      await FirebaseFirestore.instance.collection('users').doc(widget.userId).set({
         'galleryImages': _imageUrls,
       }, SetOptions(merge: true));
 
@@ -313,14 +282,6 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
         child: FutureBuilder<UserModel?>(
           future: _userFuture,
           builder: (context, snapshot) {
-            print('FutureBuilder state: ${snapshot.connectionState}');
-            if (snapshot.hasData) {
-              print('FutureBuilder has data: ${snapshot.data?.displayName}');
-            }
-            if (snapshot.hasError) {
-              print('FutureBuilder error: ${snapshot.error}');
-            }
-
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
                 child: CircularProgressIndicator(
@@ -365,13 +326,11 @@ class _ProfileScreenState extends State<ProfileScreen> with SingleTickerProvider
 
             final user = snapshot.data;
             if (user == null) {
-              print('User data is null');
               return const Center(
                 child: Text('User not found', style: TextStyle(color: Colors.white)),
               );
             }
 
-            print('Rendering profile for user: ${user.displayName}, bio: ${user.bio}');
             return Column(
               children: [
                 _buildProfileHeader(user),

@@ -264,19 +264,19 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       child: Builder(
         builder: (context) {
           return Scaffold(
-            backgroundColor: Colors.white,
+            backgroundColor: Colors.black,
             appBar: AppBar(
               backgroundColor: Colors.transparent,
               elevation: 0,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
+                icon: const Icon(Icons.arrow_back, color: Colors.white),
                 onPressed: () => Navigator.pop(context),
               ),
-              title: const Text('Edit Profile', style: TextStyle(color: Colors.black)),
+              title: const Text('Edit Profile', style: TextStyle(color: Colors.white)),
               centerTitle: true,
               actions: [
                 IconButton(
-                  icon: const Icon(Icons.save_outlined, color: Colors.black),
+                  icon: const Icon(Icons.save_outlined, color: Colors.white),
                   onPressed: _isLoading ? null : _saveProfile,
                 ),
               ],
@@ -287,8 +287,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   Tab(text: 'Emergency'),
                   Tab(text: 'Social'),
                 ],
-                labelColor: Colors.black,
-                indicatorColor: Colors.deepPurple,
+                labelColor: Colors.white,
+                unselectedLabelColor: Colors.grey,
+                indicatorColor: Colors.green,
               ),
             ),
             body: Form(
@@ -341,6 +342,20 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 initialDate: _selectedDateOfBirth ?? DateTime.now(),
                 firstDate: DateTime(1900),
                 lastDate: DateTime.now(),
+                builder: (context, child) {
+                  return Theme(
+                    data: Theme.of(context).copyWith(
+                      colorScheme: const ColorScheme.dark(
+                        primary: Colors.green,
+                        onPrimary: Colors.white,
+                        surface: Colors.grey,
+                        onSurface: Colors.white,
+                      ),
+                      dialogBackgroundColor: Colors.grey.shade900,
+                    ),
+                    child: child!,
+                  );
+                },
               );
               if (picked != null) {
                 setState(() => _selectedDateOfBirth = picked);
@@ -349,7 +364,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             child: Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.grey.shade300),
+                color: Colors.grey.shade900,
+                border: Border.all(color: Colors.grey.shade800),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -361,11 +377,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         : 'Select date',
                     style: TextStyle(
                       color: _selectedDateOfBirth != null
-                          ? Colors.black
-                          : Colors.grey.shade600,
+                          ? Colors.white
+                          : Colors.grey.shade400,
                     ),
                   ),
-                  const Icon(Icons.calendar_today),
+                  const Icon(Icons.calendar_today, color: Colors.green),
                 ],
               ),
             ),
@@ -376,14 +392,18 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
-              border: Border.all(color: Colors.grey.shade300),
+              color: Colors.grey.shade900,
+              border: Border.all(color: Colors.grey.shade800),
               borderRadius: BorderRadius.circular(12),
             ),
             child: DropdownButtonHideUnderline(
               child: DropdownButton<String>(
                 isExpanded: true,
                 value: _selectedGender,
-                hint: const Text('Select gender'),
+                hint: const Text('Select gender', style: TextStyle(color: Colors.grey)),
+                dropdownColor: Colors.grey.shade900,
+                style: const TextStyle(color: Colors.white),
+                icon: const Icon(Icons.arrow_drop_down, color: Colors.green),
                 items: _genderOptions.map((String gender) {
                   return DropdownMenuItem<String>(
                     value: gender,
@@ -420,22 +440,22 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     vertical: 8,
                   ),
                   decoration: BoxDecoration(
-                    color: isSelected ? Colors.deepPurple.shade50 : Colors.white,
+                    color: isSelected ? Colors.green.withOpacity(0.3) : Colors.grey.shade900,
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(
                       color: isSelected
-                          ? Colors.deepPurple.shade100
-                          : Colors.grey.shade300,
+                          ? Colors.green
+                          : Colors.grey.shade700,
                     ),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (isSelected) ...[
-                        Icon(
+                        const Icon(
                           Icons.check,
                           size: 18,
-                          color: Colors.deepPurple.shade400,
+                          color: Colors.green,
                         ),
                         const SizedBox(width: 8),
                       ],
@@ -443,8 +463,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         interest,
                         style: TextStyle(
                           color: isSelected
-                              ? Colors.deepPurple.shade400
-                              : Colors.black87,
+                              ? Colors.white
+                              : Colors.grey.shade300,
                         ),
                       ),
                     ],
@@ -524,19 +544,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         if (index == _emergencyContacts.length) {
           return TextButton.icon(
             onPressed: () => _showAddEmergencyContactDialog(),
-            icon: const Icon(Icons.add),
-            label: const Text('Add Emergency Contact'),
+            icon: const Icon(Icons.add, color: Colors.green),
+            label: const Text('Add Emergency Contact', style: TextStyle(color: Colors.green)),
+            style: TextButton.styleFrom(
+              foregroundColor: Colors.green,
+            ),
           );
         }
 
         final contact = _emergencyContacts[index];
         return Card(
+          color: Colors.grey.shade900,
           margin: const EdgeInsets.only(bottom: 16),
           child: ListTile(
-            title: Text(contact.name),
-            subtitle: Text('${contact.relationship}\n${contact.phoneNumber}'),
+            title: Text(contact.name, style: const TextStyle(color: Colors.white)),
+            subtitle: Text(
+              '${contact.relationship}\n${contact.phoneNumber}',
+              style: TextStyle(color: Colors.grey.shade400),
+            ),
             trailing: IconButton(
-              icon: const Icon(Icons.delete),
+              icon: const Icon(Icons.delete, color: Colors.red),
               onPressed: () {
                 setState(() => _emergencyContacts.removeAt(index));
               },
@@ -558,7 +585,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             _buildTextField(
               controller: _socialLinksControllers[platform]!,
               hintText: 'Enter your $platform profile URL',
-              prefixIcon: const Icon(Icons.link),
+              prefixIcon: const Icon(Icons.link, color: Colors.green),
             ),
             const SizedBox(height: 24),
           ],
@@ -574,7 +601,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       child: Text(
         text,
         style: TextStyle(
-          color: Colors.grey[600],
+          color: Colors.grey[400],
           fontSize: 16,
         ),
       ),
@@ -590,14 +617,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }) {
     return Container(
       decoration: BoxDecoration(
+        color: Colors.grey.shade900,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: Colors.grey.shade800),
       ),
       child: TextFormField(
         controller: controller,
         maxLines: maxLines,
+        style: const TextStyle(color: Colors.white),
         decoration: InputDecoration(
           hintText: hintText,
+          hintStyle: TextStyle(color: Colors.grey.shade600),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.all(16),
           prefixIcon: prefixIcon,
@@ -620,9 +650,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           runSpacing: 8,
           children: items.map((item) {
             return Chip(
-              label: Text(item),
+              label: Text(item, style: const TextStyle(color: Colors.white)),
               onDeleted: () => onRemove(item),
-              backgroundColor: Colors.deepPurple.shade50,
+              backgroundColor: Colors.green.withOpacity(0.3),
+              deleteIconColor: Colors.white,
+              side: const BorderSide(color: Colors.green),
             );
           }).toList(),
         ),
@@ -632,8 +664,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             title: hintText,
             onAdd: onAdd,
           ),
-          icon: const Icon(Icons.add),
-          label: Text(hintText),
+          icon: const Icon(Icons.add, color: Colors.green),
+          label: Text(hintText, style: const TextStyle(color: Colors.green)),
+          style: TextButton.styleFrom(
+            foregroundColor: Colors.green,
+          ),
         ),
       ],
     );
@@ -647,17 +682,30 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(title),
+        backgroundColor: Colors.grey.shade900,
+        title: Text(title, style: const TextStyle(color: Colors.white)),
         content: TextField(
           controller: controller,
-          decoration: const InputDecoration(
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
             hintText: 'Enter item',
+            hintStyle: TextStyle(color: Colors.grey.shade600),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.grey.shade700),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: const BorderSide(color: Colors.green),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            filled: true,
+            fillColor: Colors.grey.shade800,
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () {
@@ -666,7 +714,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 Navigator.pop(context);
               }
             },
-            child: const Text('Add'),
+            child: const Text('Add', style: TextStyle(color: Colors.green)),
           ),
         ],
       ),
@@ -681,26 +729,68 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Add Emergency Contact'),
+        backgroundColor: Colors.grey.shade900,
+        title: const Text(
+          'Add Emergency Contact',
+          style: TextStyle(color: Colors.white),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: nameController,
-              decoration: const InputDecoration(
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
                 labelText: 'Name',
+                labelStyle: TextStyle(color: Colors.grey.shade400),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey.shade700),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: Colors.green),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade800,
               ),
             ),
+            const SizedBox(height: 16),
             TextField(
               controller: relationshipController,
-              decoration: const InputDecoration(
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
                 labelText: 'Relationship',
+                labelStyle: TextStyle(color: Colors.grey.shade400),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey.shade700),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: Colors.green),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade800,
               ),
             ),
+            const SizedBox(height: 16),
             TextField(
               controller: phoneController,
-              decoration: const InputDecoration(
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
                 labelText: 'Phone Number',
+                labelStyle: TextStyle(color: Colors.grey.shade400),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.grey.shade700),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: Colors.green),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade800,
               ),
               keyboardType: TextInputType.phone,
             ),
@@ -709,7 +799,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           TextButton(
             onPressed: () {
@@ -726,7 +816,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 Navigator.pop(context);
               }
             },
-            child: const Text('Add'),
+            child: const Text('Add', style: TextStyle(color: Colors.green)),
           ),
         ],
       ),

@@ -107,15 +107,12 @@ void main() {
             (WidgetTester tester) async {
           mockAuthService.updateMockData(userData: testUser, user: mockUser);
 
-          // Create a completed future with the test user
-          final testUserFuture = Future.value(testUser);
-
-          // Build the widget with the testUserFuture
+          // Build the widget WITHOUT passing testUserFuture
           await tester.pumpWidget(createTestableWidget(
-              ProfileScreen(testUserFuture: testUserFuture)
+              const ProfileScreen() // Remove the testUserFuture parameter
           ));
 
-          // Wait for the UI to render
+          // Wait for the UI to render and the future to complete
           await tester.pumpAndSettle();
 
           // Verify the username is displayed
@@ -134,12 +131,9 @@ void main() {
             (WidgetTester tester) async {
           mockAuthService.updateMockData(userData: testUser, user: mockUser);
 
-          // Create a completed future with the test user
-          final testUserFuture = Future.value(testUser);
-
-          // Build the widget with the testUserFuture
+          // Build the widget WITHOUT passing testUserFuture
           await tester.pumpWidget(createTestableWidget(
-              ProfileScreen(testUserFuture: testUserFuture)
+              const ProfileScreen() // Remove the testUserFuture parameter
           ));
 
           // Wait for the UI to render
