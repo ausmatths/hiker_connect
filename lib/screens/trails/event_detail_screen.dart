@@ -28,11 +28,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   bool _isLoading = true;
   EventData? _event;
   String? _error;
+  late Future<List<Review>> _reviewsFuture;
 
   @override
   void initState() {
     super.initState();
     _loadEventDetails();
+    _reviewsFuture = _fetchReviews(widget.eventId);
     developer.log('Initializing EventDetailScreen for event ID: ${widget.eventId}', name: 'EventDetailScreen');
   }
 
@@ -87,11 +89,17 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       );
     }
   }
+
   Future<void> _saveReview(Review review) async {
     try {
       final firestore = FirebaseFirestore.instance;
       await firestore.collection('reviews').add(review.toMap());
       developer.log('Review saved successfully', name: 'EventDetailScreen');
+
+      // Refresh reviews after adding a new one
+      setState(() {
+        _reviewsFuture = _fetchReviews(widget.eventId);
+      });
     } catch (e) {
       developer.log('Error saving review: $e', name: 'EventDetailScreen');
       if (mounted) {
@@ -101,11 +109,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       }
     }
   }
+
   double _calculateAverageRating(List<Review> reviews) {
     if (reviews.isEmpty) return 0.0;
     final totalRating = reviews.map((review) => review.rating).reduce((a, b) => a + b);
     return totalRating / reviews.length;
   }
+
   Future<List<Review>> _fetchReviews(String eventId) async {
     try {
       final firestore = FirebaseFirestore.instance;
@@ -114,17 +124,49 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
           .where('eventId', isEqualTo: eventId)
           .get();
 
-      return querySnapshot.docs.map((doc) => Review.fromMap(doc.data())).toList();
+      // Process and filter reviews
+      final reviews = querySnapshot.docs.map((doc) {
+        try {
+          return Review.fromMap(doc.data());
+        } catch (e) {
+          developer.log('Error parsing review: $e', name: 'EventDetailScreen');
+          return null;
+        }
+      })
+          .where((review) => review != null) // Filter out any null reviews
+          .cast<Review>() // Cast the non-null reviews
+          .toList();
+
+      // Sort by timestamp descending
+      reviews.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+      return reviews;
     } catch (e) {
       developer.log('Error fetching reviews: $e', name: 'EventDetailScreen');
       return [];
     }
   }
 
+  Future<void> _addToCalendar() async {
+    try {
+      if (_event == null) return;
+
+      // Implement calendar integration logic here
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Event added to calendar')),
+      );
+      developer.log('Added event to calendar: ${_event?.title}', name: 'EventDetailScreen');
+    } catch (e) {
+      developer.log('Error adding event to calendar: $e', name: 'EventDetailScreen');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to add event to calendar')),
+      );
+    }
+  }
 
   Future<void> _showReviewDialog(BuildContext context) async {
     final TextEditingController _reviewController = TextEditingController();
-    double _rating = 0.0;
+    double _rating = 3.0; // Default rating
 
     await showDialog(
       context: context,
@@ -176,11 +218,19 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   return;
                 }
 
+                final User? currentUser = FirebaseAuth.instance.currentUser;
+                if (currentUser == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('You must be logged in to leave a review')),
+                  );
+                  return;
+                }
+
                 final review = Review(
-                  userId: FirebaseAuth.instance.currentUser!.uid,
+                  userId: currentUser.uid,
                   eventId: widget.eventId,
-                  trailId: '', // Assuming trailId is not used for events
-                  username: FirebaseAuth.instance.currentUser!.displayName ?? 'Anonymous',
+                  trailId: '', // Not needed for events
+                  username: currentUser.displayName ?? 'Anonymous',
                   reviewText: _reviewController.text.trim(),
                   rating: _rating,
                   timestamp: DateTime.now(),
@@ -203,6 +253,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       },
     );
   }
+
   void _shareEvent() {
     if (_event == null) return;
 
@@ -224,76 +275,124 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     developer.log('Sharing event: $eventTitle', name: 'EventDetailScreen');
     Share.share(shareText);
   }
+
   void _showReviewsBottomSheet(BuildContext context, List<Review> reviews) {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: false,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
       builder: (context) {
-        return Container(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Reviews',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.3,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (context, scrollController) {
+            return reviews.isEmpty
+                ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.rate_review_outlined, size: 64, color: Colors.grey),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'No reviews yet',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text('Be the first to review this event!'),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      _showReviewDialog(context);
+                    },
+                    child: const Text('Write a Review'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: ListView.builder(
-                  itemCount: reviews.length,
-                  itemBuilder: (context, index) {
-                    final review = reviews[index];
-                    return Card(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      child: Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                RatingBarIndicator(
-                                  rating: review.rating,
-                                  itemCount: 5,
-                                  itemSize: 16,
-                                  itemBuilder: (context, _) => const Icon(
-                                    Icons.star,
-                                    color: Colors.amber,
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  'Posted on ${DateFormat('MMMM, d yyyy').format(review.timestamp)}',
-                                  style: const TextStyle(fontSize: 14),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              review.reviewText,
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'By User ${review.username}',// Display a portion of the user ID
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
+            )
+                : Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Reviews (${reviews.length})',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    );
-                  },
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
+                const Divider(height: 1),
+                Expanded(
+                  child: ListView.builder(
+                    controller: scrollController,
+                    itemCount: reviews.length,
+                    itemBuilder: (context, index) {
+                      final review = reviews[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    review.username,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  Text(
+                                    DateFormat('MMM d, yyyy').format(review.timestamp),
+                                    style: const TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8),
+                              RatingBarIndicator(
+                                rating: review.rating,
+                                itemCount: 5,
+                                itemSize: 20,
+                                itemBuilder: (context, _) => const Icon(
+                                  Icons.star,
+                                  color: Colors.amber,
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                review.reviewText,
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -370,278 +469,298 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
   Widget _buildEventDetails(ThemeData theme, double screenWidth) {
     return FutureBuilder<List<Review>>(
-        future: _fetchReviews(widget.eventId),
-        builder: (context, snapshot) {
-          final reviews = snapshot.data ?? [];
-          final averageRating = _calculateAverageRating(reviews);
-          final numberOfReviews = reviews.length;
-          return CustomScrollView(
-            slivers: [
-              // App Bar with Image
-              SliverAppBar(
-                expandedHeight: 200.0,
-                floating: false,
-                pinned: true,
-                actions: [
-                  // Keep existing actions
-                ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: _event!.imageUrl != null && _event!.imageUrl!.isNotEmpty
-                  ? Image.network(
-                _event!.imageUrl!,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  print('Failed to load image: $error');
-                  return Container(
-                    color: theme.colorScheme.surfaceVariant,
-                    child: const Center(
-                      child: Icon(Icons.image_not_supported, size: 50),
-                    ),
-                  );
-                },
-              )
-                  : Container(
-                color: theme.colorScheme.surfaceVariant,
-                child: const Center(
-                  child: Icon(Icons.photo_library, size: 50),
+      future: _reviewsFuture,
+      builder: (context, snapshot) {
+        final reviews = snapshot.data ?? [];
+        final averageRating = _calculateAverageRating(reviews);
+        final numberOfReviews = reviews.length;
+
+        return CustomScrollView(
+          slivers: [
+            // App Bar with Image
+            SliverAppBar(
+              expandedHeight: 200.0,
+              floating: false,
+              pinned: true,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.favorite_border),
+                  tooltip: 'Add to Favorites',
+                  onPressed: () async {
+                    try {
+                      final eventsProvider = Provider.of<EventsProvider>(context, listen: false);
+                      // Use addToFavorites instead of addEventToFavorites
+                      await eventsProvider.addToFavorites(widget.eventId);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Added to favorites')),
+                      );
+                    } catch (e) {
+                      developer.log('Error adding to favorites: $e', name: 'EventDetailScreen');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Failed to update favorite status')),
+                      );
+                    }
+                  },
+                ),
+                IconButton(
+                  icon: const Icon(Icons.share),
+                  tooltip: 'Share Event',
+                  onPressed: _shareEvent,
+                ),
+              ],
+              flexibleSpace: FlexibleSpaceBar(
+                background: _event!.imageUrl != null && _event!.imageUrl!.isNotEmpty
+                    ? Image.network(
+                  _event!.imageUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    developer.log('Failed to load image: $error', name: 'EventDetailScreen');
+                    return Container(
+                      color: theme.colorScheme.surfaceVariant,
+                      child: const Center(
+                        child: Icon(Icons.image_not_supported, size: 50),
+                      ),
+                    );
+                  },
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      color: theme.colorScheme.surfaceVariant,
+                      child: const Center(
+                        child: CircularProgressIndicator(),
+                      ),
+                    );
+                  },
+                )
+                    : Container(
+                  color: theme.colorScheme.surfaceVariant,
+                  child: const Center(
+                    child: Icon(Icons.photo_library, size: 50),
+                  ),
                 ),
               ),
             ),
-              ),
 
-              // Event Details
-              SliverToBoxAdapter(
-                child: Container(
-                  constraints: BoxConstraints(
-                    maxWidth: screenWidth,
-                  ),
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
+            // Event Details
+            SliverToBoxAdapter(
+              child: Container(
+                constraints: BoxConstraints(
+                  maxWidth: screenWidth,
+                ),
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Wrap(
-                    crossAxisAlignment: WrapCrossAlignment.center,
-                    spacing: 8, // Space between title and ratings
-                    children: [
-                      Text(
-                        _event!.title,
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (numberOfReviews > 0) ...[
-                        const SizedBox(width: 8),
-                      GestureDetector(
-                          onTap: () { _showReviewsBottomSheet(context, reviews);},
-                      child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            RatingBarIndicator(
-                              rating: averageRating,
-                              itemCount: 5,
-                              itemSize: 20,
-                              itemBuilder: (context, _) =>
-                              const Icon(
-                                Icons.star,
-                                color: Colors.amber,
-                              ),
-                            ),
-                            Text('(${numberOfReviews.toString()})',
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ],
-                      ),
-                        ),
-              ],
-                      ]
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Date & Time
-                      _buildEventInfo(
-                        'Date & Time',
-                        _event!.getFormattedDateRange(),
-                        Icons.calendar_today,
-                        theme,
-                      ),
-
-                      // Duration if available
-                      if (_event!.duration != null)
-                        _buildEventInfo(
-                          'Duration',
-                          _event!.getFormattedDuration(),
-                          Icons.timer,
-                          theme,
-                        ),
-
-                      // Location
-                      _buildEventInfo(
-                        'Location',
-                        _event!.location,
-                        Icons.location_on,
-                        theme,
-                      ),
-
-                      // Organizer
-                      _buildEventInfo(
-                        'Organizer',
-                        _event!.organizer,
-                        Icons.people,
-                        theme,
-                      ),
-
-                      // Price
-                      _buildEventInfo(
-                        'Price',
-                        _event!.isFree == true ? 'Free' : (_event!.price ??
-                            'Paid'),
-                        Icons.attach_money,
-                        theme,
-                      ),
-
-                      // Participant Limit if available
-                      if (_event!.participantLimit != null)
-                        _buildEventInfo(
-                          'Participant Limit',
-                          _event!.participantLimit.toString(),
-                          Icons.groups,
-                          theme,
-                        ),
-
-                      // Status
-                      if (_event!.status != null && _event!.status!.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 16.0),
-                          child: Row(
-                            children: [
-                              Icon(
-                                _event!.status!.toLowerCase() == 'live'
-                                    ? Icons.check_circle
-                                    : Icons.info,
-                                color: _event!.status!.toLowerCase() == 'live'
-                                    ? Colors.green
-                                    : Colors.amber,
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(
-                                  'Status: ${_event!.status}',
-                                  style: TextStyle(
-                                    color: _event!.status!.toLowerCase() ==
-                                        'live'
-                                        ? Colors.green
-                                        : Colors.amber,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-
-                      const Divider(height: 32),
-
-                      // Description
-                      if (_event!.description != null &&
-                          _event!.description!.isNotEmpty)
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Description',
-                              style: theme.textTheme.titleLarge,
-                            ),
-                            const SizedBox(height: 8),
-                            if (_event!.description!.contains('<') &&
-                                _event!.description!.contains('>'))
-                              Container(
-                                constraints: BoxConstraints(
-                                  maxWidth: screenWidth -
-                                      32, // Account for padding
-                                ),
-                                child: Html(
-                                  data: _event!.description!,
-                                  style: {
-                                    'body': Style(
-                                      fontSize: FontSize(16.0),
-                                      lineHeight: LineHeight(1.5),
-                                      maxLines: 100,
-                                      textOverflow: TextOverflow.ellipsis,
-                                    ),
-                                    'table': Style(
-                                      width: Width(screenWidth - 32),
-                                    ),
-                                    'img': Style(
-                                      width: Width(screenWidth - 32),
-                                    ),
-                                  },
-                                ),
-                              )
-                            else
-                              Text(
-                                _event!.description!,
-                                style: const TextStyle(
-                                    fontSize: 16, height: 1.5),
-                              ),
-                            const SizedBox(height: 24),
-                          ],
-                        ),
-
-                      // CTA Buttons
-                      Container(
-                        width: double.infinity,
-                        constraints: BoxConstraints(maxWidth: screenWidth - 32),
-                        child: ElevatedButton.icon(
-                          onPressed: () => _launchUrl(_event!.url),
-                          icon: const Icon(Icons.open_in_new),
-                          label: const Text('View Event Details'),
-                          style: ElevatedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            foregroundColor: theme.colorScheme.onPrimary,
-                            backgroundColor: theme.colorScheme.primary,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
                         children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () {
-                                // Add to calendar functionality
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text('Adding to calendar...')),
-                                );
-                                developer.log('Add to calendar clicked',
-                                    name: 'EventDetailScreen');
+                          Text(
+                            _event!.title,
+                            style: theme.textTheme.headlineSmall?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          if (numberOfReviews > 0) ...[
+                            const SizedBox(width: 8),
+                            GestureDetector(
+                              onTap: () {
+                                _showReviewsBottomSheet(context, reviews);
                               },
-                              icon: const Icon(Icons.calendar_today),
-                              label: const Text('Add to Calendar'),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: () => _showReviewDialog(context),
-                              icon: const Icon(
-                                Icons.reviews,
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  RatingBarIndicator(
+                                    rating: averageRating,
+                                    itemCount: 5,
+                                    itemSize: 20,
+                                    itemBuilder: (context, _) => const Icon(
+                                      Icons.star,
+                                      color: Colors.amber,
+                                    ),
+                                  ),
+                                  Text(
+                                    ' (${numberOfReviews.toString()})',
+                                    style: const TextStyle(fontSize: 14),
+                                  ),
+                                ],
                               ),
-                              label: const Text('Write a Review'),
                             ),
+                          ],
+                        ]),
+                    const SizedBox(height: 16),
+
+                    // Date & Time
+                    _buildEventInfo(
+                      'Date & Time',
+                      _event!.getFormattedDateRange(),
+                      Icons.calendar_today,
+                      theme,
+                    ),
+
+                    // Duration if available
+                    if (_event!.duration != null)
+                      _buildEventInfo(
+                        'Duration',
+                        _event!.getFormattedDuration(),
+                        Icons.timer,
+                        theme,
+                      ),
+
+                    // Location
+                    _buildEventInfo(
+                      'Location',
+                      _event!.location,
+                      Icons.location_on,
+                      theme,
+                    ),
+
+                    // Organizer
+                    _buildEventInfo(
+                      'Organizer',
+                      _event!.organizer,
+                      Icons.people,
+                      theme,
+                    ),
+
+                    // Price
+                    _buildEventInfo(
+                      'Price',
+                      _event!.isFree == true ? 'Free' : (_event!.price ?? 'Paid'),
+                      Icons.attach_money,
+                      theme,
+                    ),
+
+                    // Participant Limit if available
+                    if (_event!.participantLimit != null)
+                      _buildEventInfo(
+                        'Participant Limit',
+                        _event!.participantLimit.toString(),
+                        Icons.groups,
+                        theme,
+                      ),
+
+                    // Status
+                    if (_event!.status != null && _event!.status!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: Row(
+                          children: [
+                            Icon(
+                              _event!.status!.toLowerCase() == 'live'
+                                  ? Icons.check_circle
+                                  : Icons.info,
+                              color: _event!.status!.toLowerCase() == 'live'
+                                  ? Colors.green
+                                  : Colors.amber,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                'Status: ${_event!.status}',
+                                style: TextStyle(
+                                  color: _event!.status!.toLowerCase() == 'live'
+                                      ? Colors.green
+                                      : Colors.amber,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                    const Divider(height: 32),
+
+                    // Description
+                    if (_event!.description != null && _event!.description!.isNotEmpty)
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Description',
+                            style: theme.textTheme.titleLarge,
                           ),
+                          const SizedBox(height: 8),
+                          if (_event!.description!.contains('<') && _event!.description!.contains('>'))
+                            Container(
+                              constraints: BoxConstraints(
+                                maxWidth: screenWidth - 32,
+                              ),
+                              child: Html(
+                                data: _event!.description!,
+                                style: {
+                                  'body': Style(
+                                    fontSize: FontSize(16.0),
+                                    lineHeight: LineHeight(1.5),
+                                    maxLines: 100,
+                                    textOverflow: TextOverflow.ellipsis,
+                                  ),
+                                  'table': Style(
+                                    width: Width(screenWidth - 32),
+                                  ),
+                                  'img': Style(
+                                    width: Width(screenWidth - 32),
+                                  ),
+                                },
+                              ),
+                            )
+                          else
+                            Text(
+                              _event!.description!,
+                              style: const TextStyle(fontSize: 16, height: 1.5),
+                            ),
+                          const SizedBox(height: 24),
                         ],
                       ),
-                      const SizedBox(height: 24),
-                    ],
-                  ),
+
+                    // CTA Buttons
+                    Container(
+                      width: double.infinity,
+                      constraints: BoxConstraints(maxWidth: screenWidth - 32),
+                      child: ElevatedButton.icon(
+                        onPressed: () => _launchUrl(_event!.url),
+                        icon: const Icon(Icons.open_in_new),
+                        label: const Text('View Event Details'),
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          foregroundColor: theme.colorScheme.onPrimary,
+                          backgroundColor: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: _addToCalendar,
+                            icon: const Icon(Icons.calendar_today),
+                            label: const Text('Add to Calendar'),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => _showReviewDialog(context),
+                            icon: const Icon(
+                              Icons.reviews,
+                            ),
+                            label: const Text('Write a Review'),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                  ],
                 ),
               ),
-            ],
-          );
-        },
+            ),
+          ],
+        );
+      },
     );
   }
 }
