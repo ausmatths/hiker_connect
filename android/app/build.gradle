@@ -27,6 +27,20 @@ android {
         versionName "1.0"
 
         multiDexEnabled true
+
+        // Read the API key from the .env file
+        def envFile = rootProject.file('../.env')
+        def properties = new Properties()
+        if (envFile.exists()) {
+            envFile.withReader('UTF-8') { reader ->
+                properties.load(reader)
+            }
+
+            resValue "string", "google_maps_api_key", properties.getProperty("GOOGLE_MAPS_API_KEY", "")
+        } else {
+            resValue "string", "google_maps_api_key", ""
+            logger.warn("No .env file found - Google Maps functionality may be limited")
+        }
     }
 
     signingConfigs {

@@ -48,5 +48,16 @@ app.*.map.json
 .docker/
 docker-compose.override.yml
 
-# Ignore environment files
+# Environment files
 .env
+.env.development
+.env.production
+.env.local
+*.env
+
+# Platform-specific generated files with secrets
+ios/Runner/EnvironmentConfig.swift
+android/app/src/main/res/values/secrets.xml
+
+# Don't ignore the example file
+!.env.example

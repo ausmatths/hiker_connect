@@ -16,13 +16,13 @@ import 'package:hiker_connect/models/user_model.dart';
 import 'package:hiker_connect/models/duration_adapter.dart';
 import 'package:hiker_connect/models/event_data.dart';
 import 'package:hiker_connect/models/event_filter.dart';
-import 'package:hiker_connect/models/photo_data.dart'; // Add this import
+import 'package:hiker_connect/models/photo_data.dart';
 import 'package:hiker_connect/services/databaseservice.dart';
-import 'package:hiker_connect/services/google_events_service.dart'; // New import for Google Events
+import 'package:hiker_connect/services/google_events_service.dart';
 import 'package:hiker_connect/providers/events_provider.dart';
 import 'package:hiker_connect/providers/event_browsing_provider.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart'; // Add for LatLng support
-import 'dart:async'; // Add this for runZonedGuarded
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'dart:async';
 import 'dart:developer' as developer;
 import 'dart:io' show Directory, HttpClient, Platform;
 import 'package:flutter/foundation.dart' show
@@ -36,8 +36,8 @@ ErrorSummary;
 import 'package:flutter/src/foundation/binding.dart' show BindingBase;
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
-import 'package:firebase_performance/firebase_performance.dart'; // Add for performance monitoring
-import 'package:geolocator/geolocator.dart'; // Add for user location
+import 'package:firebase_performance/firebase_performance.dart';
+import 'package:geolocator/geolocator.dart';
 
 // Import screens and services
 import 'package:hiker_connect/services/firebase_auth.dart';
@@ -45,12 +45,16 @@ import 'package:hiker_connect/screens/auth/login_screen.dart';
 import 'package:hiker_connect/screens/auth/signup_screen.dart';
 import 'package:hiker_connect/screens/auth/forgot_password_screen.dart';
 import 'package:hiker_connect/screens/profile/profile_screen.dart';
-import 'package:hiker_connect/screens/profile/profile_photo_gallery.dart'; // Add this import
-import 'package:hiker_connect/screens/photos/photo_detail_screen.dart'; // Add this import
+import 'package:hiker_connect/screens/profile/profile_photo_gallery.dart';
+import 'package:hiker_connect/screens/photos/photo_detail_screen.dart';
 import 'package:hiker_connect/screens/home_screen.dart';
 import 'package:hiker_connect/screens/events/events_browsing_screen.dart';
 import 'firebase_options.dart';
 import 'package:hiker_connect/screens/events/event_form_screen.dart';
+
+// Import the new environment configuration
+import 'package:hiker_connect/utils/env_config.dart';
+import 'package:hiker_connect/config/firebase_options_dynamic.dart';
 
 // Adapter classes for Hive
 class EventPreferencesAdapter extends TypeAdapter<EventPreferences> {
@@ -414,11 +418,25 @@ class AppInitializer {
     try {
       developer.log('Initializing Firebase...', name: 'App Setup');
 
-      // Initialize Firebase with the configuration
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-      developer.log('Firebase initialized successfully', name: 'App Setup');
+      // Make sure environment variables are loaded first
+      await EnvConfig.load();
+
+      // Validate Firebase configuration
+      final bool hasValidConfig = EnvConfig.validateRequiredKeys();
+
+      if (hasValidConfig) {
+        // Initialize Firebase with dynamic options
+        await Firebase.initializeApp(
+          options: DynamicFirebaseOptions.currentPlatform,
+        );
+        developer.log('Firebase initialized with dynamic configuration', name: 'App Setup');
+      } else {
+        // Fall back to static configuration
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+        developer.log('Firebase initialized with static configuration', name: 'App Setup');
+      }
 
       // Initialize App Check properly - with the correct provider
       await _initializeAppCheck();
@@ -426,6 +444,8 @@ class AppInitializer {
       // Configure emulators for local development
       await _configureEmulators();
 
+      // Initialize Google Maps
+      await _initializeGoogleMaps();
     } catch (e, stackTrace) {
       developer.log(
         'Firebase initialization error',
@@ -707,13 +727,23 @@ class AppInitializer {
   /// Initialize Google Maps
   static Future<void> _initializeGoogleMaps() async {
     try {
-      // Here you would initialize any Google Maps specific settings
-      // such as custom styles, initial configuration, etc.
-      if (Platform.isAndroid) {
-        developer.log('Initializing Google Maps for Android', name: 'App Setup');
-        // Platform-specific setup would go here
+      final mapsApiKey = EnvConfig.googleMapsApiKey;
+
+      if (mapsApiKey.isEmpty) {
+        developer.log('WARNING: Google Maps API key not found in environment variables.',
+            name: 'App Setup');
+      } else {
+        developer.log('Google Maps API key loaded successfully', name: 'App Setup');
       }
 
+      // Platform-specific setup if needed
+      if (Platform.isAndroid) {
+        developer.log('Initializing Google Maps for Android', name: 'App Setup');
+        // No additional setup needed here as we handle this in the build.gradle
+      } else if (Platform.isIOS) {
+        developer.log('Initializing Google Maps for iOS', name: 'App Setup');
+        // No additional setup needed here as we handle this in AppDelegate
+      }
       developer.log('Google Maps initialized successfully', name: 'App Setup');
     } catch (e) {
       developer.log('Google Maps initialization error: $e', name: 'App Setup', error: e);
@@ -733,31 +763,11 @@ void main() {
     // Ensure Flutter binding is initialized inside the same zone as runApp
     WidgetsFlutterBinding.ensureInitialized();
 
-    // Load environment variables
-    bool envLoaded = false;
-    try {
-      await dotenv.load(fileName: ".env");
-      developer.log('Environment variables loaded successfully', name: 'App Setup');
-      envLoaded = true;
-    } catch (e) {
-      developer.log('Failed to load .env file with standard path: $e', name: 'App Setup');
-
-      try {
-        if (Platform.isIOS || Platform.isMacOS) {
-          final directory = await path_provider.getApplicationDocumentsDirectory();
-          final path = '${directory.path}/.env';
-          developer.log('Trying alternate path: $path', name: 'App Setup');
-          await dotenv.load(fileName: path);
-          developer.log('Environment variables loaded from alternate path', name: 'App Setup');
-          envLoaded = true;
-        }
-      } catch (e2) {
-        developer.log('Failed to load .env from alternate path: $e2', name: 'App Setup');
-      }
-
-      if (!envLoaded) {
-        developer.log('WARNING: Continuing without environment variables', name: 'App Setup');
-      }
+    // Load environment variables using our EnvConfig utility
+    final envLoaded = await EnvConfig.load();
+    if (!envLoaded) {
+      developer.log('Failed to load environment variables from .env file', name: 'App Setup');
+      // Continue initialization, but some features may not work
     }
 
     try {
@@ -793,8 +803,8 @@ void main() {
     // Google Events provider
     Provider<GoogleEventsService>.value(value: googleEventsService),
 
-    // Performance monitoring provider
-    Provider<PerformanceMonitoringService>.value(value: performanceService),
+                // Performance monitoring provider
+                Provider<PerformanceMonitoringService>.value(value: performanceService),
 
                 // Location service provider
                 Provider<LocationService>.value(value: locationService),
